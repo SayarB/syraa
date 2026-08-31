@@ -4,8 +4,8 @@ import {
   createContextStore,
   migrateContextSchema,
   resolveDatabaseUrl,
-} from "@everyday/context";
-import { createIngestQueue, type IngestQueue } from "@everyday/ingest";
+} from "@syraa/context";
+import { createIngestQueue, type IngestQueue } from "@syraa/ingest";
 import type { Pool } from "pg";
 
 export type ContextHandle = {

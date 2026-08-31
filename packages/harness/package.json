@@ -1,9 +1,9 @@
 {
-  "name": "@everyday/harness",
+  "name": "@syraa/harness",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Everyday M9 harness — chat orchestration, LLM config, memory wiring",
+  "description": "Syraa M9 harness — chat orchestration, LLM config, memory wiring",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -19,9 +19,9 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@everyday/context": "*",
-    "@everyday/ingest": "*",
-    "@everyday/memory": "*",
+    "@syraa/context": "*",
+    "@syraa/ingest": "*",
+    "@syraa/memory": "*",
     "@mastra/core": "^1.63.2",
     "busboy": "^1.6.0",
     "pg": "^8.23.0",

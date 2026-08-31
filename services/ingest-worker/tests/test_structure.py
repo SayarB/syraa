@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from everyday_ingest.heading_heuristics.structure import extract_structure_tree
+from syraa_ingest.heading_heuristics.structure import extract_structure_tree
 
 
 def test_structure_heuristics_on_headed_pdf(headed_pdf: Path):

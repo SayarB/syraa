@@ -4,7 +4,7 @@ import { INGEST_QUEUE_KEY, parseJobPayload } from "../src/protocol.js";
 
 describe("ingest protocol", () => {
   it("exposes queue key", () => {
-    expect(INGEST_QUEUE_KEY).toBe("everyday:ingest:queue");
+    expect(INGEST_QUEUE_KEY).toBe("syraa:ingest:queue");
   });
 
   it("parses job payloads", () => {

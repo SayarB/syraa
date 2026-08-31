@@ -1,6 +1,6 @@
-import type { MemoryItem } from "@everyday/memory";
 import type { MessageListInput } from "@mastra/core/agent/message-list";
-import { getEverydayAgent } from "./mastra/index.js";
+import type { MemoryItem } from "@syraa/memory";
+import { getSyraaAgent } from "./mastra/index.js";
 import { resolveChatModel, resolveChatProvider } from "./mastra/model.js";
 import { buildSystemPrompt } from "./mastra/prompt.js";
 import {
@@ -52,7 +52,7 @@ export async function runChatTurn(opts: {
     throw new Error(`Set ${keyEnv} in .env to use chat`);
   }
 
-  const agent = getEverydayAgent();
+  const agent = getSyraaAgent();
   const messages = [
     ...opts.history.slice(-20).map((message) => ({
       role: message.role,

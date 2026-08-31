@@ -13,18 +13,18 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     env:
-      DATABASE_URL: postgresql://everyday:everyday@localhost:5432/everyday
+      DATABASE_URL: postgresql://syraa:syraa@localhost:5432/syraa
     services:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: everyday
-          POSTGRES_PASSWORD: everyday
-          POSTGRES_DB: everyday
+          POSTGRES_USER: syraa
+          POSTGRES_PASSWORD: syraa
+          POSTGRES_DB: syraa
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U everyday -d everyday"
+          --health-cmd "pg_isready -U syraa -d syraa"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
@@ -58,16 +58,16 @@ jobs:
 
       - name: Build packages
         run: |
-          npm run build -w @everyday/memory
-          npm run build -w @everyday/context
-          npm run build -w @everyday/ingest
-          npm run build -w @everyday/harness
-          npm run build -w @everyday/api
+          npm run build -w @syraa/memory
+          npm run build -w @syraa/context
+          npm run build -w @syraa/ingest
+          npm run build -w @syraa/harness
+          npm run build -w @syraa/api
 
       - name: Migrate database
         run: |
-          npm run db:migrate:dist -w @everyday/memory
-          npm run db:migrate:dist -w @everyday/context
+          npm run db:migrate:dist -w @syraa/memory
+          npm run db:migrate:dist -w @syraa/context
 
       - name: TypeScript tests
         run: npm run test:ts

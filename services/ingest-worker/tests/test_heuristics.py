@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from everyday_ingest.heading_heuristics.heuristics import (
+from syraa_ingest.heading_heuristics.heuristics import (
     Line,
     assign_levels_by_font,
     build_tree,

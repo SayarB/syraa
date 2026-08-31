@@ -1,4 +1,4 @@
-# Everyday plans (index)
+# Syraa plans (index)
 
 Brainstorm was split so packages can move forward independently:
 

@@ -85,7 +85,7 @@ async function handleApi(
   const userId = defaultUserId(req);
 
   if (req.method === "GET" && pathname === "/api/health") {
-    sendJson(res, 200, { status: "ok", service: "@everyday/harness", chat: getChatConfig() });
+    sendJson(res, 200, { status: "ok", service: "@syraa/harness", chat: getChatConfig() });
     return;
   }
 

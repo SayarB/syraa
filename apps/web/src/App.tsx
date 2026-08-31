@@ -35,7 +35,7 @@ async function sleep(ms: number): Promise<void> {
 export default function App() {
   const [userId, setUserId] = useState("demo-user");
   const [userDraft, setUserDraft] = useState("demo-user");
-  const [subtitle, setSubtitle] = useState("Everyday AI Chat");
+  const [subtitle, setSubtitle] = useState("SYRAA AI Chat");
   const [chatReady, setChatReady] = useState(true);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -367,7 +367,7 @@ export default function App() {
         <div className="sidebar-brand">
           <span className="orb" aria-hidden="true" />
           <div>
-            <strong>Everyday</strong>
+            <strong>SYRAA</strong>
             <small>{subtitle}</small>
           </div>
         </div>
@@ -513,7 +513,7 @@ export default function App() {
           {!hasThread ? (
             <div className="hero">
               <div className="hero-orb" aria-hidden="true" />
-              <p className="hero-eyebrow">Everyday AI Chat</p>
+              <p className="hero-eyebrow">SYRAA AI Chat</p>
               <h1>
                 {greeting()}, {userId}
               </h1>

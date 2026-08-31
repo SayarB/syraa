@@ -1,9 +1,9 @@
-from everyday_ingest.embed import embed_texts, resolve_embedding_config
-from everyday_ingest.queue_protocol import QUEUE_KEY, IngestJob
+from syraa_ingest.embed import embed_texts, resolve_embedding_config
+from syraa_ingest.queue_protocol import QUEUE_KEY, IngestJob
 
 
 def test_queue_key() -> None:
-    assert QUEUE_KEY == "everyday:ingest:queue"
+    assert QUEUE_KEY == "syraa:ingest:queue"
 
 
 def test_job_from_json() -> None:

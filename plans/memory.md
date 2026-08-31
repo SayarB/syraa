@@ -1,4 +1,4 @@
-# Brainstorm: Memory system (M7 / `@everyday/memory`)
+# Brainstorm: Memory system (M7 / `@syraa/memory`)
 
 Living notes for **learned behavior** memory (prefs, rules, methods, decisions) — not chat history, not materials RAG.
 
@@ -9,7 +9,7 @@ Sibling docs: [`context.md`](./context.md) · [`harness.md`](./harness.md)
 ### Working-style memory (M7 — deep dive)
 
 - Settled (user): Remember **actions, decisions, methods** — not just documents; not raw chat as the brain.
-- Settled (user): **M7 Memory is one pluggable package** (`@everyday/memory` or equivalent) — own schema, SDK, migrations. Mastra harness **plugs it in**; memory does **not** live inside Mastra and does **not** import Mastra.
+- Settled (user): **M7 Memory is one pluggable package** (`@syraa/memory` or equivalent) — own schema, SDK, migrations. Mastra harness **plugs it in**; memory does **not** live inside Mastra and does **not** import Mastra.
 - Settled: Scopes = **user** · **kind** · **subproject** · **session (ephemeral)**; vault facts live on resource cards (M5), not mixed into style memory.
 - Settled: HITL for promoting methods into kind/user memory; visible edit/delete.
 - Settled: Cross-kind fork never writes into source kind memory; clone gets its own target scopes.
@@ -341,7 +341,7 @@ LLM structured out
 
 #### Build notes for architect
 
-- **TypeScript** package `@everyday/memory` — app/Mastra/SDK are TS. **Python only for ingest scripts.**  
+- **TypeScript** package `@syraa/memory` — app/Mastra/SDK are TS. **Python only for ingest scripts.**  
 - Postgres (or SQLite locally) for profiles, briefs, MemoryItems — primary.  
 - Optional embedding index on MemoryItem.text for “find that decision.”  
 - Projection layer versioned (prompt templates).  
@@ -357,7 +357,7 @@ LLM structured out
 - **Sessions attach to subprojects; kind holds method memory** — → assumed (stance)
 - **Sibling subprojects share kind memory, not instance memory** — → assumed
 - **Memory: user + vault + kind + subproject + session** — → assumed (refined)
-- **M9 harness = thin Mastra** — settled (user). No Mastra Memory/RAG; plug Everyday SDKs only. AI SDK / LangGraph = escape hatches.
+- **M9 harness = thin Mastra** — settled (user). No Mastra Memory/RAG; plug Syraa SDKs only. AI SDK / LangGraph = escape hatches.
 - **M7 Memory is a pluggable package wired into Mastra (not inside Mastra)** — settled (user).
 - **Cross-kind fork when session outgrows craft** — clone session into target kind, redirect user, keep source quiz convo + Quiz kind memory. → settled (user)
 - **Visible editable memory; no Neo4j in v1** — → assumed

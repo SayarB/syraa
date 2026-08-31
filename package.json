@@ -1,5 +1,5 @@
 {
-  "name": "everyday",
+  "name": "syraa",
   "private": true,
   "workspaces": [
     "packages/*",
@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "check": "npm run check:ts && npm run check:py",
-    "check:ts": "biome check . && npm run build -w @everyday/memory && npm run build -w @everyday/context && npm run build -w @everyday/ingest && npm run build -w @everyday/harness && npm run typecheck --workspaces --if-present",
+    "check:ts": "biome check . && npm run build -w @syraa/memory && npm run build -w @syraa/context && npm run build -w @syraa/ingest && npm run build -w @syraa/harness && npm run typecheck --workspaces --if-present",
     "check:py": "bash scripts/dev/python.sh -m ruff check . && bash scripts/dev/python.sh -m ruff format --check .",
     "format": "npm run format:ts && npm run format:py",
     "format:ts": "biome check --write .",
@@ -20,11 +20,11 @@
     "dev:down": "docker compose down",
     "db:up": "docker compose up -d postgres redis",
     "db:down": "docker compose stop postgres redis",
-    "db:migrate": "bash scripts/dev/with-env.sh npm run db:migrate -w @everyday/memory && bash scripts/dev/with-env.sh npm run db:migrate -w @everyday/context",
+    "db:migrate": "bash scripts/dev/with-env.sh npm run db:migrate -w @syraa/memory && bash scripts/dev/with-env.sh npm run db:migrate -w @syraa/context",
     "db:logs": "docker compose logs -f postgres",
-    "dev:api": "bash scripts/dev/with-env.sh npm run dev -w @everyday/api",
-    "dev:ui": "bash scripts/dev/with-env.sh npm run dev -w @everyday/web",
-    "dev:web": "bash scripts/dev/with-env.sh npm run dev -w @everyday/web",
+    "dev:api": "bash scripts/dev/with-env.sh npm run dev -w @syraa/api",
+    "dev:ui": "bash scripts/dev/with-env.sh npm run dev -w @syraa/web",
+    "dev:web": "bash scripts/dev/with-env.sh npm run dev -w @syraa/web",
     "dev:ingest": "bash scripts/dev/with-env.sh bash scripts/dev/python.sh services/ingest-worker/worker.py"
   },
   "devDependencies": {

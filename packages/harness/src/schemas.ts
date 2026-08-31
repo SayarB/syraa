@@ -53,7 +53,7 @@ export type ChatRequestInput = z.infer<typeof chatRequestSchema>;
 /** JSON Schema sent to the LLM (derived from Zod — single source of truth). */
 export function turnResultJsonSchema(): Record<string, unknown> {
   const schema = zodToJsonSchema(turnResultSchema, {
-    name: "everyday_turn",
+    name: "syraa_turn",
     $refStrategy: "none",
   }) as Record<string, unknown>;
   delete schema.$schema;

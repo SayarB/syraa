@@ -5,8 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from everyday_ingest.heading_heuristics.heuristics import TopicNode
-from everyday_ingest.pipeline import (
+from syraa_ingest.heading_heuristics.heuristics import TopicNode
+from syraa_ingest.pipeline import (
     bridge_summary,
     flatten_topics,
     ingest_pdf,

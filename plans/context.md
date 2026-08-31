@@ -1,8 +1,8 @@
 # Brainstorm: Context system
 
-**Package:** `@everyday/context` (store · retrieve · assemble)  
-**Sibling writer:** `@everyday/ingest` (M4 worker — writes into the store)  
-**Product:** Everyday  
+**Package:** `@syraa/context` (store · retrieve · assemble)  
+**Sibling writer:** `@syraa/ingest` (M4 worker — writes into the store)  
+**Product:** Syraa  
 **Siblings:** [`memory.md`](./memory.md) · [`harness.md`](./harness.md) · [`brainstorm.md`](./brainstorm.md) (index)
 
 **Coverage:** brainstorm complete enough for this package. Open decision queue (D1–D5) settled 2026-08-29. Feasibility code: `scripts/heading_heuristics/`, `scripts/ingest/`.
@@ -11,7 +11,7 @@
 
 ## Problem this package solves
 
-Users work on **their materials** (syllabi, papers, briefs, notes). Chatbots either ignore those files or stuff whole PDFs into the prompt. Everyday needs a materials brain that:
+Users work on **their materials** (syllabi, papers, briefs, notes). Chatbots either ignore those files or stuff whole PDFs into the prompt. Syraa needs a materials brain that:
 
 1. Processes each file **once**, carefully, off the chat path  
 2. Keeps a **cheap** layer always available (what is this file?)  
@@ -37,12 +37,12 @@ That is Context. It is **not** Memory (how this person likes to work) and **not*
 ### Recommended layout
 
 ```
-@everyday/context
+@syraa/context
   ├── store/        # Postgres units + migrations
   ├── retrieve/     # pluggable catalog / semantic / hybrid
   └── assemble/     # buildTurnPack
 
-@everyday/ingest    # worker process; depends on Drive + Context store APIs
+@syraa/ingest    # worker process; depends on Drive + Context store APIs
 ```
 
 ---
@@ -370,7 +370,7 @@ High-level defaults; exact model IDs and index engine params at build.
 ### API
 
 ```ts
-// @everyday/context
+// @syraa/context
 assembleTurnPack({
   userId, kindId, subprojectId, sessionId,
   userMessage,
@@ -423,7 +423,7 @@ interface ContextRetriever {
 
 When structure exists, prefer **topic hit → `getEvidence`** over raw chunk soup.
 
-Optional thin `@everyday/search` (M3) can wrap the same indexes; ingest writes, context/tools read.
+Optional thin `@syraa/search` (M3) can wrap the same indexes; ingest writes, context/tools read.
 
 ```ts
 type RetrieveHit = {

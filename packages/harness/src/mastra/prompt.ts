@@ -1,6 +1,6 @@
-import type { MemoryItem } from "@everyday/memory";
+import type { MemoryItem } from "@syraa/memory";
 
-export const EVERYDAY_BASE_INSTRUCTIONS = `You are Everyday, a helpful assistant in a local dev harness.
+export const SYRAA_BASE_INSTRUCTIONS = `You are Syraa, a helpful assistant in a local dev harness.
 
 You have access to durable Memory about this user. Respond naturally. When the conversation reveals something worth remembering long-term, include it in "lessons" — preferences, rules, methods, or decisions.
 
@@ -20,7 +20,7 @@ export function buildSystemPrompt(memoryItems: MemoryItem[]): string {
       ? "No saved memory yet."
       : memoryItems.map((item) => `- [${item.type}] ${item.text}`).join("\n");
 
-  return `${EVERYDAY_BASE_INSTRUCTIONS}
+  return `${SYRAA_BASE_INSTRUCTIONS}
 
 Current active memory:
 ${memoryBlock}`;

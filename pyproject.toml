@@ -1,7 +1,7 @@
 [project]
-name = "everyday"
+name = "syraa"
 version = "0.0.0"
-description = "Everyday agent harness monorepo"
+description = "Syraa agent harness monorepo"
 requires-python = ">=3.11"
 dependencies = [
   "pymupdf>=1.24.0",
@@ -18,7 +18,7 @@ dev = [
 [tool.ruff]
 target-version = "py311"
 line-length = 100
-src = ["services/ingest-worker/everyday_ingest", "services/ingest-worker/tests"]
+src = ["services/ingest-worker/syraa_ingest", "services/ingest-worker/tests"]
 
 [tool.ruff.lint]
 select = [
@@ -31,7 +31,7 @@ select = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"services/ingest-worker/everyday_ingest/**" = ["E501", "SIM102"]
+"services/ingest-worker/syraa_ingest/**" = ["E501", "SIM102"]
 "services/ingest-worker/tests/**" = ["E501", "S101"]
 
 [tool.pytest.ini_options]

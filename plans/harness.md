@@ -1,4 +1,4 @@
-# Brainstorm: Everyday harness (product + wiring)
+# Brainstorm: Syraa harness (product + wiring)
 
 Living notes for **product**, hierarchy, HITL, drive, Mastra wiring, and anything not owned by Memory or Context packages.
 
@@ -6,9 +6,9 @@ Sibling docs: [`memory.md`](./memory.md) · [`context.md`](./context.md)
 
 **Split (2026-08-29):** Deep dives for Memory and Context were moved out of the monolithic brainstorm so we can take one package forward at a time.
 
-**Repo:** `/Volumes/ssd/code/everyday` · plans in `plans/` · feasibility scripts in `scripts/`.
+**Repo:** local monorepo · plans in `plans/` · scripts in `scripts/`.
 
-Working name: **Everyday** (product). **Harness** is architecture, not the thing users see.
+Working name: **Syraa** (product). **Harness** is architecture, not the thing users see.
 
 ## Problem framing
 
@@ -50,7 +50,7 @@ Treat these as **separately ideatable, buildable, and pluggable** units.
 | **M5** | **Vault** | Resource entities / card typing over store | Card schemas | Context, M4 |
 | **M6** | **Hierarchy** | Kinds / subprojects / sessions; HITL fork | State machine | M1, M2 |
 | **M7** | **Memory** | `memories` + `memory_items`; pack + recall + lessons | Schema settled; SDK at build | M6 |
-| **Context** | **`@everyday/context`** | Store catalog/chunks/cards; pluggable retrievers; assembleTurnPack | **Pluggable context storage + retrieval** | M2, M4, M7 (inject memory pack) |
+| **Context** | **`@syraa/context`** | Store catalog/chunks/cards; pluggable retrievers; assembleTurnPack | **Pluggable context storage + retrieval** | M2, M4, M7 (inject memory pack) |
 | **M9** | **Harness (Mastra)** | Agent, tool adapters, turn hooks | Thin wiring | all SDKs |
 | **M10** | **Tool adapters** | Mastra wrappers over Drive/Context/Memory | — | M2, Context, M7 |
 | **M11** | **UI** | Chat, dashboard, HITL, memory viewer | Separate app | Package APIs |
@@ -125,7 +125,7 @@ Coverage: `m8-context: brainstorm-complete-enough · m3-retrieval: brainstorm-co
 
 - Settled (user, refined): **Not an edtech product.** Teachers/students/researchers were examples. Same system must extend to **any profession** that does knowledge work: lawyers, writers, influencers/creators, consultants, etc. — research, prep, drafting, planning.
 - Settled: opinionated + easy pickup + UI for people who are not software operators.
-- Assumed product framing: **Everyday = craft desks (kinds) × durable matters (subprojects) × sessions**, with vault, S3 drive, HITL hierarchy, cross-kind fork. Profession is a *lens on kinds*, not a separate app.
+- Assumed product framing: **Syraa = craft desks (kinds) × durable matters (subprojects) × sessions**, with vault, S3 drive, HITL hierarchy, cross-kind fork. Profession is a *lens on kinds*, not a separate app.
 - Assumed v1: ship the **generic substrate** + a **small seed set of kinds** (not 40 verticals). New kinds emerge as users work (or from a light catalog later). Do not hardcode “teacher mode.”
 - Pushback: “for everyone” in *marketing* without a first wedge in *distribution* stalls GTM — but the **data model must stay profession-agnostic** so lawyers aren’t bolted on later. → substrate universal; go-to-market can still pick a first beachhead.
 - Override / cut: none on extensibility — user wants all professions.
@@ -193,7 +193,7 @@ Flat instance-as-project means Chemistry is a sibling with **no shared method me
 
 **S3 assumption:** `{userId}/projects/{kindSlug}/{subprojectSlug}/` + catalog fields `projectId`, `subprojectId`.
 
-**Stance:** Hierarchy is right for Everyday. Flat “Study plan — Biology” optimizes hour one and punishes hour ten. People already speak kind then scope: *I make study plans* / *for biology*.
+**Stance:** Hierarchy is right for Syraa. Flat “Study plan — Biology” optimizes hour one and punishes hour ten. People already speak kind then scope: *I make study plans* / *for biology*.
 
 #### Subproject vs new session (split rule)
 
@@ -443,8 +443,8 @@ No silent: create kind, create subproject, move/clone session, redirect, or writ
 - Notes for architect: index consistency on rename/move/delete; per-user isolation in every query; repair job if catalog drifts from S3.
 
 - Assumed agent FS tools on that prefix: `list`, `read`, `write`, `mkdir`, **`find`/`search files`**; `move`/`delete` with confirm on delete — all catalog-aware.
-- Assumed UX name: **“My files”** / Everyday Drive — never “bucket” or “S3.”
-- Soft pushback: GSuite = import/export; Everyday Drive = system of record while working here — don’t force two homes.
+- Assumed UX name: **“My files”** / Syraa Drive — never “bucket” or “S3.”
+- Soft pushback: GSuite = import/export; Syraa Drive = system of record while working here — don’t force two homes.
 - Soft pushback: seed a simple default tree so recipes don’t dump chaos at the root.
 - Risk for architect: quotas, large PDFs, lifecycle; catalog/content index cost.
 - Assumed **not in toolkit** (v1): shell, code exec, browser automation, email send, arbitrary HTTP, MCP install.
@@ -469,7 +469,7 @@ Not end-user apps — **TS agent runtimes** to dogfood for M9.
 
 **Skip / caution:** LlamaIndex.TS (archived Apr 2026 per recent roundups); CrewAI (Python-first); AutoGen for new greenfield.
 
-**Settled (user 2026-08-29): M9 harness = Mastra (thin).** Agents, tools, workflows, HITL suspend — wire `@everyday/*` SDKs only. Domain packages stay Mastra-free.
+**Settled (user 2026-08-29): M9 harness = Mastra (thin).** Agents, tools, workflows, HITL suspend — wire `@syraa/*` SDKs only. Domain packages stay Mastra-free.
 
 **Thin Mastra rules (non-negotiable):**
 1. **Do not use** Mastra Memory, Mastra RAG/vector, or Mastra-owned long-term store for product memory/context.
@@ -576,7 +576,7 @@ Package-specific decisions live in [`memory.md`](./memory.md) and [`context.md`]
 
 ## Risks / open concerns
 
-- **Cowork / ChatGPT agent mode eat the generic harness.** If Everyday is “easier Cowork,” it dies when Anthropic/OpenAI simplify onboarding. Survival is opinionated recipes + binder, not a prettier loop.
+- **Cowork / ChatGPT agent mode eat the generic harness.** If Syraa is “easier Cowork,” it dies when Anthropic/OpenAI simplify onboarding. Survival is opinionated recipes + binder, not a prettier loop.
 - **Three audiences is three sales motions.** Teachers (schools), students (cheating + cheap), researchers (citations + PDFs). Shipping all three as first-class is how the product stays vague.
 - **Homework-doer gravity.** Students will try to make it do the assignment. Needs a stance (study coach vs ghostwriter) or the product gets a reputation.
 - **Trust of sources.** Researchers will bounce on hallucinated citations harder than teachers bounce on a mediocre lesson draft.
@@ -591,4 +591,4 @@ Package-specific decisions live in [`memory.md`](./memory.md) and [`context.md`]
 - Do not design an MCP/skill platform in v1.
 - Success metric is “finished artifact they used,” not “messages sent.”
 - Copy must never say harness, token, context, model, tool, agent loop.
-- Closest competitors to study: Claude Cowork (loop), MagicSchool (teacher recipes), Elicit (research receipts). Everyday should feel like the overlap: Cowork’s loop, MagicSchool’s cards, Elicit’s sources — minus setup.
+- Closest competitors to study: Claude Cowork (loop), MagicSchool (teacher recipes), Elicit (research receipts). Syraa should feel like the overlap: Cowork’s loop, MagicSchool’s cards, Elicit’s sources — minus setup.

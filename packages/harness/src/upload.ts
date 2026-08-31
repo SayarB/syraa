@@ -9,7 +9,7 @@ import {
   fileExtension,
   type IngestJobStatus,
   resolveDriveRoot,
-} from "@everyday/ingest";
+} from "@syraa/ingest";
 import Busboy from "busboy";
 import { getContextStore, getIngestQueue } from "./context.js";
 

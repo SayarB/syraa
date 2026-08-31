@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from everyday_ingest.heading_heuristics.heuristics import (
+from syraa_ingest.heading_heuristics.heuristics import (
     TopicNode,
     assign_levels_by_font,
     body_font_size,

@@ -5,7 +5,7 @@ WORKDIR /app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY services/ingest-worker/everyday_ingest ./services/ingest-worker/everyday_ingest
+COPY services/ingest-worker/syraa_ingest ./services/ingest-worker/syraa_ingest
 COPY services/ingest-worker/worker.py ./services/ingest-worker/worker.py
 
 ENV PYTHONPATH=/app/services/ingest-worker

@@ -1,4 +1,4 @@
-# Everyday / Syraa
+# Syraa
 
 Local agent harness: chat + durable memory + PDF context ingest (topic tree).
 
@@ -6,7 +6,7 @@ Local agent harness: chat + durable memory + PDF context ingest (topic tree).
 
 ```
 apps/web/                  # Vite + React UI
-apps/api/                  # HTTP process → @everyday/harness
+apps/api/                  # HTTP process → @syraa/harness
 packages/harness/          # Chat, memory wiring, ingest upload API
 packages/memory/           # Preferences / rules / methods / decisions (Postgres)
 packages/context/          # Resources / topics / chunks / cards

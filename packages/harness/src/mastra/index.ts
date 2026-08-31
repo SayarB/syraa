@@ -1,20 +1,20 @@
 import { Mastra } from "@mastra/core";
 import type { Agent } from "@mastra/core/agent";
-import { createEverydayAgent } from "./agents/everyday-agent.js";
+import { createSyraaAgent } from "./agents/syraa-agent.js";
 
-let mastra: Mastra<{ everyday: Agent }> | null = null;
+let mastra: Mastra<{ syraa: Agent }> | null = null;
 
-export function getMastra(): Mastra<{ everyday: Agent }> {
+export function getMastra(): Mastra<{ syraa: Agent }> {
   if (!mastra) {
     mastra = new Mastra({
       agents: {
-        everyday: createEverydayAgent(),
+        syraa: createSyraaAgent(),
       },
     });
   }
   return mastra;
 }
 
-export function getEverydayAgent(): Agent {
-  return getMastra().getAgent("everyday");
+export function getSyraaAgent(): Agent {
+  return getMastra().getAgent("syraa");
 }

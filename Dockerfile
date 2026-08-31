@@ -21,11 +21,11 @@ COPY packages/harness packages/harness
 COPY apps/api apps/api
 COPY biome.json ./
 
-RUN npm run build -w @everyday/memory \
-  && npm run build -w @everyday/context \
-  && npm run build -w @everyday/ingest \
-  && npm run build -w @everyday/harness \
-  && npm run build -w @everyday/api
+RUN npm run build -w @syraa/memory \
+  && npm run build -w @syraa/context \
+  && npm run build -w @syraa/ingest \
+  && npm run build -w @syraa/harness \
+  && npm run build -w @syraa/api
 
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

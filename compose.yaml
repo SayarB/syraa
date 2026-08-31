@@ -3,15 +3,15 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-everyday}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-everyday}
-      POSTGRES_DB: ${POSTGRES_DB:-everyday}
+      POSTGRES_USER: ${POSTGRES_USER:-syraa}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-syraa}
+      POSTGRES_DB: ${POSTGRES_DB:-syraa}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-everyday} -d ${POSTGRES_DB:-everyday}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-syraa} -d ${POSTGRES_DB:-syraa}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -41,7 +41,7 @@ services:
     ports:
       - "${API_PORT:-3000}:3000"
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-everyday}:${POSTGRES_PASSWORD:-everyday}@postgres:5432/${POSTGRES_DB:-everyday}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-syraa}:${POSTGRES_PASSWORD:-syraa}@postgres:5432/${POSTGRES_DB:-syraa}
       REDIS_URL: redis://redis:6379
       DRIVE_ROOT: /data/drive
       NODE_ENV: ${NODE_ENV:-development}
@@ -65,7 +65,7 @@ services:
         condition: service_healthy
     environment:
       REDIS_URL: redis://redis:6379
-      DATABASE_URL: postgresql://${POSTGRES_USER:-everyday}:${POSTGRES_PASSWORD:-everyday}@postgres:5432/${POSTGRES_DB:-everyday}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-syraa}:${POSTGRES_PASSWORD:-syraa}@postgres:5432/${POSTGRES_DB:-syraa}
       DRIVE_ROOT: /data/drive
       EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-auto}
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-}

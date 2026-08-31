@@ -1,6 +1,6 @@
 """Feasibility ingest: structure → topics + bridge/leaf chunks → JSON.
 
-No embeddings / DB. Matches Everyday leveled context model:
+No embeddings / DB. Matches Syraa leveled context model:
   - topics: tree spine
   - bridge chunks: summary of a child topic, child_topic_id set
   - leaf chunks: full section text under a leaf topic, child_topic_id null
@@ -15,8 +15,8 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
-from everyday_ingest.heading_heuristics.heuristics import TopicNode
-from everyday_ingest.heading_heuristics.structure import extract_structure_tree
+from syraa_ingest.heading_heuristics.heuristics import TopicNode
+from syraa_ingest.heading_heuristics.structure import extract_structure_tree
 
 
 def _uuid() -> str:

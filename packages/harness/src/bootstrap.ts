@@ -1,4 +1,4 @@
-import { migrateMemorySchema, resolveDatabaseUrl } from "@everyday/memory";
+import { migrateMemorySchema, resolveDatabaseUrl } from "@syraa/memory";
 import { ensureContextReady } from "./context.js";
 
 export async function ensureHarnessReady(connectionString?: string): Promise<void> {

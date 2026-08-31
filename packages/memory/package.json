@@ -1,9 +1,9 @@
 {
-  "name": "@everyday/memory",
+  "name": "@syraa/memory",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Everyday M7 Memory SDK — scoped prefs, rules, methods, decisions",
+  "description": "Syraa M7 Memory SDK — scoped prefs, rules, methods, decisions",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

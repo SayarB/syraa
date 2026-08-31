@@ -1,4 +1,4 @@
-import type { ItemType, MemoryItem, MemoryService } from "@everyday/memory";
+import type { ItemType, MemoryItem, MemoryService } from "@syraa/memory";
 import type { Lesson, LessonKind } from "./schemas.js";
 
 const LESSON_KIND_TO_TYPE: Record<LessonKind, ItemType> = {

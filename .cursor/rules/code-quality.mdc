@@ -7,7 +7,7 @@ globs:
 alwaysApply: false
 ---
 
-# Code quality (Everyday)
+# Code quality (Syraa)
 
 All new or changed code must pass repo checks before merge.
 
@@ -24,7 +24,7 @@ npm run test       # vitest (packages/*, apps/*) + pytest (ingest-worker)
 - **Biome** — lint + format (`biome.json` at root)
 - **tsc --noEmit** — each workspace package exposes `typecheck` script
 - **Vitest** — unit/integration tests in package `tests/`
-- **`@everyday/harness`** — chat orchestration (LLM, lessons → memory); no Mastra import in domain packages
+- **`@syraa/harness`** — chat orchestration (LLM, lessons → memory); no Mastra import in domain packages
 - Functional factories preferred over classes (except small Error types)
 - **Postgres + Redis** in Docker Compose for app services
 

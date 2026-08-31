@@ -1,8 +1,8 @@
 /**
  * Shared Redis queue protocol for Node (API) ↔ Python (ingest-worker).
  *
- * Queue: Redis list `everyday:ingest:queue` — LPUSH producer, BRPOP consumer.
- * Status: Redis hash `everyday:ingest:job:{jobId}`
+ * Queue: Redis list `syraa:ingest:queue` — LPUSH producer, BRPOP consumer.
+ * Status: Redis hash `syraa:ingest:job:{jobId}`
  *
  * Job payload (JSON string on the list):
  * {
@@ -16,10 +16,10 @@
  * }
  */
 
-export const INGEST_QUEUE_KEY = "everyday:ingest:queue";
+export const INGEST_QUEUE_KEY = "syraa:ingest:queue";
 
 export function ingestJobKey(jobId: string): string {
-  return `everyday:ingest:job:${jobId}`;
+  return `syraa:ingest:job:${jobId}`;
 }
 
 export type IngestJobPayload = {

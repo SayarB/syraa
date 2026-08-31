@@ -9,10 +9,10 @@ import traceback
 from datetime import UTC, datetime
 from pathlib import Path
 
-from everyday_ingest.embed import embed_texts
-from everyday_ingest.persist import mark_resource_failed, persist_ingest_result
-from everyday_ingest.pipeline import ingest_pdf
-from everyday_ingest.queue_protocol import (
+from syraa_ingest.embed import embed_texts
+from syraa_ingest.persist import mark_resource_failed, persist_ingest_result
+from syraa_ingest.pipeline import ingest_pdf
+from syraa_ingest.queue_protocol import (
     QUEUE_KEY,
     IngestJob,
     job_key,

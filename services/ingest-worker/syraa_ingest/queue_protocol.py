@@ -1,7 +1,7 @@
-"""Redis list queue protocol — must match @everyday/ingest.
+"""Redis list queue protocol — must match @syraa/ingest.
 
-Queue key: everyday:ingest:queue (LPUSH / BRPOP)
-Status hash: everyday:ingest:job:{jobId}
+Queue key: syraa:ingest:queue (LPUSH / BRPOP)
+Status hash: syraa:ingest:job:{jobId}
 """
 
 from __future__ import annotations
@@ -10,11 +10,11 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
-QUEUE_KEY = "everyday:ingest:queue"
+QUEUE_KEY = "syraa:ingest:queue"
 
 
 def job_key(job_id: str) -> str:
-    return f"everyday:ingest:job:{job_id}"
+    return f"syraa:ingest:job:{job_id}"
 
 
 @dataclass

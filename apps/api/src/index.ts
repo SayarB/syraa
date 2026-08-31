@@ -1,8 +1,8 @@
 import "dotenv/config";
 import { existsSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { closeHarness, createHarnessServer, ensureHarnessReady } from "@everyday/harness";
+import { closeHarness, createHarnessServer, ensureHarnessReady } from "@syraa/harness";
 
 const port = Number(process.env.PORT ?? 3000);
 const here = dirname(fileURLToPath(import.meta.url));
@@ -30,9 +30,9 @@ async function main(): Promise<void> {
   const server = createHarnessServer({ staticDir });
   server.listen(port, () => {
     if (staticDir) {
-      console.log(`Everyday API + UI → http://localhost:${port} (static: ${staticDir})`);
+      console.log(`Syraa API + UI → http://localhost:${port} (static: ${staticDir})`);
     } else {
-      console.log(`Everyday API → http://localhost:${port} (no static UI; use apps/web)`);
+      console.log(`Syraa API → http://localhost:${port} (no static UI; use apps/web)`);
     }
   });
 

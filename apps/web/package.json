@@ -1,9 +1,9 @@
 {
-  "name": "@everyday/web",
+  "name": "@syraa/web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Everyday web UI — also the frontend for the Wails desktop shell",
+  "description": "Syraa web UI — also the frontend for the Wails desktop shell",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

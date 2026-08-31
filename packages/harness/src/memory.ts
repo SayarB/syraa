@@ -3,7 +3,7 @@ import {
   createPostgresMemoryRepository,
   type MemoryItem,
   type MemoryService,
-} from "@everyday/memory";
+} from "@syraa/memory";
 
 export type MemoryHandle = {
   service: MemoryService;

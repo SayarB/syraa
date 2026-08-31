@@ -1,9 +1,9 @@
 {
-  "name": "@everyday/context",
+  "name": "@syraa/context",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Everyday Context store — resources, topics, chunks, cards",
+  "description": "Syraa Context store — resources, topics, chunks, cards",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
