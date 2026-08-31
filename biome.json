@@ -15,7 +15,8 @@
       "!**/.venv",
       "!**/.plans",
       "!**/packages/memory/drizzle/meta",
-      "!**/apps/api/public/vendor"
+      "!**/apps/api/public/vendor",
+      "!**/apps/web/public/**"
     ]
   },
   "formatter": {
@@ -34,7 +35,8 @@
     "rules": {
       "preset": "recommended",
       "style": {
-        "noNonNullAssertion": "off"
+        "noNonNullAssertion": "off",
+        "noDescendingSpecificity": "off"
       }
     }
   },

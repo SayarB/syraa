@@ -10,13 +10,26 @@ type Props = {
 
 export function TopicTreeModal({ data, loading, error, onClose }: Props) {
   return (
-    <div className="modal-backdrop" role="presentation" onClick={onClose}>
+    <div
+      className="modal-backdrop"
+      role="button"
+      tabIndex={0}
+      aria-label="Close topic tree"
+      onClick={onClose}
+      onKeyDown={(event) => {
+        if (event.key === "Escape" || event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClose();
+        }
+      }}
+    >
       <div
         className="modal glass"
         role="dialog"
         aria-modal="true"
         aria-label="Document topic tree"
         onClick={(event) => event.stopPropagation()}
+        onKeyDown={(event) => event.stopPropagation()}
       >
         <div className="modal-head">
           <div>

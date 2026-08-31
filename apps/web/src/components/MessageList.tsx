@@ -9,6 +9,7 @@ type Props = {
 export function MessageList({ messages }: Props) {
   const endRef = useRef<HTMLDivElement>(null);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll whenever the message list changes
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages]);

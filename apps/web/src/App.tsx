@@ -128,6 +128,7 @@ export default function App() {
     }
   }
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only bootstrap
   useEffect(() => {
     void loadConfig();
     void refreshMemory();
