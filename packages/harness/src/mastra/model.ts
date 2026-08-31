@@ -67,14 +67,12 @@ export function resolveChatModel(): ResolvedChatModel | null {
   const baseUrl = (process.env[defaults.baseUrlEnv]?.trim() || defaults.baseUrl).replace(/\/$/, "");
   const mastraModelId = toMastraModelId(provider, model);
 
-  const mastraModel: MastraModelConfig =
-    baseUrl === defaults.baseUrl
-      ? mastraModelId
-      : {
-          id: mastraModelId,
-          url: baseUrl,
-          apiKey,
-        };
+  // Always pass apiKey so Docker/Mastra does not rely solely on ambient env discovery.
+  const mastraModel: MastraModelConfig = {
+    id: mastraModelId,
+    url: baseUrl,
+    apiKey,
+  };
 
   return { provider, apiKey, model, baseUrl, mastraModel };
 }

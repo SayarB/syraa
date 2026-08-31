@@ -7,6 +7,27 @@ import { closeHarness, createHarnessServer, ensureHarnessReady } from "@syraa/ha
 const port = Number(process.env.PORT ?? 3000);
 const here = dirname(fileURLToPath(import.meta.url));
 
+/**
+ * Docker/OrbStack often hangs on Fireworks AAAA (ETIMEDOUT) even with
+ * --dns-result-order=ipv4first. Force undici connect family 4.
+ */
+async function preferIpv4Outbound(): Promise<void> {
+  const flag = process.env.FORCE_IPV4?.trim().toLowerCase();
+  const enabled =
+    flag === "1" ||
+    flag === "true" ||
+    (process.env.NODE_OPTIONS?.includes("dns-result-order=ipv4first") ?? false);
+  if (!enabled) return;
+
+  try {
+    const { Agent, setGlobalDispatcher } = await import("undici");
+    setGlobalDispatcher(new Agent({ connect: { family: 4 } }));
+    console.log("outbound HTTP forced to IPv4 (FORCE_IPV4 / ipv4first)");
+  } catch (err) {
+    console.warn("could not force IPv4 outbound:", err);
+  }
+}
+
 /** Optional static UI dir (e.g. apps/web/dist in Docker). Empty = API only. */
 function resolveStaticDir(): string | undefined {
   const fromEnv = process.env.STATIC_DIR?.trim();
@@ -23,6 +44,7 @@ function resolveStaticDir(): string | undefined {
 }
 
 async function main(): Promise<void> {
+  await preferIpv4Outbound();
   await ensureHarnessReady();
   console.log("memory schema ready");
 

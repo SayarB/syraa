@@ -25,6 +25,7 @@ export { isResourceStatus, RESOURCE_STATUSES, utcNow } from "./models.js";
 export type {
   ContextStore,
   CreateResourceInput,
+  MaterialsLayer1Outline,
   ResourceTopicTree,
   TopicTreeNode,
 } from "./store.js";

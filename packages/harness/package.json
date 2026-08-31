@@ -19,10 +19,12 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@mastra/core": "^1.63.2",
+    "@mastra/memory": "^1.28.1",
+    "@mastra/pg": "^1.22.2",
     "@syraa/context": "*",
     "@syraa/ingest": "*",
     "@syraa/memory": "*",
-    "@mastra/core": "^1.63.2",
     "busboy": "^1.6.0",
     "pg": "^8.23.0",
     "zod": "^3.24.0",

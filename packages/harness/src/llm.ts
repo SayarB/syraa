@@ -1,4 +1,3 @@
-import type { MessageListInput } from "@mastra/core/agent/message-list";
 import type { MemoryItem } from "@syraa/memory";
 import { getSyraaAgent } from "./mastra/index.js";
 import { resolveChatModel, resolveChatProvider } from "./mastra/model.js";
@@ -41,8 +40,9 @@ export function getChatConfig(): ChatConfig {
 }
 
 export async function runChatTurn(opts: {
+  userId: string;
+  threadId: string;
   userMessage: string;
-  history: ChatMessage[];
   memoryItems: MemoryItem[];
 }) {
   const chat = resolveChatModel();
@@ -53,17 +53,14 @@ export async function runChatTurn(opts: {
   }
 
   const agent = getSyraaAgent();
-  const messages = [
-    ...opts.history.slice(-20).map((message) => ({
-      role: message.role,
-      content: message.content,
-    })),
-    { role: "user", content: opts.userMessage },
-  ] as MessageListInput;
 
   let output: Awaited<ReturnType<typeof agent.generate>>;
   try {
-    output = await agent.generate(messages, {
+    output = await agent.generate(opts.userMessage, {
+      memory: {
+        thread: opts.threadId,
+        resource: opts.userId,
+      },
       instructions: buildSystemPrompt(opts.memoryItems),
       structuredOutput: {
         schema: turnResultSchema,

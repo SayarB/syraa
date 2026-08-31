@@ -35,8 +35,26 @@ export type ChatConfig = {
 export type ChatResponse = {
   role: "assistant";
   content: string;
+  threadId?: string;
   memoryItems?: MemoryItem[];
   error?: string;
+};
+
+export type ChatThread = {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  placement: "global" | "attached";
+  projectId: string | null;
+  subprojectId: string | null;
+};
+
+export type ThreadMessage = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  createdAt: string;
 };
 
 export type UploadIngestResponse = {

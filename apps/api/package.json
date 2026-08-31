@@ -13,7 +13,8 @@
   },
   "dependencies": {
     "@syraa/harness": "*",
-    "dotenv": "^17.4.2"
+    "dotenv": "^17.4.2",
+    "undici": "^8.10.1"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

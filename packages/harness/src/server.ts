@@ -8,17 +8,36 @@ import { getChatConfig } from "./llm.js";
 import { getMemory, listMemoryForUser } from "./memory.js";
 import {
   chatRequestSchema,
+  createThreadRequestSchema,
   memoryItemPatchSchema,
   parseJsonBody,
   ValidationError,
 } from "./schemas.js";
+import {
+  createChatThread,
+  listChatThreads,
+  listThreadMessages,
+} from "./threads.js";
 import { getIngestJobStatus, handleIngestUpload } from "./upload.js";
 
 const MIME: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
+  ".mjs": "text/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
   ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+  ".gif": "image/gif",
+  ".ico": "image/x-icon",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2",
+  ".ttf": "font/ttf",
+  ".map": "application/json",
+  ".txt": "text/plain; charset=utf-8",
 };
 
 export type HarnessServerOptions = {
@@ -66,9 +85,18 @@ async function serveStatic(
   res: ServerResponse,
 ): Promise<boolean> {
   const safePath = pathname === "/" ? "/index.html" : pathname;
-  const filePath = join(staticDir, safePath);
-  if (!filePath.startsWith(staticDir) || !existsSync(filePath)) {
+  let filePath = join(staticDir, safePath);
+  if (!filePath.startsWith(staticDir)) {
     return false;
+  }
+  if (!existsSync(filePath)) {
+    // SPA fallback for client routes (no file extension)
+    if (extname(safePath) === "") {
+      filePath = join(staticDir, "index.html");
+      if (!existsSync(filePath)) return false;
+    } else {
+      return false;
+    }
   }
   const ext = extname(filePath);
   res.writeHead(200, { "Content-Type": MIME[ext] ?? "application/octet-stream" });
@@ -94,6 +122,48 @@ async function handleApi(
     return;
   }
 
+  if (req.method === "GET" && pathname === "/api/threads") {
+    const url = new URL(req.url ?? "/", "http://localhost");
+    const threads = await listChatThreads({
+      userId,
+      projectId: url.searchParams.get("projectId"),
+      subprojectId: url.searchParams.get("subprojectId"),
+    });
+    sendJson(res, 200, { threads });
+    return;
+  }
+
+  if (req.method === "POST" && pathname === "/api/threads") {
+    const body = await parseJsonBody(await readBody(req), createThreadRequestSchema);
+    const thread = await createChatThread({
+      userId: body.userId ?? userId,
+      title: body.title,
+      projectId: body.projectId,
+      subprojectId: body.subprojectId,
+    });
+    sendJson(res, 201, { thread });
+    return;
+  }
+
+  if (req.method === "GET" && pathname.startsWith("/api/threads/")) {
+    const threadId = pathname.slice("/api/threads/".length);
+    if (!threadId || threadId.includes("/")) {
+      sendJson(res, 400, { error: "thread id required" });
+      return;
+    }
+    try {
+      const result = await listThreadMessages({ userId, threadId });
+      sendJson(res, 200, result);
+    } catch (err) {
+      if (err instanceof ValidationError) {
+        sendJson(res, 404, { error: err.message });
+        return;
+      }
+      throw err;
+    }
+    return;
+  }
+
   if (req.method === "GET" && pathname === "/api/memory") {
     sendJson(res, 200, await listMemoryForUser(service, userId));
     return;
@@ -105,7 +175,9 @@ async function handleApi(
       userId: body.userId ?? userId,
       message: body.message,
       messageId: body.messageId,
-      history: body.history ?? [],
+      threadId: body.threadId,
+      projectId: body.projectId,
+      subprojectId: body.subprojectId,
     });
     sendJson(res, 200, result);
     return;

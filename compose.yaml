@@ -40,18 +40,38 @@ services:
         condition: service_healthy
     ports:
       - "${API_PORT:-3000}:3000"
+    env_file:
+      - path: .env
+        required: false
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-syraa}:${POSTGRES_PASSWORD:-syraa}@postgres:5432/${POSTGRES_DB:-syraa}
       REDIS_URL: redis://redis:6379
       DRIVE_ROOT: /data/drive
-      NODE_ENV: ${NODE_ENV:-development}
+      STATIC_DIR: /app/apps/web/dist
+      NODE_ENV: production
       PORT: "3000"
       CHAT_PROVIDER: ${CHAT_PROVIDER:-fireworks}
       FIREWORKS_API_KEY: ${FIREWORKS_API_KEY:-}
       FIREWORKS_MODEL: ${FIREWORKS_MODEL:-accounts/fireworks/models/gpt-oss-120b}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-}
+      # Prefer IPv4 — Fireworks AAAA often ETIMEDOUT from Docker/OrbStack
+      NODE_OPTIONS: --dns-result-order=ipv4first
+      FORCE_IPV4: "1"
     volumes:
       - drive_data:/data/drive
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
 
   ingest-worker:
     build:
@@ -63,6 +83,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      api:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
     environment:
       REDIS_URL: redis://redis:6379
       DATABASE_URL: postgresql://${POSTGRES_USER:-syraa}:${POSTGRES_PASSWORD:-syraa}@postgres:5432/${POSTGRES_DB:-syraa}
@@ -71,6 +96,7 @@ services:
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-}
       FIREWORKS_API_KEY: ${FIREWORKS_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      NODE_OPTIONS: --dns-result-order=ipv4first
     volumes:
       - drive_data:/data/drive
 

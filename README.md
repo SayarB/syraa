@@ -18,22 +18,27 @@ plans/                     # Product brainstorm notes
 data/drive/                # Local PDF blob store
 ```
 
-## Run locally
+## Run with Docker
 
 ```bash
-cp .env.example .env          # set FIREWORKS_API_KEY for chat
-npm install
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements-dev.txt
-
-npm run db:up                 # postgres + redis
-npm run db:migrate            # memory + context schemas
-npm run dev:api               # http://localhost:3000
-npm run dev:web               # http://localhost:5173 (proxies /api)
-npm run dev:ingest            # PDF worker
+cp .env.example .env   # set FIREWORKS_API_KEY for chat
+npm run dev:up         # postgres + redis + api (serves UI) + ingest-worker
 ```
 
-Or containers: `npm run dev:up` / `npm run dev:down`.
+Open **http://localhost:3000** — React UI is baked into the API image (`apps/web/dist`).
+
+Stop: `npm run dev:down`
+
+## Run locally (hot reload)
+
+```bash
+npm install && npm run db:up && npm run db:migrate
+npm run dev:api               # :3000
+npm run dev:web               # :5173 proxies /api
+npm run dev:ingest
+```
+
+For hot-reload UI work, use the host commands above instead of Compose.
 
 Upload PDFs from the web composer. Flow: drive → Redis → worker (bookmarks → printed TOC → heading heuristics) → topics/chunks → Postgres. Bridge text is title + lead excerpt (no LLM). Embeddings optional via `EMBEDDING_PROVIDER`.
 

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import type { ContextDb } from "./db/client.js";
 import {
   type ContextResourceRow,
@@ -44,10 +44,20 @@ export type ResourceTopicTree = {
   chunkCount: number;
 };
 
+export type MaterialsLayer1Outline = {
+  resourceId: string;
+  name: string;
+  status: ResourceStatus;
+  /** Top-level section titles under the document root (depth === 1). */
+  sectionTitles: string[];
+};
+
 export type ContextStore = {
   createResource(input: CreateResourceInput): Promise<ContextResourceRow>;
   getResource(userId: string, resourceId: string): Promise<ContextResourceRow | null>;
   listResources(userId: string, limit?: number): Promise<ContextResourceRow[]>;
+  /** Ready materials + first topic layer (depth 1) for chat injection. */
+  listMaterialsLayer1(userId: string, limit?: number): Promise<MaterialsLayer1Outline[]>;
   getResourceTopicTree(userId: string, resourceId: string): Promise<ResourceTopicTree | null>;
   setResourceStatus(
     userId: string,
@@ -200,6 +210,49 @@ export function createContextStore(db: ContextDb): ContextStore {
         .orderBy(desc(contextResources.createdAt))
         .limit(limit);
       return rows.map(mapResource);
+    },
+
+    async listMaterialsLayer1(userId, limit = 50) {
+      const resources = await db
+        .select()
+        .from(contextResources)
+        .where(and(eq(contextResources.userId, userId), eq(contextResources.status, "ready")))
+        .orderBy(desc(contextResources.createdAt))
+        .limit(limit);
+
+      if (resources.length === 0) return [];
+
+      const resourceIds = resources.map((r) => r.id);
+      const topics = await db
+        .select({
+          resourceId: contextTopics.resourceId,
+          title: contextTopics.title,
+          ordinal: contextTopics.ordinal,
+        })
+        .from(contextTopics)
+        .where(
+          and(
+            eq(contextTopics.userId, userId),
+            eq(contextTopics.depth, 1),
+            inArray(contextTopics.resourceId, resourceIds),
+          ),
+        )
+        .orderBy(asc(contextTopics.ordinal));
+
+      const byResource = new Map<string, string[]>();
+      for (const topic of topics) {
+        if (!topic.resourceId) continue;
+        const list = byResource.get(topic.resourceId) ?? [];
+        list.push(topic.title);
+        byResource.set(topic.resourceId, list);
+      }
+
+      return resources.map((resource) => ({
+        resourceId: resource.id,
+        name: resource.name,
+        status: resource.status,
+        sectionTitles: byResource.get(resource.id) ?? [],
+      }));
     },
 
     async getResourceTopicTree(userId, resourceId) {

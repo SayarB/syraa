@@ -29,6 +29,7 @@ export {
   chatMessageSchema,
   chatProviderSchema,
   chatRequestSchema,
+  createThreadRequestSchema,
   confidenceSchema,
   lessonKindSchema,
   lessonSchema,
@@ -41,5 +42,14 @@ export {
 } from "./schemas.js";
 export type { HarnessServerOptions } from "./server.js";
 export { createHarnessServer } from "./server.js";
+export type { ThreadDto, ThreadMessageDto, ThreadWorksMetadata } from "./threads.js";
+export {
+  buildThreadWorksMetadata,
+  createChatThread,
+  ensureChatThread,
+  listChatThreads,
+  listThreadMessages,
+  maybeSetThreadTitle,
+} from "./threads.js";
 export type { UploadIngestResult } from "./upload.js";
 export { getIngestJobStatus, handleIngestUpload } from "./upload.js";

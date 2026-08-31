@@ -1,11 +1,13 @@
 import { migrateMemorySchema, resolveDatabaseUrl } from "@syraa/memory";
 import { ensureContextReady } from "./context.js";
+import { ensureMastraStorageReady } from "./mastra/storage.js";
 
 export async function ensureHarnessReady(connectionString?: string): Promise<void> {
   const databaseUrl = resolveDatabaseUrl(connectionString);
   try {
     await migrateMemorySchema(databaseUrl);
     await ensureContextReady(databaseUrl);
+    await ensureMastraStorageReady(databaseUrl);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     if (message.includes("ECONNREFUSED")) {

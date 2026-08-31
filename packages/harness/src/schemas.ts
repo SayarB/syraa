@@ -36,7 +36,20 @@ export const chatRequestSchema = z.object({
   userId: z.string().trim().min(1).optional(),
   message: z.string().trim().min(1),
   messageId: z.string().optional(),
+  /** Mastra Memory thread id. Created server-side when omitted. */
+  threadId: z.string().trim().min(1).optional(),
+  /** Reserved for future Works attach — stored on thread metadata only. */
+  projectId: z.string().trim().min(1).nullable().optional(),
+  subprojectId: z.string().trim().min(1).nullable().optional(),
+  /** @deprecated Ignored — Mastra Memory owns transcript. Kept for old clients. */
   history: z.array(chatMessageSchema).optional(),
+});
+
+export const createThreadRequestSchema = z.object({
+  userId: z.string().trim().min(1).optional(),
+  title: z.string().trim().min(1).max(120).optional(),
+  projectId: z.string().trim().min(1).nullable().optional(),
+  subprojectId: z.string().trim().min(1).nullable().optional(),
 });
 
 export const memoryItemPatchSchema = z.object({

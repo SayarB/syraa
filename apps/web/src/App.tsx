@@ -6,19 +6,41 @@ import { TopicTreeModal } from "./components/TopicTreeModal";
 import { apiUrl } from "./lib/api";
 import type {
   ChatConfig,
-  ChatMessage,
   ChatResponse,
+  ChatThread,
   ContextResource,
   DisplayMessage,
   IngestJobStatus,
   MemoryItem,
   MemorySnapshot,
   ResourceTopicTree,
+  ThreadMessage,
   UploadIngestResponse,
 } from "./lib/types";
 
 function nextId(prefix: string): string {
   return `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
+}
+
+function threadStorageKey(userId: string): string {
+  return `syraa:threadId:${userId}`;
+}
+
+function loadStoredThreadId(userId: string): string | null {
+  try {
+    return localStorage.getItem(threadStorageKey(userId));
+  } catch {
+    return null;
+  }
+}
+
+function storeThreadId(userId: string, threadId: string | null): void {
+  try {
+    if (threadId) localStorage.setItem(threadStorageKey(userId), threadId);
+    else localStorage.removeItem(threadStorageKey(userId));
+  } catch {
+    // ignore quota / private mode
+  }
 }
 
 function greeting(): string {
@@ -32,6 +54,14 @@ async function sleep(ms: number): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function toDisplayMessages(messages: ThreadMessage[]): DisplayMessage[] {
+  return messages.map((message) => ({
+    id: message.id,
+    role: message.role,
+    content: message.content,
+  }));
+}
+
 export default function App() {
   const [userId, setUserId] = useState("demo-user");
   const [userDraft, setUserDraft] = useState("demo-user");
@@ -41,7 +71,9 @@ export default function App() {
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
-  const [history, setHistory] = useState<ChatMessage[]>([]);
+  const [threadId, setThreadId] = useState<string | null>(() => loadStoredThreadId("demo-user"));
+  const [threads, setThreads] = useState<ChatThread[]>([]);
+  const [threadsLoading, setThreadsLoading] = useState(false);
   const [items, setItems] = useState<MemoryItem[]>([]);
   const [memoryMeta, setMemoryMeta] = useState("—");
   const [memoryOpen, setMemoryOpen] = useState(false);
@@ -78,18 +110,59 @@ export default function App() {
     }
   }
 
-  async function refreshResources(activeUser = userId) {
+  async function refreshThreads(activeUser = userId) {
+    setThreadsLoading(true);
     try {
-      const res = await fetch(apiUrl(`/api/resources?userId=${encodeURIComponent(activeUser)}`));
+      const res = await fetch(apiUrl(`/api/threads?userId=${encodeURIComponent(activeUser)}`));
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(err.error ?? `HTTP ${res.status}`);
       }
-      const data = (await res.json()) as { resources: ContextResource[] };
-      setResources(data.resources ?? []);
+      const data = (await res.json()) as { threads: ChatThread[] };
+      setThreads(data.threads);
     } catch (err) {
       console.error(err);
-      setResources([]);
+      setThreads([]);
+    } finally {
+      setThreadsLoading(false);
+    }
+  }
+
+  async function openThread(nextThreadId: string, activeUser = userId) {
+    setThreadId(nextThreadId);
+    storeThreadId(activeUser, nextThreadId);
+    setMemoryOpen(false);
+    try {
+      const res = await fetch(
+        apiUrl(`/api/threads/${encodeURIComponent(nextThreadId)}?userId=${encodeURIComponent(activeUser)}`),
+      );
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(err.error ?? `HTTP ${res.status}`);
+      }
+      const data = (await res.json()) as { messages: ThreadMessage[] };
+      setMessages(toDisplayMessages(data.messages));
+    } catch (err) {
+      console.error(err);
+      setMessages([
+        {
+          id: nextId("system"),
+          role: "system",
+          content: `Could not load thread: ${err instanceof Error ? err.message : String(err)}`,
+        },
+      ]);
+    }
+    inputRef.current?.focus();
+  }
+
+  async function refreshResources(activeUser = userId) {
+    try {
+      const res = await fetch(apiUrl(`/api/resources?userId=${encodeURIComponent(activeUser)}`));
+      if (!res.ok) return;
+      const data = (await res.json()) as { resources: ContextResource[] };
+      setResources(data.resources);
+    } catch (err) {
+      console.error(err);
     }
   }
 
@@ -130,9 +203,16 @@ export default function App() {
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only bootstrap
   useEffect(() => {
-    void loadConfig();
-    void refreshMemory();
-    void refreshResources();
+    void (async () => {
+      await loadConfig();
+      await refreshMemory();
+      await refreshResources();
+      await refreshThreads();
+      const stored = loadStoredThreadId("demo-user");
+      if (stored) {
+        await openThread(stored, "demo-user");
+      }
+    })();
   }, []);
 
   useEffect(() => {
@@ -177,14 +257,9 @@ export default function App() {
   async function pollIngestJob(jobId: string): Promise<IngestJobStatus> {
     for (let attempt = 0; attempt < 90; attempt++) {
       const res = await fetch(apiUrl(`/api/ingest/jobs/${jobId}`));
-      if (!res.ok) {
-        const err = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(err.error ?? `HTTP ${res.status}`);
-      }
+      if (!res.ok) throw new Error(`job poll failed: ${res.status}`);
       const status = (await res.json()) as IngestJobStatus;
-      if (status.status === "ready" || status.status === "failed") {
-        return status;
-      }
+      if (status.status === "ready" || status.status === "failed") return status;
       await sleep(1000);
     }
     throw new Error("ingest timed out");
@@ -194,79 +269,29 @@ export default function App() {
     setMessages((prev) => [...prev, { id: nextId("system"), role: "system", content }]);
   }
 
-  async function onUploadFile(file: File) {
-    if (uploading) return;
+  async function onUpload(file: File) {
     setUploading(true);
-    const statusMsgId = nextId("system");
-    setMessages((prev) => [
-      ...prev,
-      { id: statusMsgId, role: "system", content: `Uploading “${file.name}”…` },
-    ]);
-
     try {
       const body = new FormData();
       body.append("file", file);
-      body.append("userId", userId);
-
-      const res = await fetch(apiUrl("/api/ingest/upload"), {
+      const res = await fetch(apiUrl(`/api/ingest/upload?userId=${encodeURIComponent(userId)}`), {
         method: "POST",
         body,
       });
       const data = (await res.json()) as UploadIngestResponse & { error?: string };
-      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
-
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === statusMsgId
-            ? {
-                ...msg,
-                content: `Queued “${data.name}” for ingest (job ${data.jobId.slice(0, 8)}…)`,
-              }
-            : msg,
-        ),
-      );
-
-      const finalStatus = await pollIngestJob(data.jobId);
-      if (finalStatus.status === "failed") {
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === statusMsgId
-              ? {
-                  ...msg,
-                  content: `Ingest failed for “${file.name}”: ${finalStatus.error ?? "unknown error"}`,
-                }
-              : msg,
-          ),
+      if (!res.ok) throw new Error(data.error ?? `upload failed: ${res.status}`);
+      pushSystem(`Queued “${data.name}” for ingest…`);
+      const status = await pollIngestJob(data.jobId);
+      if (status.status === "failed") {
+        pushSystem(`Ingest failed: ${status.error ?? "unknown error"}`);
+      } else {
+        pushSystem(
+          `Ready: “${status.name}” · ${status.topicCount ?? "?"} topics · ${status.chunkCount ?? "?"} chunks`,
         );
-        return;
       }
-
-      const topics = finalStatus.topicCount ?? "?";
-      const chunks = finalStatus.chunkCount ?? "?";
-      const embedNote =
-        finalStatus.embeddingProvider && finalStatus.embeddingProvider !== "none"
-          ? ` · embeddings via ${finalStatus.embeddingProvider}`
-          : " · embeddings skipped (set EMBEDDING_PROVIDER / API key)";
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === statusMsgId
-            ? {
-                ...msg,
-                content: `Ingested “${file.name}” — ${topics} topics, ${chunks} chunks${embedNote}`,
-              }
-            : msg,
-        ),
-      );
       await refreshResources();
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === statusMsgId
-            ? { ...msg, content: `Upload failed for “${file.name}”: ${message}` }
-            : msg,
-        ),
-      );
+      pushSystem(`Upload error: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -288,7 +313,12 @@ export default function App() {
       const res = await fetch(apiUrl("/api/chat"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, message, messageId, history }),
+        body: JSON.stringify({
+          userId,
+          message,
+          messageId,
+          ...(threadId ? { threadId } : {}),
+        }),
       });
       const data = (await res.json()) as ChatResponse;
       if (!res.ok) {
@@ -303,15 +333,17 @@ export default function App() {
         return;
       }
 
+      if (data.threadId) {
+        setThreadId(data.threadId);
+        storeThreadId(userId, data.threadId);
+      }
+
       setMessages((prev) => [
         ...prev,
         { id: nextId("assistant"), role: "assistant", content: data.content },
       ]);
-      setHistory((prev) => [
-        ...prev,
-        { role: "user", content: message },
-        { role: "assistant", content: data.content },
-      ]);
+
+      await refreshThreads();
 
       if (data.memoryItems?.length) {
         await refreshMemory();
@@ -331,7 +363,8 @@ export default function App() {
   }
 
   function startNewChat() {
-    setHistory([]);
+    setThreadId(null);
+    storeThreadId(userId, null);
     setMessages([]);
     setMemoryOpen(false);
     inputRef.current?.focus();
@@ -342,7 +375,8 @@ export default function App() {
     setUserDraft(next);
     if (next === userId) return;
     setUserId(next);
-    setHistory([]);
+    const stored = loadStoredThreadId(next);
+    setThreadId(stored);
     setMessages([
       {
         id: nextId("system"),
@@ -350,8 +384,12 @@ export default function App() {
         content: `Switched to user “${next}”.`,
       },
     ]);
-    void refreshMemory(next);
-    void refreshResources(next);
+    void (async () => {
+      await refreshMemory(next);
+      await refreshResources(next);
+      await refreshThreads(next);
+      if (stored) await openThread(stored, next);
+    })();
   }
 
   function applySuggestion(text: string) {
@@ -377,18 +415,6 @@ export default function App() {
         </button>
 
         <nav className="side-nav" aria-label="Primary">
-          <button type="button" className="side-link is-active">
-            <span className="side-ico" aria-hidden="true">
-              ⌕
-            </span>
-            Search chat
-          </button>
-          <button type="button" className="side-link" disabled title="Coming soon">
-            <span className="side-ico" aria-hidden="true">
-              ▦
-            </span>
-            Library
-          </button>
           <div className="memory-anchor side-memory" ref={memoryAnchorRef}>
             <button
               type="button"
@@ -420,54 +446,78 @@ export default function App() {
           </div>
         </nav>
 
-        <div className="folders">
-          <div className="folders-label">Folders</div>
-          <div className="folder materials-folder">
-            <div className="folder-head">
-              <span className="folder-dot peach" />
-              <div>
-                <strong>Materials</strong>
-                <small>
-                  {resources.length === 0
-                    ? "Upload PDFs from the composer"
-                    : `${resources.length} document(s)`}
-                </small>
-              </div>
-              <button
-                type="button"
-                className="ghost-btn materials-refresh"
-                onClick={() => void refreshResources()}
-              >
-                Refresh
-              </button>
-            </div>
-            {resources.length > 0 ? (
-              <ul className="materials-list">
-                {resources.map((resource) => (
-                  <li key={resource.id}>
+        <div className="sidebar-scroll">
+          <div className="folders">
+            <div className="folders-label">Chats</div>
+            {threadsLoading && threads.length === 0 ? (
+              <p className="thread-empty">Loading…</p>
+            ) : threads.length === 0 ? (
+              <p className="thread-empty">No chats yet — send a message to start</p>
+            ) : (
+              <ul className="thread-list thread-list-bare">
+                {threads.map((thread) => (
+                  <li key={thread.id}>
                     <button
                       type="button"
-                      className="material-item"
-                      onClick={() => void openResourceTree(resource.id)}
-                      title="Open topic tree"
+                      className={`thread-item${thread.id === threadId ? " is-active" : ""}`}
+                      onClick={() => void openThread(thread.id)}
+                      title={thread.title}
                     >
-                      <span className="material-name">{resource.name}</span>
-                      <span className={`material-status status-${resource.status}`}>
-                        {resource.status}
-                      </span>
+                      <span className="thread-title">{thread.title}</span>
                     </button>
                   </li>
                 ))}
               </ul>
-            ) : null}
-          </div>
-          <div className="folder">
-            <span className="folder-dot teal" />
-            <div>
-              <strong>Memory</strong>
-              <small>
-                {items.length} item(s) · {pendingCount} pending
-              </small>
+            )}
+
+            <div className="folders-label">Folders</div>
+            <div className="folder materials-folder">
+              <div className="folder-head">
+                <span className="folder-dot peach" />
+                <div>
+                  <strong>Materials</strong>
+                  <small>
+                    {resources.length === 0
+                      ? "Upload PDFs from the composer"
+                      : `${resources.length} document(s)`}
+                  </small>
+                </div>
+                <button
+                  type="button"
+                  className="ghost-btn materials-refresh"
+                  onClick={() => void refreshResources()}
+                >
+                  Refresh
+                </button>
+              </div>
+              {resources.length > 0 ? (
+                <ul className="materials-list">
+                  {resources.map((resource) => (
+                    <li key={resource.id}>
+                      <button
+                        type="button"
+                        className="material-item"
+                        onClick={() => void openResourceTree(resource.id)}
+                        title="Open topic tree"
+                      >
+                        <span className="material-name">{resource.name}</span>
+                        <span className={`material-status status-${resource.status}`}>
+                          {resource.status}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+            <div className="folder">
+              <span className="folder-dot teal" />
+              <div>
+                <strong>Memory</strong>
+                <small>
+                  {items.length} item(s) · {pendingCount} pending
+                </small>
+              </div>
             </div>
           </div>
         </div>
@@ -484,8 +534,6 @@ export default function App() {
                 commitUserId();
               }
             }}
-            spellCheck={false}
-            aria-label="User id"
           />
         </label>
       </aside>
@@ -533,7 +581,7 @@ export default function App() {
               hidden
               onChange={(event) => {
                 const file = event.target.files?.[0];
-                if (file) void onUploadFile(file);
+                if (file) void onUpload(file);
               }}
             />
             <button
@@ -551,16 +599,17 @@ export default function App() {
               ref={inputRef}
               value={input}
               onChange={(event) => setInput(event.target.value)}
-              placeholder="Ask anything…"
+              placeholder={chatReady ? "Ask anything…" : "Configure API key to chat"}
               autoComplete="off"
               disabled={!chatReady || sending}
+              aria-label="Message"
             />
             <button
               className="prompt-send"
               type="submit"
               disabled={!chatReady || sending || !input.trim()}
             >
-              Send
+              {sending ? "…" : "Send"}
             </button>
           </form>
         </div>
