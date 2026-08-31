@@ -3,19 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Everyday dev UI shell — serves chat frontend, delegates to @everyday/harness",
+  "description": "Everyday API process — boots @everyday/harness HTTP (optional STATIC_DIR for baked UI)",
   "main": "./dist/index.js",
   "scripts": {
-    "build": "node scripts/sync-vendor.mjs && tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "start": "node dist/index.js",
-    "dev": "node scripts/sync-vendor.mjs && npm run build -w @everyday/harness && tsx src/index.ts"
+    "dev": "npm run build -w @everyday/harness && tsx src/index.ts"
   },
   "dependencies": {
     "@everyday/harness": "*",
-    "dompurify": "^3.4.14",
-    "dotenv": "^17.4.2",
-    "marked": "^18.0.11"
+    "dotenv": "^17.4.2"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

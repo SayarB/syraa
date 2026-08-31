@@ -32,7 +32,6 @@ select = [
 
 [tool.ruff.lint.per-file-ignores]
 "services/ingest-worker/everyday_ingest/**" = ["E501", "SIM102"]
-"services/ingest-worker/everyday_ingest/**/cli.py" = ["B008"]
 "services/ingest-worker/tests/**" = ["E501", "S101"]
 
 [tool.pytest.ini_options]

@@ -1,18 +1,39 @@
 import "dotenv/config";
-import { dirname, join } from "node:path";
+import { existsSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { closeHarness, createHarnessServer, ensureHarnessReady } from "@everyday/harness";
 
 const port = Number(process.env.PORT ?? 3000);
-const staticDir = join(dirname(fileURLToPath(import.meta.url)), "../public");
+const here = dirname(fileURLToPath(import.meta.url));
+
+/** Optional static UI dir (e.g. apps/web/dist in Docker). Empty = API only. */
+function resolveStaticDir(): string | undefined {
+  const fromEnv = process.env.STATIC_DIR?.trim();
+  if (fromEnv) {
+    const abs = resolve(fromEnv);
+    if (!existsSync(abs)) {
+      throw new Error(`STATIC_DIR does not exist: ${abs}`);
+    }
+    return abs;
+  }
+  const webDist = resolve(here, "../../../apps/web/dist");
+  if (existsSync(webDist)) return webDist;
+  return undefined;
+}
 
 async function main(): Promise<void> {
   await ensureHarnessReady();
   console.log("memory schema ready");
 
+  const staticDir = resolveStaticDir();
   const server = createHarnessServer({ staticDir });
   server.listen(port, () => {
-    console.log(`Everyday chat UI → http://localhost:${port}`);
+    if (staticDir) {
+      console.log(`Everyday API + UI → http://localhost:${port} (static: ${staticDir})`);
+    } else {
+      console.log(`Everyday API → http://localhost:${port} (no static UI; use apps/web)`);
+    }
   });
 
   async function shutdown(): Promise<void> {
@@ -27,7 +48,6 @@ async function main(): Promise<void> {
       process.exit(1);
     });
   });
-
   process.on("SIGTERM", () => {
     shutdown().catch((err) => {
       console.error(err);

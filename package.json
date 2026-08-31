@@ -23,7 +23,7 @@
     "db:migrate": "bash scripts/dev/with-env.sh npm run db:migrate -w @everyday/memory && bash scripts/dev/with-env.sh npm run db:migrate -w @everyday/context",
     "db:logs": "docker compose logs -f postgres",
     "dev:api": "bash scripts/dev/with-env.sh npm run dev -w @everyday/api",
-    "dev:ui": "bash scripts/dev/with-env.sh npm run dev -w @everyday/api",
+    "dev:ui": "bash scripts/dev/with-env.sh npm run dev -w @everyday/web",
     "dev:web": "bash scripts/dev/with-env.sh npm run dev -w @everyday/web",
     "dev:ingest": "bash scripts/dev/with-env.sh bash scripts/dev/python.sh services/ingest-worker/worker.py"
   },

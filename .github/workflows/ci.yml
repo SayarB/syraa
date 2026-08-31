@@ -57,10 +57,17 @@ jobs:
         run: npm run check:py
 
       - name: Build packages
-        run: npm run build -w @everyday/memory && npm run build -w @everyday/harness && npm run build -w @everyday/api
+        run: |
+          npm run build -w @everyday/memory
+          npm run build -w @everyday/context
+          npm run build -w @everyday/ingest
+          npm run build -w @everyday/harness
+          npm run build -w @everyday/api
 
       - name: Migrate database
-        run: npm run db:migrate:dist -w @everyday/memory
+        run: |
+          npm run db:migrate:dist -w @everyday/memory
+          npm run db:migrate:dist -w @everyday/context
 
       - name: TypeScript tests
         run: npm run test:ts

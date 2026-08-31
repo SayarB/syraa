@@ -1,22 +1,27 @@
-# Plans (ignore accidental large dumps)
+# Tooling / caches
 node_modules/
 packages/*/node_modules/
+apps/*/node_modules/
 dist/
 packages/*/dist/
 apps/*/dist/
-out/
-.data/
-data/drive/**
-!data/drive/.gitkeep
-.env
-packages/memory/.env
 .venv/
-.plans/
 __pycache__/
 *.pyc
+.pytest_cache/
+.ruff_cache/
 .DS_Store
+
+# Secrets & local runtime
+.env
+packages/memory/.env
+.data/
+out/
+data/drive/**
+!data/drive/.gitkeep
+apps/api/data/
 fixtures/pdfs/*.pdf
 !fixtures/pdfs/.gitkeep
-.plans/
 
-apps/api/data/
+# Agent phase plans (keep folder locally; not published)
+.plans/

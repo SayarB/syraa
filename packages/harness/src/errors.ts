@@ -10,7 +10,7 @@ export function formatHarnessError(err: unknown): string {
     return "Cannot reach Postgres. Start it with: npm run db:up";
   }
   if (message.includes('relation "memories" does not exist')) {
-    return "Memory tables missing. Run: npm run db:migrate (or restart dev:ui — it migrates on boot)";
+    return "Memory tables missing. Run: npm run db:migrate (or restart the API — it migrates on boot)";
   }
   if (message.startsWith("Failed query:")) {
     return `Database error. Is Postgres running and migrated? (${message.split("\n")[0]})`;

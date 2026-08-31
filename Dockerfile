@@ -11,6 +11,7 @@ COPY packages/context/package.json packages/context/
 COPY packages/ingest/package.json packages/ingest/
 COPY packages/harness/package.json packages/harness/
 COPY apps/api/package.json apps/api/
+COPY apps/web/package.json apps/web/
 RUN npm ci
 
 COPY packages/memory packages/memory

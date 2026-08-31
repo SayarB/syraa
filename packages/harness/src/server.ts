@@ -22,7 +22,7 @@ const MIME: Record<string, string> = {
 };
 
 export type HarnessServerOptions = {
-  /** Optional static assets directory (e.g. apps/api/public). */
+  /** Optional static assets directory (e.g. apps/web/dist). */
   staticDir?: string;
 };
 

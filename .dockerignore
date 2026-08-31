@@ -10,8 +10,9 @@ __pycache__
 out
 .plans
 .pytest_cache
-test.pdf
-test2.pdf
-fixtures/pdfs/*.pdf
+.ruff_cache
+*.pdf
+!fixtures/pdfs/.gitkeep
 *.md
 !packages/**/README.md
+.cursor
