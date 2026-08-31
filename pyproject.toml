@@ -1,0 +1,41 @@
+[project]
+name = "everyday"
+version = "0.0.0"
+description = "Everyday agent harness monorepo"
+requires-python = ">=3.11"
+dependencies = [
+  "pymupdf>=1.24.0",
+  "psycopg[binary]>=3.2.0",
+  "redis>=5.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+  "ruff>=0.11.0",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["services/ingest-worker/everyday_ingest", "services/ingest-worker/tests"]
+
+[tool.ruff.lint]
+select = [
+  "E",
+  "F",
+  "I",
+  "UP",
+  "B",
+  "SIM",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"services/ingest-worker/everyday_ingest/**" = ["E501", "SIM102"]
+"services/ingest-worker/everyday_ingest/**/cli.py" = ["B008"]
+"services/ingest-worker/tests/**" = ["E501", "S101"]
+
+[tool.pytest.ini_options]
+testpaths = ["services/ingest-worker/tests"]
+pythonpath = ["services/ingest-worker"]
+addopts = "-q"

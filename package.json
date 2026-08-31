@@ -1,0 +1,36 @@
+{
+  "name": "everyday",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "check": "npm run check:ts && npm run check:py",
+    "check:ts": "biome check . && npm run build -w @everyday/memory && npm run build -w @everyday/context && npm run build -w @everyday/ingest && npm run build -w @everyday/harness && npm run typecheck --workspaces --if-present",
+    "check:py": "bash scripts/dev/python.sh -m ruff check . && bash scripts/dev/python.sh -m ruff format --check .",
+    "format": "npm run format:ts && npm run format:py",
+    "format:ts": "biome check --write .",
+    "format:py": "bash scripts/dev/python.sh -m ruff format .",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present && bash scripts/dev/python.sh -m pytest",
+    "test:ts": "npm run test --workspaces --if-present",
+    "test:py": "bash scripts/dev/python.sh -m pytest",
+    "dev:up": "docker compose up -d --build",
+    "dev:down": "docker compose down",
+    "db:up": "docker compose up -d postgres redis",
+    "db:down": "docker compose stop postgres redis",
+    "db:migrate": "bash scripts/dev/with-env.sh npm run db:migrate -w @everyday/memory && bash scripts/dev/with-env.sh npm run db:migrate -w @everyday/context",
+    "db:logs": "docker compose logs -f postgres",
+    "dev:api": "bash scripts/dev/with-env.sh npm run dev -w @everyday/api",
+    "dev:ui": "bash scripts/dev/with-env.sh npm run dev -w @everyday/api",
+    "dev:web": "bash scripts/dev/with-env.sh npm run dev -w @everyday/web",
+    "dev:ingest": "bash scripts/dev/with-env.sh bash scripts/dev/python.sh services/ingest-worker/worker.py"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.11"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

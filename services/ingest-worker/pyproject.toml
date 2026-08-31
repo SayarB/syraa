@@ -1,0 +1,16 @@
+[project]
+name = "everyday-ingest-worker"
+version = "0.1.0"
+description = "Everyday PDF ingest worker — heading heuristics and chunk materialization"
+requires-python = ">=3.11"
+dependencies = [
+  "pymupdf>=1.24.0",
+  "psycopg[binary]>=3.2.0",
+  "redis>=5.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+  "ruff>=0.11.0",
+]

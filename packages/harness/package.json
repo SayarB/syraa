@@ -1,0 +1,41 @@
+{
+  "name": "@everyday/harness",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Everyday M9 harness — chat orchestration, LLM config, memory wiring",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@everyday/context": "*",
+    "@everyday/ingest": "*",
+    "@everyday/memory": "*",
+    "@mastra/core": "^1.63.2",
+    "busboy": "^1.6.0",
+    "pg": "^8.23.0",
+    "zod": "^3.24.0",
+    "zod-to-json-schema": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/busboy": "^1.5.4",
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.23.1",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

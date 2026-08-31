@@ -1,0 +1,40 @@
+{
+  "name": "@everyday/context",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Everyday Context store — resources, topics, chunks, cards",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:migrate": "tsx src/migrate.ts",
+    "db:migrate:dist": "node dist/migrate.js",
+    "db:generate": "drizzle-kit generate"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.23.1",
+    "dotenv": "^17.4.2",
+    "drizzle-kit": "^1.0.0-rc.4",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "drizzle-orm": "^1.0.0-rc.4",
+    "pg": "^8.23.0"
+  }
+}
