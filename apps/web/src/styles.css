@@ -950,9 +950,13 @@ button:disabled {
   display: grid;
   place-items: center;
   padding: 1rem;
+  margin: 0;
+  border: none;
+  width: 100%;
   background: color-mix(in srgb, #000 55%, transparent);
   backdrop-filter: blur(8px);
   animation: dropdown-in 160ms ease;
+  cursor: default;
 }
 
 .modal {

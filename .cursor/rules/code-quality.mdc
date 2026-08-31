@@ -1,0 +1,48 @@
+---
+description: Repo-wide code quality — lint, format, test before shipping
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.py"
+alwaysApply: false
+---
+
+# Code quality (Everyday)
+
+All new or changed code must pass repo checks before merge.
+
+## Commands (repo root)
+
+```bash
+npm run check      # lint + format check + typecheck (TS) + ruff (Python)
+npm run format     # auto-fix TS (Biome) + Python (Ruff)
+npm run test       # vitest (packages/*, apps/*) + pytest (ingest-worker)
+```
+
+## TypeScript (`packages/*`, `apps/*`)
+
+- **Biome** — lint + format (`biome.json` at root)
+- **tsc --noEmit** — each workspace package exposes `typecheck` script
+- **Vitest** — unit/integration tests in package `tests/`
+- **`@everyday/harness`** — chat orchestration (LLM, lessons → memory); no Mastra import in domain packages
+- Functional factories preferred over classes (except small Error types)
+- **Postgres + Redis** in Docker Compose for app services
+
+## Python (`services/ingest-worker/`)
+
+- **Ruff** — lint + format (root `pyproject.toml`, src under `services/ingest-worker/`)
+- **pytest** — tests under `services/ingest-worker/tests/`
+- PDF ingest and heading heuristics only — do not add Python app SDKs
+
+## Adding a new package
+
+1. Create under `packages/<name>/` or `apps/<name>/` (auto-included in npm workspaces)
+2. Add `typecheck`, `test`, and `build` scripts to `package.json`
+3. TypeScript is covered by root Biome config — no per-package ESLint needed
+4. Run `npm run check && npm run test` from repo root
+
+## Adding a new Python service
+
+1. Create under `services/<name>/` with its own `Dockerfile` if containerized
+2. Register paths in root `pyproject.toml` (`tool.ruff.src`, `tool.pytest`)
+3. Set `PYTHONPATH` in `scripts/dev/python.sh` if the service exposes importable modules

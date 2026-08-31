@@ -1,3 +1,4 @@
+import type { KeyboardEvent, MouseEvent } from "react";
 import type { ResourceTopicTree } from "../lib/types";
 import { TopicTreeItem } from "./TopicTreeItem";
 
@@ -9,27 +10,29 @@ type Props = {
 };
 
 export function TopicTreeModal({ data, loading, error, onClose }: Props) {
+  function onBackdropClick(event: MouseEvent<HTMLButtonElement>) {
+    if (event.target === event.currentTarget) onClose();
+  }
+
+  function onBackdropKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
+    if (event.key === "Escape") onClose();
+  }
+
   return (
-    <div
+    <button
+      type="button"
       className="modal-backdrop"
-      role="button"
-      tabIndex={0}
       aria-label="Close topic tree"
-      onClick={onClose}
-      onKeyDown={(event) => {
-        if (event.key === "Escape" || event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onClose();
-        }
-      }}
+      onClick={onBackdropClick}
+      onKeyDown={onBackdropKeyDown}
     >
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: dialog stops click-through only */}
       <div
         className="modal glass"
         role="dialog"
         aria-modal="true"
         aria-label="Document topic tree"
         onClick={(event) => event.stopPropagation()}
-        onKeyDown={(event) => event.stopPropagation()}
       >
         <div className="modal-head">
           <div>
@@ -62,6 +65,6 @@ export function TopicTreeModal({ data, loading, error, onClose }: Props) {
             : null}
         </div>
       </div>
-    </div>
+    </button>
   );
 }

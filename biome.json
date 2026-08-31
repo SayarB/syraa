@@ -16,7 +16,7 @@
       "!**/.plans",
       "!**/packages/memory/drizzle/meta",
       "!**/apps/api/public/vendor",
-      "!**/apps/web/public/**"
+      "!**/apps/web/public"
     ]
   },
   "formatter": {
