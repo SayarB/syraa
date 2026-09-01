@@ -1,8 +1,5 @@
 import type { MaterialsLayer1Outline } from "@syraa/context";
 import type { MemoryItem } from "@syraa/memory";
-import type { ChatMessage } from "../schemas.js";
-
-export const MATERIALS_BOOTSTRAP_PREFIX = "[syraa:materials-overview]";
 
 export const SYRAA_BASE_INSTRUCTIONS = `You are Syraa, a helpful assistant.
 
@@ -16,8 +13,12 @@ Memory:
 - Use "suggestion" for uncertain inferences (stored as method, pending confirmation).
 - Put unresolved questions in open_loop, not as lesson text.
 
-Materials:
-- A materials overview will return via thread working memory in a later phase. Until then, do not invent document contents or page-level quotes.
+Materials (thread working memory):
+- A session materials overview lives in thread working memory for this chat.
+- It lists document names and first-layer section titles only — not full document text.
+- If you need more detail, ask which document/section to expand to the next topic layer.
+- Do not invent quotes or page-level detail that is not in memory, working memory, or an expanded layer.
+- Do not modify the materials overview in working memory.
 
 Keep "message" clean — do not list lessons in the chat message.
 
@@ -38,36 +39,6 @@ export function formatMaterialsOutline(materials: MaterialsLayer1Outline[]): str
       return `${header}\n${sections}`;
     })
     .join("\n");
-}
-
-export function historyHasMaterialsBootstrap(history: ChatMessage[]): boolean {
-  return history.some((message) => message.content.startsWith(MATERIALS_BOOTSTRAP_PREFIX));
-}
-
-/**
- * Keep session seeds (materials overview) at the front of the model window,
- * then the newest chat turns. Prevents long sessions from truncating seeds away.
- */
-export function pinSessionSeeds(
-  history: ChatMessage[],
-  recentLimit = 40,
-): ChatMessage[] {
-  const seeds = history.filter((message) => message.content.startsWith(MATERIALS_BOOTSTRAP_PREFIX));
-  const rest = history.filter((message) => !message.content.startsWith(MATERIALS_BOOTSTRAP_PREFIX));
-  return [...seeds, ...rest.slice(-recentLimit)];
-}
-
-/** One-shot session message: stays in chat history for the whole session. */
-export function buildMaterialsBootstrapMessage(materials: MaterialsLayer1Outline[]): ChatMessage {
-  const body = [
-    MATERIALS_BOOTSTRAP_PREFIX,
-    "Session materials overview (durable for this chat — not re-sent as system prompt each turn).",
-    "These are document names and their first topic layer only. Ask to expand a section for the next layer.",
-    "",
-    formatMaterialsOutline(materials),
-  ].join("\n");
-
-  return { role: "assistant", content: body };
 }
 
 export function buildSystemPrompt(memoryItems: MemoryItem[]): string {

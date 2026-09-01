@@ -38,8 +38,8 @@ export async function handleChat(request: ChatRequest): Promise<ChatResponse> {
       role: "assistant",
       threadId,
       content: [
-        "Chat normally — conversation history is stored on the server (Mastra thread).",
-        "Product Memory is refreshed each turn; materials overview returns in a later phase.",
+        "Chat normally — conversation history and materials overview are stored on the server (Mastra thread).",
+        "Product Memory is refreshed each turn.",
         "Durable facts land in Memory (pending ones need your confirmation).",
         "",
         "Manual overrides:",

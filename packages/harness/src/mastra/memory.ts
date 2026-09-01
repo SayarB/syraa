@@ -3,7 +3,7 @@ import { getMastraStorage } from "./storage.js";
 
 let memory: Memory | null = null;
 
-/** Shared Mastra Memory for Syraa chat threads (history + later WM). */
+/** Shared Mastra Memory for Syraa chat threads (history + thread WM). */
 export function getSyraaMemory(): Memory {
   if (!memory) {
     memory = new Memory({
@@ -11,6 +11,12 @@ export function getSyraaMemory(): Memory {
       options: {
         lastMessages: 40,
         semanticRecall: false,
+        workingMemory: {
+          enabled: true,
+          scope: "thread",
+          // Harness seeds materials L1; agent must not overwrite the overview.
+          agentManaged: false,
+        },
       },
     });
   }

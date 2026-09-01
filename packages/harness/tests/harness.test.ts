@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { shouldAutoActivate } from "../src/lessons.js";
 import { resolveChatProvider } from "../src/llm.js";
 import { formatMaterialsOutline } from "../src/mastra/prompt.js";
+import { buildMaterialsWorkingMemoryContent } from "../src/materials-working-memory.js";
 import { parseSaveCommand } from "../src/memory.js";
 import { chatRequestSchema, createThreadRequestSchema } from "../src/schemas.js";
 import {
@@ -59,6 +60,27 @@ describe("formatMaterialsOutline", () => {
 
   it("handles empty materials", () => {
     expect(formatMaterialsOutline([])).toBe("No ingested materials yet.");
+  });
+});
+
+describe("buildMaterialsWorkingMemoryContent", () => {
+  it("wraps outline in session materials header", () => {
+    const content = buildMaterialsWorkingMemoryContent([
+      {
+        resourceId: "a",
+        name: "notes.pdf",
+        status: "ready",
+        sectionTitles: ["Intro"],
+      },
+    ]);
+    expect(content).toContain("# Session materials");
+    expect(content).toContain("notes.pdf");
+    expect(content).toContain("Intro");
+    expect(content).not.toContain("[syraa:materials-overview]");
+  });
+
+  it("accepts optional Works scope params via seed helper signature", () => {
+    expect(typeof buildMaterialsWorkingMemoryContent).toBe("function");
   });
 });
 

@@ -1,5 +1,6 @@
 import type { MastraDBMessage } from "@mastra/core/agent";
 import { getSyraaMemory } from "./mastra/memory.js";
+import { seedMaterialsWorkingMemory } from "./materials-working-memory.js";
 import { ValidationError } from "./schemas.js";
 
 /** Thread metadata shaped for future Works (Project → Subproject → sessions). */
@@ -118,12 +119,24 @@ export async function ensureChatThread(opts: {
       resourceId: opts.userId,
       metadata,
     });
+    await seedMaterialsWorkingMemory({
+      threadId: created.id,
+      userId: opts.userId,
+      projectId: opts.projectId,
+      subprojectId: opts.subprojectId,
+    });
     return { threadId: created.id, created: true, metadata };
   }
 
   const created = await memory.createThread({
     resourceId: opts.userId,
     metadata,
+  });
+  await seedMaterialsWorkingMemory({
+    threadId: created.id,
+    userId: opts.userId,
+    projectId: opts.projectId,
+    subprojectId: opts.subprojectId,
   });
   return { threadId: created.id, created: true, metadata };
 }
@@ -143,6 +156,12 @@ export async function createChatThread(opts: {
     resourceId: opts.userId,
     title: opts.title,
     metadata,
+  });
+  await seedMaterialsWorkingMemory({
+    threadId: created.id,
+    userId: opts.userId,
+    projectId: opts.projectId,
+    subprojectId: opts.subprojectId,
   });
   return toThreadDto(created);
 }

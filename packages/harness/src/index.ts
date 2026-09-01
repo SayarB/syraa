@@ -53,3 +53,7 @@ export {
 } from "./threads.js";
 export type { UploadIngestResult } from "./upload.js";
 export { getIngestJobStatus, handleIngestUpload } from "./upload.js";
+export {
+  buildMaterialsWorkingMemoryContent,
+  seedMaterialsWorkingMemory,
+} from "./materials-working-memory.js";
