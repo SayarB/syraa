@@ -79,5 +79,10 @@ export async function listMemoryForUser(service: MemoryService, userId: string) 
     limit: 100,
     statuses: ["active", "pending"],
   });
-  return { memory, items };
+  const dedupItems = await service.listItems(userId, {
+    memoryId: memory.id,
+    limit: 200,
+    statuses: ["active", "pending", "dismissed"],
+  });
+  return { memory, items, dedupItems };
 }

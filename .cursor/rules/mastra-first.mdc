@@ -1,0 +1,54 @@
+---
+description: Prefer Mastra built-ins over custom agent-runtime code in harness
+globs:
+  - "packages/harness/**"
+  - "apps/web/**"
+  - "apps/api/**"
+  - "plans/mastra*.md"
+  - ".plans/mastra-first/**"
+alwaysApply: true
+---
+
+# Mastra-first (Syraa harness)
+
+Mastra is the **agent app framework**. Use its primitives before writing our own runtime code.
+
+## Default: use Mastra
+
+When adding or changing agent behavior, check Mastra (and `@mastra/ai-sdk`, AI SDK UI) first:
+
+| Need | Prefer |
+|---|---|
+| Chat loop | `agent.generate` / `agent.stream` |
+| Streaming to UI | `toAISdkStream`, `handleChatStream`, `pipeUIMessageStreamToResponse`, `useChat` |
+| Tools | `createTool` on the agent |
+| Thread + history | Mastra Memory (`thread`, `resource`) — not client `history[]` as SoT |
+| Working memory | Mastra thread WM — not DIY bootstrap/pin messages |
+| Storage | Mastra storage on shared Postgres |
+| Structured output | Mastra `structuredOutput` / AI SDK message stream — not hand-rolled SSE event protocols |
+
+Docs: [mastra.ai/docs](https://mastra.ai/docs), `@mastra/ai-sdk` (`handleChatStream`, `toAISdkStream`).
+
+## Keep ours (domain only)
+
+These stay Syraa-owned and **must not import Mastra**:
+
+- `@syraa/memory` — product prefs/rules/decisions (HITL)
+- `@syraa/context` — materials, topics, chunks, retrieve
+- `@syraa/ingest` — PDF ingest worker
+
+Wire domain data **into** Mastra via tools, processors, or dynamic instructions — do not reimplement Mastra Memory or the agent loop.
+
+## When custom code is OK
+
+Write our own layer only when:
+
+1. Mastra has no equivalent, or
+2. The gap is explicit product logic (e.g. `applyLessons`, Works thread metadata, ingest upload), or
+3. A Mastra primitive is blocked and the workaround is documented in code/plan.
+
+If you add a custom stream protocol, event bus, or message parser, **stop** and check whether `@mastra/ai-sdk` + AI SDK UI already covers it.
+
+## Review bar
+
+PRs that add harness chat/stream/tool code should answer: *Why isn’t this `handleChatStream` / `createTool` / Memory / processors?*

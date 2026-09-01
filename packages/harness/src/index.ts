@@ -1,6 +1,6 @@
 export { ensureHarnessReady } from "./bootstrap.js";
 export type { ChatRequest, ChatResponse } from "./chat.js";
-export { closeHarness, handleChat } from "./chat.js";
+export { closeHarness, handleChat, pipeChatStream } from "./chat.js";
 export type { ContextHandle } from "./context.js";
 export {
   closeContextAndQueue,
@@ -9,7 +9,7 @@ export {
   getIngestQueue,
 } from "./context.js";
 export { formatHarnessError } from "./errors.js";
-export { applyLessons, lessonToItemType, shouldAutoActivate } from "./lessons.js";
+export { applyLessons, isDuplicateLesson, lessonDedupKey, lessonToItemType, normalizeLessonText, shouldAutoActivate } from "./lessons.js";
 export type { ChatConfig, ChatMessage, ChatProvider } from "./llm.js";
 export { getChatConfig, resolveChatProvider, runChatTurn } from "./llm.js";
 export type { MemoryHandle, SaveCommand } from "./memory.js";

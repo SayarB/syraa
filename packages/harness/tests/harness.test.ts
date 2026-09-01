@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { shouldAutoActivate } from "../src/lessons.js";
+import { isDuplicateLesson, shouldAutoActivate } from "../src/lessons.js";
 import { resolveChatProvider } from "../src/llm.js";
 import { formatMaterialsOutline } from "../src/mastra/prompt.js";
 import { buildMaterialsWorkingMemoryContent } from "../src/materials-working-memory.js";
@@ -181,6 +181,39 @@ describe("shouldAutoActivate", () => {
       shouldAutoActivate(
         { text: "Might prefer bullet lists", kind: "suggestion" },
         "I sometimes like bullets",
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("lesson deduplication", () => {
+  it("treats paraphrased preferences as duplicates", () => {
+    const existing = [{ text: "User prefers concise answers", status: "active" }] as const;
+    expect(isDuplicateLesson([...existing], "Prefers concise answers")).toBe(true);
+    expect(isDuplicateLesson([...existing], "User prefers concise answers.")).toBe(true);
+  });
+
+  it("treats paraphrased trigger-response rules as duplicates", () => {
+    const existing = [
+      {
+        text: 'When user says "sun suna", respond with "aati kya khandala"',
+        status: "active",
+      },
+    ] as const;
+    expect(
+      isDuplicateLesson(
+        [...existing],
+        'When the user says "sun suna", respond with "aati kya khandala".',
+      ),
+    ).toBe(true);
+  });
+
+  it("allows clearly different lessons", () => {
+    const existing = [{ text: "User prefers concise answers", status: "active" }] as const;
+    expect(
+      isDuplicateLesson(
+        [...existing],
+        "When providing prices, always convert to INR using same-day rates.",
       ),
     ).toBe(false);
   });

@@ -1,12 +1,13 @@
 import type { MemoryItem } from "@syraa/memory";
+import { runWithChatContext } from "./chat-run-context.js";
 import { getSyraaAgent } from "./mastra/index.js";
+import { resolveTurnFromGenerateOutput } from "./mastra/resolve-turn.js";
+import { buildStructuredTurnOutput } from "./mastra/structured-turn.js";
 import { resolveChatModel, resolveChatProvider } from "./mastra/model.js";
 import { buildSystemPrompt } from "./mastra/prompt.js";
 import {
   type ChatMessage,
   type ChatProvider,
-  turnResultSchema,
-  ValidationError,
 } from "./schemas.js";
 
 export type ChatConfig = {
@@ -27,6 +28,26 @@ const DEFAULTS: Record<ChatProvider, { model: string; apiKeyEnv: string; modelEn
     modelEnv: "OPENAI_MODEL",
   },
 };
+
+function buildChatTurnOptions(opts: {
+  userId: string;
+  threadId: string;
+  memoryItems: MemoryItem[];
+}) {
+  return {
+    memory: {
+      thread: opts.threadId,
+      resource: opts.userId,
+    },
+    instructions: buildSystemPrompt(opts.memoryItems),
+    structuredOutput: buildStructuredTurnOutput(),
+    modelSettings: {
+      temperature: 0.4,
+      maxOutputTokens: 2048,
+    },
+    maxSteps: 8,
+  };
+}
 
 export function getChatConfig(): ChatConfig {
   const provider = resolveChatProvider();
@@ -54,38 +75,27 @@ export async function runChatTurn(opts: {
 
   const agent = getSyraaAgent();
 
-  let output: Awaited<ReturnType<typeof agent.generate>>;
-  try {
-    output = await agent.generate(opts.userMessage, {
-      memory: {
-        thread: opts.threadId,
-        resource: opts.userId,
-      },
-      instructions: buildSystemPrompt(opts.memoryItems),
-      structuredOutput: {
-        schema: turnResultSchema,
-      },
-      modelSettings: {
-        temperature: 0.4,
-        maxOutputTokens: 2048,
-      },
-    });
-  } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error);
-    throw new Error(`${chat.provider} generate failed: ${detail}`);
-  }
+  return runWithChatContext(
+    { userId: opts.userId, threadId: opts.threadId },
+    async () => {
+      let output: Awaited<ReturnType<typeof agent.generate>>;
+      try {
+        output = await agent.generate(opts.userMessage, buildChatTurnOptions(opts));
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : String(error);
+        throw new Error(`${chat.provider} generate failed: ${detail}`);
+      }
 
-  const parsed = turnResultSchema.safeParse(output.object);
-  if (!parsed.success) {
-    throw new ValidationError(`Invalid model output: ${parsed.error.message}`);
-  }
+      const turn = await resolveTurnFromGenerateOutput(output);
 
-  const turn = {
-    message: parsed.data.message.trim(),
-    lessons: parsed.data.lessons ?? [],
-  };
-
-  return { ...turn, model: chat.model, provider: chat.provider };
+      return {
+        message: turn.message,
+        lessons: turn.lessons,
+        model: chat.model,
+        provider: chat.provider,
+      };
+    },
+  );
 }
 
 export { resolveChatProvider } from "./mastra/model.js";

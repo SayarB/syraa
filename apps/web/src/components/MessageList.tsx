@@ -15,22 +15,34 @@ export function MessageList({ messages }: Props) {
   }, [messages]);
 
   return (
-    <div className="messages" aria-live="polite">
-      {messages.map((message) =>
-        message.role === "assistant" ? (
-          <div
-            key={message.id}
-            className="message assistant markdown-body"
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized markdown
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(message.content) }}
-          />
-        ) : (
-          <div key={message.id} className={`message ${message.role}`}>
+    <>
+      {messages.map((message) => {
+        if (message.role === "activity") {
+          return (
+            <div key={message.id} className="chat-tool" aria-label="Agent activity">
+              {message.content}
+            </div>
+          );
+        }
+
+        if (message.role === "assistant") {
+          return (
+            <div
+              key={message.id}
+              className={`chat-assistant markdown-body${message.streaming ? " streaming-caret" : ""}`}
+              // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized markdown
+              dangerouslySetInnerHTML={{ __html: renderMarkdown(message.content) }}
+            />
+          );
+        }
+
+        return (
+          <div key={message.id} className="chat-system">
             {message.content}
           </div>
-        ),
-      )}
+        );
+      })}
       <div ref={endRef} />
-    </div>
+    </>
   );
 }

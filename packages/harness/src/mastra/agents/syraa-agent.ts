@@ -2,6 +2,7 @@ import { Agent } from "@mastra/core/agent";
 import { getSyraaMemory } from "../memory.js";
 import { requireChatModel } from "../model.js";
 import { SYRAA_BASE_INSTRUCTIONS } from "../prompt.js";
+import { syraaTools } from "../tools/materials-tools.js";
 
 export const SYRAA_AGENT_ID = "syraa-agent";
 
@@ -13,5 +14,6 @@ export function createSyraaAgent(): Agent {
     instructions: SYRAA_BASE_INSTRUCTIONS,
     model: () => requireChatModel().mastraModel,
     memory: getSyraaMemory(),
+    tools: syraaTools,
   });
 }

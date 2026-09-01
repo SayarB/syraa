@@ -1,7 +1,7 @@
 import { createReadStream, existsSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { extname, join } from "node:path";
-import { handleChat } from "./chat.js";
+import { handleChat, pipeChatStream } from "./chat.js";
 import { getContextStore } from "./context.js";
 import { formatHarnessError } from "./errors.js";
 import { getChatConfig } from "./llm.js";
@@ -17,6 +17,7 @@ import {
   createChatThread,
   listChatThreads,
   listThreadMessages,
+  refreshChatThreadMaterials,
 } from "./threads.js";
 import { getIngestJobStatus, handleIngestUpload } from "./upload.js";
 
@@ -145,6 +146,30 @@ async function handleApi(
     return;
   }
 
+  if (req.method === "POST" && pathname.endsWith("/refresh-materials")) {
+    const prefix = "/api/threads/";
+    if (!pathname.startsWith(prefix) || pathname === `${prefix}refresh-materials`) {
+      sendJson(res, 400, { error: "thread id required" });
+      return;
+    }
+    const threadId = pathname.slice(prefix.length, -"/refresh-materials".length);
+    if (!threadId || threadId.includes("/")) {
+      sendJson(res, 400, { error: "thread id required" });
+      return;
+    }
+    try {
+      await refreshChatThreadMaterials({ userId, threadId });
+      sendJson(res, 200, { ok: true, threadId });
+    } catch (err) {
+      if (err instanceof ValidationError) {
+        sendJson(res, 404, { error: err.message });
+        return;
+      }
+      throw err;
+    }
+    return;
+  }
+
   if (req.method === "GET" && pathname.startsWith("/api/threads/")) {
     const threadId = pathname.slice("/api/threads/".length);
     if (!threadId || threadId.includes("/")) {
@@ -180,6 +205,27 @@ async function handleApi(
       subprojectId: body.subprojectId,
     });
     sendJson(res, 200, result);
+    return;
+  }
+
+  if (req.method === "POST" && pathname === "/api/chat/stream") {
+    const body = await parseJsonBody(await readBody(req), chatRequestSchema);
+    try {
+      await pipeChatStream(
+        {
+          userId: body.userId ?? userId,
+          message: body.message,
+          messageId: body.messageId,
+          threadId: body.threadId,
+          projectId: body.projectId,
+          subprojectId: body.subprojectId,
+        },
+        res,
+      );
+    } catch (err) {
+      const message = formatHarnessError(err);
+      sendJson(res, 500, { error: message });
+    }
     return;
   }
 

@@ -1,11 +1,24 @@
 # Decision: Mastra-first harness (revises “thin Mastra / no Mastra Memory”)
 
-**Status:** proposed — user direction 2026-09-01 (revised same day)  
+**Status:** Wave 1 shipped (phases 01–04) — 2026-09-02  
 **Supersedes (in part):** `plans/harness.md` / `plans/memory.md` lines that said **do not use Mastra Memory** for session history / context window.
+
+## Implementation status (phases 01–04)
+
+| # | Capability | Status |
+|---|---|---|
+| 01 | Threaded chat on Mastra Memory + Postgres | **done** |
+| 02 | Materials L1 in thread working memory | **done** |
+| 03 | Stream + tools + structured `{ message, lessons }` | **done** |
+| 04 | Thread UI (list / resume / new chat) | **done** |
+
+**Wave 1 follow-ups (deferred):** Mastra processors for memory pack, Observability/Studio, `handleChatStream` refactor.
 
 ## Principle
 
 If Mastra already provides a capability we are DIY’ing poorly, **use Mastra first**. Only after the agent runtime is Mastra-native do we add filesystem / browser / skills.
+
+**Enforcement:** `.cursor/rules/mastra-first.mdc` (always apply) and vault `projects/syraa/instructions/coding.md`.
 
 Syraa domain packages stay the source of truth for **product** data. Mastra owns the **agent runtime**.
 

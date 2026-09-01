@@ -1,0 +1,46 @@
+import { parseTurnJson, turnResultSchema, type Lesson } from "../schemas.js";
+
+export type SyraaTurnMeta = {
+  message: string;
+  lessons: Lesson[];
+};
+
+export function turnFromStructuredObject(object: unknown): SyraaTurnMeta | null {
+  const parsed = turnResultSchema.safeParse(object);
+  if (!parsed.success) return null;
+  return {
+    message: parsed.data.message.trim(),
+    lessons: parsed.data.lessons ?? [],
+  };
+}
+
+export function turnFromAgentText(text: string): SyraaTurnMeta {
+  const turn = parseTurnJson(text);
+  return {
+    message: turn.message.trim(),
+    lessons: turn.lessons ?? [],
+  };
+}
+
+export async function resolveTurnFromGenerateOutput(output: {
+  object?: unknown | Promise<unknown>;
+  text: string | Promise<string>;
+}): Promise<SyraaTurnMeta> {
+  try {
+    const object = await output.object;
+    const fromObject = turnFromStructuredObject(object);
+    if (fromObject) return fromObject;
+  } catch {
+    // fall through to text parse
+  }
+
+  const text = await output.text;
+  return turnFromAgentText(text);
+}
+
+export async function resolveTurnFromStreamOutput(output: {
+  object?: unknown | Promise<unknown>;
+  text: string | Promise<string>;
+}): Promise<SyraaTurnMeta> {
+  return resolveTurnFromGenerateOutput(output);
+}

@@ -21,13 +21,60 @@ export function shouldAutoActivate(lesson: Lesson, userMessage: string): boolean
   return EXPLICIT_MARKERS.test(userMessage) || EXPLICIT_MARKERS.test(lesson.text);
 }
 
+/** Normalize lesson text for duplicate checks. */
+export function normalizeLessonText(text: string): string {
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/[`'"“”‘’]/g, "")
+    .replace(/[.,!?;:]+$/g, "")
+    .replace(/\s+/g, " ");
+}
+
+/** Stable key for near-duplicate lesson matching. */
+export function lessonDedupKey(text: string): string {
+  let normalized = normalizeLessonText(text);
+
+  const triggerResponse = normalized.match(
+    /when (?:the )?user says (.+?)(?:,|\s+)(?:respond(?:s)? with|reply with|say) (.+)$/,
+  );
+  if (triggerResponse) {
+    return `rule:${normalizeLessonText(triggerResponse[1])}=>${normalizeLessonText(triggerResponse[2])}`;
+  }
+
+  normalized = normalized.replace(/^user\s+/, "");
+  normalized = normalized.replace(/^prefers?\s+/, "prefer ");
+  return normalized;
+}
+
+export function isDuplicateLesson(existing: MemoryItem[], text: string): boolean {
+  const key = lessonDedupKey(text);
+  if (!key) return true;
+
+  for (const item of existing) {
+    const existingKey = lessonDedupKey(item.text);
+    if (existingKey === key) return true;
+
+    const a = normalizeLessonText(text);
+    const b = normalizeLessonText(item.text);
+    if (a === b) return true;
+
+    if (a.length >= 12 && b.length >= 12 && (a.includes(b) || b.includes(a))) {
+      const shorter = Math.min(a.length, b.length);
+      const longer = Math.max(a.length, b.length);
+      if (shorter / longer >= 0.72) return true;
+    }
+  }
+
+  return false;
+}
+
 function normalize(text: string): string {
-  return text.trim().toLowerCase().replace(/\s+/g, " ");
+  return normalizeLessonText(text);
 }
 
 function isDuplicate(existing: MemoryItem[], text: string): boolean {
-  const needle = normalize(text);
-  return existing.some((item) => normalize(item.text) === needle);
+  return isDuplicateLesson(existing, text);
 }
 
 export async function applyLessons(

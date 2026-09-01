@@ -1,6 +1,13 @@
+import { randomUUID } from "node:crypto";
+import type { ServerResponse } from "node:http";
+import { pipeUIMessageStreamToResponse } from "ai";
 import { applyLessons } from "./lessons.js";
 import { runChatTurn } from "./llm.js";
 import { getMemory, listMemoryForUser, parseSaveCommand, saveMemoryItem } from "./memory.js";
+import {
+  createStaticUIMessageStream,
+  createSyraaUIMessageStream,
+} from "./mastra/chat-stream.js";
 import { ensureChatThread, maybeSetThreadTitle } from "./threads.js";
 
 export type ChatRequest = {
@@ -23,6 +30,51 @@ export type ChatResponse = {
 };
 
 export async function handleChat(request: ChatRequest): Promise<ChatResponse> {
+  const prepared = await prepareChatTurn(request);
+
+  if (prepared.kind === "static") {
+    return {
+      role: "assistant",
+      threadId: prepared.threadId,
+      content: prepared.content,
+      memoryItems: prepared.memoryItems,
+    };
+  }
+
+  const turn = await runChatTurn({
+    userId: request.userId,
+    threadId: prepared.threadId,
+    userMessage: prepared.message,
+    memoryItems: prepared.activeItems,
+  });
+
+  await maybeSetThreadTitle({
+    userId: request.userId,
+    threadId: prepared.threadId,
+    title: prepared.message,
+  });
+
+  const memoryItems = await applyLessons(prepared.service, {
+    userId: request.userId,
+    memoryId: prepared.memoryId,
+    lessons: turn.lessons,
+    userMessage: prepared.message,
+    messageId: request.messageId,
+    existingItems: prepared.dedupItems,
+  });
+
+  return {
+    role: "assistant",
+    threadId: prepared.threadId,
+    content: turn.message,
+    model: turn.model,
+    provider: turn.provider,
+    memoryItems,
+    lessons: turn.lessons,
+  };
+}
+
+async function prepareChatTurn(request: ChatRequest) {
   const { service } = await getMemory();
   const message = request.message.trim();
 
@@ -35,12 +87,13 @@ export async function handleChat(request: ChatRequest): Promise<ChatResponse> {
 
   if (message === "/help") {
     return {
-      role: "assistant",
+      kind: "static" as const,
       threadId,
       content: [
         "Chat normally — conversation history and materials overview are stored on the server (Mastra thread).",
         "Product Memory is refreshed each turn.",
         "Durable facts land in Memory (pending ones need your confirmation).",
+        "The agent can read ingested materials via tools when you ask about document content.",
         "",
         "Manual overrides:",
         "  /rule <text>  /pref <text>  /method <text>  /decision <text>",
@@ -52,47 +105,67 @@ export async function handleChat(request: ChatRequest): Promise<ChatResponse> {
   if (command) {
     const item = await saveMemoryItem(service, request.userId, command, request.messageId);
     return {
-      role: "assistant",
+      kind: "static" as const,
       threadId,
       content: `Saved ${item.type}: “${item.text}”`,
       memoryItems: [item],
     };
   }
 
-  const { memory, items } = await listMemoryForUser(service, request.userId);
+  const { memory, items, dedupItems } = await listMemoryForUser(service, request.userId);
   const activeItems = items.filter((item) => item.status === "active");
 
-  const turn = await runChatTurn({
-    userId: request.userId,
-    threadId,
-    userMessage: message,
-    memoryItems: activeItems,
-  });
-
-  await maybeSetThreadTitle({
-    userId: request.userId,
-    threadId,
-    title: message,
-  });
-
-  const memoryItems = await applyLessons(service, {
-    userId: request.userId,
-    memoryId: memory.id,
-    lessons: turn.lessons,
-    userMessage: message,
-    messageId: request.messageId,
-    existingItems: items,
-  });
-
   return {
-    role: "assistant",
+    kind: "turn" as const,
+    service,
     threadId,
-    content: turn.message,
-    model: turn.model,
-    provider: turn.provider,
-    memoryItems,
-    lessons: turn.lessons,
+    message,
+    memoryId: memory.id,
+    activeItems,
+    items,
+    dedupItems,
   };
+}
+
+export async function pipeChatStream(request: ChatRequest, res: ServerResponse): Promise<void> {
+  const prepared = await prepareChatTurn(request);
+
+  if (prepared.kind === "static") {
+    const stream = createStaticUIMessageStream(prepared.content);
+    await pipeUIMessageStreamToResponse({ response: res, stream });
+    return;
+  }
+
+  const stream = await createSyraaUIMessageStream({
+    userId: request.userId,
+    threadId: prepared.threadId,
+    userMessage: prepared.message,
+    memoryItems: prepared.activeItems,
+    onTurnComplete: async (turn) => {
+      await maybeSetThreadTitle({
+        userId: request.userId,
+        threadId: prepared.threadId,
+        title: prepared.message,
+      });
+
+      const memoryItems = await applyLessons(prepared.service, {
+        userId: request.userId,
+        memoryId: prepared.memoryId,
+        lessons: turn.lessons,
+        userMessage: prepared.message,
+        messageId: request.messageId,
+        existingItems: prepared.dedupItems,
+      });
+
+      return {
+        threadId: prepared.threadId,
+        memoryItems,
+        lessons: turn.lessons,
+      };
+    },
+  });
+
+  await pipeUIMessageStreamToResponse({ response: res, stream });
 }
 
 export async function closeHarness(): Promise<void> {

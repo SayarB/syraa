@@ -19,12 +19,14 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@mastra/ai-sdk": "^1.10.0",
     "@mastra/core": "^1.63.2",
     "@mastra/memory": "^1.28.1",
     "@mastra/pg": "^1.22.2",
     "@syraa/context": "*",
     "@syraa/ingest": "*",
     "@syraa/memory": "*",
+    "ai": "^7.0.87",
     "busboy": "^1.6.0",
     "pg": "^8.23.0",
     "zod": "^3.24.0",

@@ -42,6 +42,16 @@ export async function seedMaterialsWorkingMemory(opts: {
   projectId?: string | null;
   subprojectId?: string | null;
 }): Promise<void> {
+  await refreshMaterialsWorkingMemory(opts);
+}
+
+/** Reload materials L1 into thread working memory (e.g. after ingest completes). */
+export async function refreshMaterialsWorkingMemory(opts: {
+  threadId: string;
+  userId: string;
+  projectId?: string | null;
+  subprojectId?: string | null;
+}): Promise<void> {
   const materials = await loadMaterialsLayer1(opts);
   const workingMemory = buildMaterialsWorkingMemoryContent(materials);
   const memory = getSyraaMemory();

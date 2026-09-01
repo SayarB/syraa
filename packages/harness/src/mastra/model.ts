@@ -35,6 +35,7 @@ export type ResolvedChatModel = {
   model: string;
   baseUrl: string;
   mastraModel: MastraModelConfig;
+  mastraModelId: `${string}/${string}`;
 };
 
 function toMastraModelId(provider: ChatProvider, model: string): `${string}/${string}` {
@@ -74,7 +75,7 @@ export function resolveChatModel(): ResolvedChatModel | null {
     apiKey,
   };
 
-  return { provider, apiKey, model, baseUrl, mastraModel };
+  return { provider, apiKey, model, baseUrl, mastraModel, mastraModelId };
 }
 
 export function requireChatModel(): ResolvedChatModel {

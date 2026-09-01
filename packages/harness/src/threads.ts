@@ -1,6 +1,6 @@
 import type { MastraDBMessage } from "@mastra/core/agent";
 import { getSyraaMemory } from "./mastra/memory.js";
-import { seedMaterialsWorkingMemory } from "./materials-working-memory.js";
+import { seedMaterialsWorkingMemory, refreshMaterialsWorkingMemory } from "./materials-working-memory.js";
 import { ValidationError } from "./schemas.js";
 
 /** Thread metadata shaped for future Works (Project → Subproject → sessions). */
@@ -325,4 +325,27 @@ export async function listThreadMessages(opts: {
   }
 
   return { thread: toThreadDto(thread), messages };
+}
+
+/** Refresh materials L1 in thread working memory (e.g. after ingest). */
+export async function refreshChatThreadMaterials(opts: {
+  userId: string;
+  threadId: string;
+}): Promise<void> {
+  const memory = getSyraaMemory();
+  const thread = await memory.getThreadById({
+    threadId: opts.threadId,
+    resourceId: opts.userId,
+  });
+  if (!thread || (thread.resourceId && thread.resourceId !== opts.userId)) {
+    throw new ValidationError("thread not found");
+  }
+
+  const meta = metadataFromThread(thread.metadata);
+  await refreshMaterialsWorkingMemory({
+    threadId: opts.threadId,
+    userId: opts.userId,
+    projectId: meta.projectId,
+    subprojectId: meta.subprojectId,
+  });
 }

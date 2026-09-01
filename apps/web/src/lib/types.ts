@@ -1,4 +1,4 @@
-export type ChatRole = "user" | "assistant" | "system";
+export type ChatRole = "user" | "assistant" | "system" | "activity";
 
 export type ChatMessage = {
   role: "user" | "assistant";
@@ -9,6 +9,7 @@ export type DisplayMessage = {
   id: string;
   role: ChatRole;
   content: string;
+  streaming?: boolean;
 };
 
 export type MemoryItem = {

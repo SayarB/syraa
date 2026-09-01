@@ -1,12 +1,15 @@
-import { type FormEvent, useEffect, useId, useRef, useState } from "react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, type UIMessage } from "ai";
+import { type FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { BrainButton } from "./components/BrainButton";
 import { MemoryDropdown } from "./components/MemoryDropdown";
 import { MessageList } from "./components/MessageList";
+import { UiMessageList } from "./components/UiMessageList";
 import { TopicTreeModal } from "./components/TopicTreeModal";
 import { apiUrl } from "./lib/api";
+import { formatMemorySavedNotice } from "./lib/memory-notice";
 import type {
   ChatConfig,
-  ChatResponse,
   ChatThread,
   ContextResource,
   DisplayMessage,
@@ -17,6 +20,12 @@ import type {
   ThreadMessage,
   UploadIngestResponse,
 } from "./lib/types";
+
+type MemoryNoticeLine = {
+  id: string;
+  text: string;
+  variant: "draft" | "saved";
+};
 
 function nextId(prefix: string): string {
   return `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
@@ -54,11 +63,11 @@ async function sleep(ms: number): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function toDisplayMessages(messages: ThreadMessage[]): DisplayMessage[] {
+function toUiMessages(messages: ThreadMessage[]): UIMessage[] {
   return messages.map((message) => ({
     id: message.id,
     role: message.role,
-    content: message.content,
+    parts: [{ type: "text", text: message.content }],
   }));
 }
 
@@ -70,7 +79,8 @@ export default function App() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [messages, setMessages] = useState<DisplayMessage[]>([]);
+  const [systemMessages, setSystemMessages] = useState<DisplayMessage[]>([]);
+  const [memoryNoticeLines, setMemoryNoticeLines] = useState<MemoryNoticeLine[]>([]);
   const [threadId, setThreadId] = useState<string | null>(() => loadStoredThreadId("demo-user"));
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [threadsLoading, setThreadsLoading] = useState(false);
@@ -87,8 +97,67 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formId = useId();
 
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: apiUrl("/api/chat/stream"),
+        prepareSendMessagesRequest({ messages }) {
+          const lastUser = [...messages].reverse().find((message) => message.role === "user");
+          const text =
+            lastUser?.parts
+              .filter((part) => part.type === "text")
+              .map((part) => part.text)
+              .join("\n") ?? "";
+          return {
+            body: {
+              userId,
+              ...(threadId ? { threadId } : {}),
+              message: text,
+              messageId: nextId("msg"),
+            },
+          };
+        },
+      }),
+    [userId, threadId],
+  );
+
+  const {
+    messages: chatMessages,
+    setMessages: setChatMessages,
+    sendMessage,
+    status: chatStatus,
+  } = useChat({
+    transport,
+    onError: (error) => {
+      pushSystem(`Chat error: ${error.message}`);
+    },
+    onData: (part) => {
+      if (part.type === "data-syraa-turn") {
+        const data = part.data as {
+          threadId?: string;
+          memoryItems?: MemoryItem[];
+        };
+        if (data.threadId) {
+          setThreadId(data.threadId);
+          storeThreadId(userId, data.threadId);
+        }
+        if (data.memoryItems?.length) {
+          void (async () => {
+            await refreshMemory();
+            const pending = data.memoryItems?.filter((item) => item.status === "pending").length ?? 0;
+            if (pending > 0) setMemoryOpen(true);
+          })();
+        }
+      }
+    },
+    onFinish: () => {
+      void refreshThreads();
+    },
+  });
+
   const pendingCount = items.filter((item) => item.status === "pending").length;
-  const hasThread = messages.some((m) => m.role === "user" || m.role === "assistant");
+  const hasThread = chatMessages.some((message) => message.role === "user" || message.role === "assistant");
+  const streaming = chatStatus === "streaming" || chatStatus === "submitted";
 
   async function refreshMemory(activeUser = userId) {
     try {
@@ -132,6 +201,7 @@ export default function App() {
     setThreadId(nextThreadId);
     storeThreadId(activeUser, nextThreadId);
     setMemoryOpen(false);
+    setMemoryNoticeLines([]);
     try {
       const res = await fetch(
         apiUrl(`/api/threads/${encodeURIComponent(nextThreadId)}?userId=${encodeURIComponent(activeUser)}`),
@@ -141,10 +211,10 @@ export default function App() {
         throw new Error(err.error ?? `HTTP ${res.status}`);
       }
       const data = (await res.json()) as { messages: ThreadMessage[] };
-      setMessages(toDisplayMessages(data.messages));
+      setChatMessages(toUiMessages(data.messages));
     } catch (err) {
       console.error(err);
-      setMessages([
+      setSystemMessages([
         {
           id: nextId("system"),
           role: "system",
@@ -246,12 +316,27 @@ export default function App() {
   }, [memoryOpen]);
 
   async function patchItem(id: string, status: "active" | "dismissed") {
-    await fetch(apiUrl(`/api/memory/items/${id}?userId=${encodeURIComponent(userId)}`), {
+    const item = items.find((entry) => entry.id === id);
+    const res = await fetch(apiUrl(`/api/memory/items/${id}?userId=${encodeURIComponent(userId)}`), {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
     });
+    if (!res.ok) {
+      const err = (await res.json().catch(() => ({}))) as { error?: string };
+      pushSystem(`Memory update failed: ${err.error ?? `HTTP ${res.status}`}`);
+      return;
+    }
     await refreshMemory();
+    if (status === "active" && item) {
+      const text = formatMemorySavedNotice([{ ...item, status: "active" }]);
+      if (text) {
+        setMemoryNoticeLines((prev) => [
+          ...prev,
+          { id: nextId("memory-saved"), text, variant: "saved" },
+        ]);
+      }
+    }
   }
 
   async function pollIngestJob(jobId: string): Promise<IngestJobStatus> {
@@ -266,7 +351,21 @@ export default function App() {
   }
 
   function pushSystem(content: string) {
-    setMessages((prev) => [...prev, { id: nextId("system"), role: "system", content }]);
+    setSystemMessages((prev) => [...prev, { id: nextId("system"), role: "system", content }]);
+  }
+
+  async function refreshThreadMaterials(activeUser = userId, activeThreadId = threadId) {
+    if (!activeThreadId) return;
+    try {
+      await fetch(
+        apiUrl(
+          `/api/threads/${encodeURIComponent(activeThreadId)}/refresh-materials?userId=${encodeURIComponent(activeUser)}`,
+        ),
+        { method: "POST" },
+      );
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   async function onUpload(file: File) {
@@ -288,6 +387,7 @@ export default function App() {
         pushSystem(
           `Ready: “${status.name}” · ${status.topicCount ?? "?"} topics · ${status.chunkCount ?? "?"} chunks`,
         );
+        await refreshThreadMaterials();
       }
       await refreshResources();
     } catch (err) {
@@ -300,62 +400,16 @@ export default function App() {
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
-    if (sending || !chatReady) return;
+    if (streaming || !chatReady) return;
     const message = input.trim();
     if (!message) return;
 
     setInput("");
     setSending(true);
-    setMessages((prev) => [...prev, { id: nextId("user"), role: "user", content: message }]);
-
-    const messageId = nextId("msg");
     try {
-      const res = await fetch(apiUrl("/api/chat"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId,
-          message,
-          messageId,
-          ...(threadId ? { threadId } : {}),
-        }),
-      });
-      const data = (await res.json()) as ChatResponse;
-      if (!res.ok) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: nextId("assistant"),
-            role: "assistant",
-            content: `Error: ${data.error ?? res.status}`,
-          },
-        ]);
-        return;
-      }
-
-      if (data.threadId) {
-        setThreadId(data.threadId);
-        storeThreadId(userId, data.threadId);
-      }
-
-      setMessages((prev) => [
-        ...prev,
-        { id: nextId("assistant"), role: "assistant", content: data.content },
-      ]);
-
-      await refreshThreads();
-
-      if (data.memoryItems?.length) {
-        await refreshMemory();
-        const count = data.memoryItems.length;
-        const pending = data.memoryItems.filter((item) => item.status === "pending").length;
-        pushSystem(
-          pending > 0
-            ? `Drafted ${count} memory item(s) — ${pending} waiting in Memory →`
-            : `Saved ${count} memory item(s) →`,
-        );
-        if (pending > 0) setMemoryOpen(true);
-      }
+      await sendMessage({ text: message });
+    } catch (err) {
+      pushSystem(`Error: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setSending(false);
       inputRef.current?.focus();
@@ -365,7 +419,9 @@ export default function App() {
   function startNewChat() {
     setThreadId(null);
     storeThreadId(userId, null);
-    setMessages([]);
+    setChatMessages([]);
+    setSystemMessages([]);
+    setMemoryNoticeLines([]);
     setMemoryOpen(false);
     inputRef.current?.focus();
   }
@@ -377,7 +433,7 @@ export default function App() {
     setUserId(next);
     const stored = loadStoredThreadId(next);
     setThreadId(stored);
-    setMessages([
+    setSystemMessages([
       {
         id: nextId("system"),
         role: "system",
@@ -568,7 +624,17 @@ export default function App() {
               <p className="hero-sub">How can I help you today?</p>
             </div>
           ) : (
-            <MessageList messages={messages} />
+            <div className="messages-pane" aria-live="polite">
+              <div className="messages-inner">
+                <UiMessageList
+                  messages={chatMessages}
+                  streaming={streaming}
+                  memoryNoticeLines={memoryNoticeLines}
+                  onOpenMemory={() => setMemoryOpen(true)}
+                />
+                <MessageList messages={systemMessages} />
+              </div>
+            </div>
           )}
         </section>
 
@@ -601,7 +667,7 @@ export default function App() {
               onChange={(event) => setInput(event.target.value)}
               placeholder={chatReady ? "Ask anything…" : "Configure API key to chat"}
               autoComplete="off"
-              disabled={!chatReady || sending}
+              disabled={!chatReady || streaming || sending}
               aria-label="Message"
             />
             <button
