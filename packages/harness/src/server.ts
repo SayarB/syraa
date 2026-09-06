@@ -3,6 +3,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import { extname, join } from "node:path";
 import { toNodeHandler } from "better-auth/node";
 import {
+  authProvidersStatus,
   getAuth,
   isBetterAuthConfigured,
   requireUser,
@@ -125,7 +126,10 @@ async function handleApi(
   }
 
   if (req.method === "GET" && pathname === "/api/config") {
-    sendJson(res, 200, { chat: getChatConfig() });
+    sendJson(res, 200, {
+      chat: getChatConfig(),
+      auth: authProvidersStatus(),
+    });
     return;
   }
 

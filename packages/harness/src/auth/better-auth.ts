@@ -1,5 +1,6 @@
 import type { IncomingMessage } from "node:http";
 import { betterAuth } from "better-auth";
+import { magicLink } from "better-auth/plugins";
 import { fromNodeHeaders } from "better-auth/node";
 import { Pool } from "pg";
 
@@ -15,13 +16,27 @@ export type AuthUser = {
   email: string;
 };
 
-type AuthInstance = ReturnType<typeof createAuth>;
+export type AuthProvidersStatus = {
+  google: boolean;
+  magicLink: boolean;
+};
+
+type AuthInstance = ReturnType<typeof betterAuth>;
 
 let authInstance: AuthInstance | null = null;
 let pool: Pool | null = null;
 
 export function isBetterAuthConfigured(): boolean {
   return Boolean(process.env.BETTER_AUTH_SECRET?.trim());
+}
+
+export function authProvidersStatus(): AuthProvidersStatus {
+  return {
+    google: Boolean(
+      process.env.GOOGLE_CLIENT_ID?.trim() && process.env.GOOGLE_CLIENT_SECRET?.trim(),
+    ),
+    magicLink: true,
+  };
 }
 
 function databaseUrl(): string {
@@ -64,35 +79,94 @@ function trustProxyHeaders(): boolean {
   const flag = process.env.TRUST_PROXY?.trim().toLowerCase();
   if (flag === "0" || flag === "false") return false;
   if (flag === "1" || flag === "true") return true;
-  // Dokploy / Traefik terminate TLS; enable by default in production.
   return isProduction();
 }
 
-function createAuth() {
+function googleSocialProvider():
+  | { google: { clientId: string; clientSecret: string; prompt: "select_account" } }
+  | undefined {
+  const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
+  if (!clientId || !clientSecret) return undefined;
+  return {
+    google: {
+      clientId,
+      clientSecret,
+      prompt: "select_account",
+    },
+  };
+}
+
+async function sendMagicLinkEmail(input: { email: string; url: string }): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  const from = process.env.EMAIL_FROM?.trim() || "SYRAA <onboarding@resend.dev>";
+
+  if (apiKey) {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
+        to: [input.email],
+        subject: "Sign in to SYRAA",
+        html: `<p>Sign in to SYRAA:</p><p><a href="${input.url}">Continue</a></p><p>Or paste this link:<br/>${input.url}</p>`,
+        text: `Sign in to SYRAA: ${input.url}`,
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`Failed to send magic link (${res.status})${body ? `: ${body}` : ""}`);
+    }
+    return;
+  }
+
+  console.info(`[magic-link] ${input.email} → ${input.url}`);
+  if (isProduction()) {
+    throw new Error("Email delivery is not configured (set RESEND_API_KEY and EMAIL_FROM)");
+  }
+}
+
+/** Shared options for runtime + migrate (keep in sync). */
+export function buildBetterAuthOptions(database: Pool): Parameters<typeof betterAuth>[0] {
   const baseURL = process.env.BETTER_AUTH_URL?.trim();
   if (isProduction() && !baseURL) {
     throw new Error("BETTER_AUTH_URL is required in production (public https origin)");
   }
 
-  pool = new Pool({ connectionString: databaseUrl() });
-  return betterAuth({
-    database: pool,
+  const google = googleSocialProvider();
+
+  return {
+    database,
     baseURL: baseURL || "http://localhost:5173",
     secret: process.env.BETTER_AUTH_SECRET!.trim(),
     trustedOrigins: trustedOrigins(),
     emailAndPassword: {
-      enabled: true,
-      requireEmailVerification: false,
+      enabled: false,
     },
+    ...(google ? { socialProviders: google } : {}),
+    plugins: [
+      magicLink({
+        sendMagicLink: async ({ email, url }) => {
+          await sendMagicLinkEmail({ email, url });
+        },
+      }),
+    ],
     advanced: {
       trustedProxyHeaders: trustProxyHeaders(),
-      // Only Secure cookies when the public URL is https (local Docker uses http://localhost:3000).
       useSecureCookies: baseURL?.startsWith("https://") === true,
     },
-  });
+  };
 }
 
-export function getAuth(): AuthInstance {
+function createAuth(): ReturnType<typeof betterAuth> {
+  pool = new Pool({ connectionString: databaseUrl() });
+  return betterAuth(buildBetterAuthOptions(pool));
+}
+
+export function getAuth(): ReturnType<typeof betterAuth> {
   if (!isBetterAuthConfigured()) {
     throw new Error("Better Auth is not configured (set BETTER_AUTH_SECRET)");
   }

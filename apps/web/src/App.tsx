@@ -118,11 +118,11 @@ export default function App() {
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formId = useId();
-  const [authMode, setAuthMode] = useState<"sign-in" | "sign-up">("sign-in");
   const [authEmail, setAuthEmail] = useState("");
-  const [authPassword, setAuthPassword] = useState("");
   const [authError, setAuthError] = useState<string | null>(null);
   const [authBusy, setAuthBusy] = useState(false);
+  const [authSent, setAuthSent] = useState(false);
+  const [googleAuthEnabled, setGoogleAuthEnabled] = useState(false);
 
 
   const transport = useMemo(
@@ -289,14 +289,18 @@ export default function App() {
   async function loadConfig() {
     const res = await apiFetch("/api/config");
     if (!res.ok) return;
-    const { chat } = (await res.json()) as { chat: ChatConfig };
-    if (chat.configured) {
-      setSubtitle(`${chat.provider} · ${chat.model.split("/").pop()}`);
+    const data = (await res.json()) as {
+      chat: ChatConfig;
+      auth?: { google?: boolean; magicLink?: boolean };
+    };
+    if (data.chat.configured) {
+      setSubtitle(`${data.chat.provider} · ${data.chat.model.split("/").pop()}`);
       setChatReady(true);
     } else {
       setSubtitle("Set FIREWORKS_API_KEY in .env");
       setChatReady(false);
     }
+    setGoogleAuthEnabled(Boolean(data.auth?.google));
   }
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only bootstrap
@@ -489,56 +493,45 @@ export default function App() {
     setResources([]);
   }
 
-  async function submitAuth(event: FormEvent) {
-    event.preventDefault();
+  async function signInWithGoogle() {
     setAuthError(null);
     setAuthBusy(true);
     try {
+      const result = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/",
+      });
+      if (result.error) {
+        setAuthError(result.error.message || "Google sign-in failed");
+      }
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setAuthBusy(false);
+    }
+  }
+
+  async function submitMagicLink(event: FormEvent) {
+    event.preventDefault();
+    setAuthError(null);
+    setAuthSent(false);
+    setAuthBusy(true);
+    try {
       const email = authEmail.trim();
-      const password = authPassword;
-      if (!email || !password) {
-        setAuthError("Email and password are required.");
+      if (!email) {
+        setAuthError("Enter your email.");
         return;
       }
-      if (authMode === "sign-up") {
-        const result = await authClient.signUp.email({ email, password, name: email.split("@")[0] || "User" });
-        if (result.error) {
-          setAuthError(result.error.message || "Sign up failed");
-          return;
-        }
-      } else {
-        const result = await authClient.signIn.email({ email, password });
-        if (result.error) {
-          setAuthError(result.error.message || "Sign in failed");
-          return;
-        }
-      }
-      const me = await apiFetch("/api/me");
-      if (!me.ok) {
-        setAuthError("Signed in, but session was not available. Try again.");
+      const result = await authClient.signIn.magicLink({
+        email,
+        name: email.split("@")[0] || "User",
+        callbackURL: "/",
+      });
+      if (result.error) {
+        setAuthError(result.error.message || "Could not send sign-in link");
         return;
       }
-      const data = (await me.json()) as { userId: string; email: string };
-      setUserId(data.userId);
-      setUserEmail(data.email);
-      setAuthStatus("signed_in");
-      setAuthPassword("");
-      await refreshMemory();
-      await refreshResources();
-      await refreshThreads();
-      const stored = loadStoredThreadId(data.userId);
-      if (stored) {
-        setThreadId(stored);
-        try {
-          const res = await apiFetch(`/api/threads/${encodeURIComponent(stored)}`);
-          if (res.ok) {
-            const threadData = (await res.json()) as { messages: ThreadMessage[] };
-            setChatMessages(toUiMessages(threadData.messages));
-          }
-        } catch (err) {
-          console.error(err);
-        }
-      }
+      setAuthSent(true);
     } catch (err) {
       setAuthError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -553,15 +546,11 @@ export default function App() {
 
   if (authStatus === "loading") {
     return (
-      <div className="desk">
+      <div className="desk desk-auth">
         <div className="desk-glow" aria-hidden="true" />
-        <main className="stage">
-          <section className="canvas glass">
-            <div className="hero">
-              <p className="hero-eyebrow">SYRAA</p>
-              <h1>Loading…</h1>
-            </div>
-          </section>
+        <main className="auth-shell">
+          <p className="hero-eyebrow">SYRAA</p>
+          <h1>Loading…</h1>
         </main>
       </div>
     );
@@ -569,57 +558,71 @@ export default function App() {
 
   if (authStatus === "signed_out") {
     return (
-      <div className="desk">
+      <div className="desk desk-auth">
         <div className="desk-glow" aria-hidden="true" />
-        <main className="stage">
-          <section className="canvas glass">
-            <div className="hero">
-              <div className="hero-orb" aria-hidden="true" />
-              <p className="hero-eyebrow">SYRAA AI Chat</p>
-              <h1>{authMode === "sign-in" ? "Sign in" : "Create account"}</h1>
-              <p className="hero-sub">Your chats and memory stay with your account.</p>
-              <form className="prompt glass" style={{ marginTop: "1.5rem", flexDirection: "column", gap: "0.75rem" }} onSubmit={(e) => void submitAuth(e)}>
+        <main className="auth-shell">
+          <section className="auth-card glass">
+            <div className="hero-orb" aria-hidden="true" />
+            <p className="hero-eyebrow">SYRAA</p>
+            <h1>Welcome back</h1>
+            <p className="hero-sub">Sign in to continue your chats and memory.</p>
+
+            {googleAuthEnabled ? (
+              <button
+                type="button"
+                className="auth-google"
+                onClick={() => void signInWithGoogle()}
+                disabled={authBusy}
+              >
+                <span className="auth-google-icon" aria-hidden="true">
+                  G
+                </span>
+                Continue with Google
+              </button>
+            ) : null}
+
+            {googleAuthEnabled ? <div className="auth-divider">or</div> : null}
+
+            {authSent ? (
+              <p className="auth-sent">
+                Check <strong>{authEmail.trim()}</strong> for a sign-in link. It expires in a few minutes.
+              </p>
+            ) : (
+              <form className="auth-form" onSubmit={(e) => void submitMagicLink(e)}>
+                <label className="auth-label" htmlFor={`${formId}-email`}>
+                  Email
+                </label>
                 <input
+                  id={`${formId}-email`}
+                  className="auth-input"
                   type="email"
                   value={authEmail}
                   onChange={(event) => setAuthEmail(event.target.value)}
-                  placeholder="Email"
+                  placeholder="you@example.com"
                   autoComplete="email"
-                  aria-label="Email"
                   disabled={authBusy}
+                  required
                 />
-                <input
-                  type="password"
-                  value={authPassword}
-                  onChange={(event) => setAuthPassword(event.target.value)}
-                  placeholder="Password"
-                  autoComplete={authMode === "sign-in" ? "current-password" : "new-password"}
-                  aria-label="Password"
-                  disabled={authBusy}
-                />
-                {authError ? <p className="hero-sub" style={{ color: "crimson" }}>{authError}</p> : null}
-                <button className="prompt-send" type="submit" disabled={authBusy}>
-                  {authBusy ? "…" : authMode === "sign-in" ? "Sign in" : "Sign up"}
+                {authError ? <p className="auth-error">{authError}</p> : null}
+                <button className="auth-submit" type="submit" disabled={authBusy}>
+                  {authBusy ? "Sending…" : "Email me a sign-in link"}
                 </button>
               </form>
-              <p className="hero-sub" style={{ marginTop: "1rem" }}>
-                {authMode === "sign-in" ? (
-                  <>
-                    No account?{" "}
-                    <button type="button" className="ghost-btn" onClick={() => { setAuthMode("sign-up"); setAuthError(null); }}>
-                      Sign up
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    Have an account?{" "}
-                    <button type="button" className="ghost-btn" onClick={() => { setAuthMode("sign-in"); setAuthError(null); }}>
-                      Sign in
-                    </button>
-                  </>
-                )}
-              </p>
-            </div>
+            )}
+
+            {authSent && authError ? <p className="auth-error">{authError}</p> : null}
+            {authSent ? (
+              <button
+                type="button"
+                className="ghost-btn"
+                onClick={() => {
+                  setAuthSent(false);
+                  setAuthError(null);
+                }}
+              >
+                Use a different email
+              </button>
+            ) : null}
           </section>
         </main>
       </div>

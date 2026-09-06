@@ -46,7 +46,11 @@ Use the repo root [`compose.yaml`](compose.yaml) (or Dokploy “Docker Compose�
 3. Leave Postgres and Redis on the internal compose network (host ports bind to `127.0.0.1` by default).
 4. First boot runs memory, context, and Better Auth migrations via [`docker/entrypoint.sh`](docker/entrypoint.sh).
 
-Smoke after deploy: open the domain → sign up → one chat turn → upload a PDF → sign out. Health: `GET /api/health`.
+Smoke after deploy: open the domain → Google or magic-link sign-in → one chat turn → upload a PDF → sign out. Health: `GET /api/health`.
+
+For Google: set `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` and add redirect  
+`https://your.domain/api/auth/callback/google` in Google Cloud Console.  
+For email magic links in production: set `RESEND_API_KEY` and `EMAIL_FROM`.
 
 ## Run locally (hot reload)
 

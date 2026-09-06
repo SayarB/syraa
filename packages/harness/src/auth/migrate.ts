@@ -5,6 +5,7 @@
 import { getMigrations } from "better-auth/db/migration";
 import { betterAuth } from "better-auth";
 import { Pool } from "pg";
+import { buildBetterAuthOptions } from "./better-auth.js";
 
 async function main(): Promise<void> {
   const secret = process.env.BETTER_AUTH_SECRET?.trim();
@@ -15,16 +16,7 @@ async function main(): Promise<void> {
 
   const pool = new Pool({ connectionString: databaseUrl });
   try {
-    const auth = betterAuth({
-      database: pool,
-      baseURL: process.env.BETTER_AUTH_URL?.trim() || "http://localhost:3000",
-      secret,
-      emailAndPassword: {
-        enabled: true,
-        requireEmailVerification: false,
-      },
-    });
-
+    const auth = betterAuth(buildBetterAuthOptions(pool));
     const { toBeCreated, toBeAdded, runMigrations } = await getMigrations(auth.options);
     if (toBeCreated.length === 0 && toBeAdded.length === 0) {
       console.log("Better Auth schema up to date");
