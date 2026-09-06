@@ -1,12 +1,12 @@
-/** Agent turns stream `{ message, lessons }` JSON — surface only `message` in the UI. */
+/** Agent turns may stream `{ message, lessons }` JSON — surface only `message` in the UI. */
 export function extractTurnMessage(text: string): string {
   const trimmed = text.trim();
   if (!trimmed) return "";
-  if (!trimmed.startsWith("{")) return text;
+  if (!trimmed.startsWith("{")) return trimmed;
 
   try {
     const parsed = JSON.parse(trimmed) as { message?: unknown };
-    if (typeof parsed.message === "string") return parsed.message;
+    if (typeof parsed.message === "string") return parsed.message.trim();
   } catch {
     // partial JSON while streaming
   }
@@ -33,5 +33,5 @@ export function extractTurnMessage(text: string): string {
     index += 1;
   }
 
-  return output;
+  return output.trim();
 }

@@ -587,11 +587,90 @@ button:disabled {
   color: color-mix(in srgb, var(--muted) 92%, var(--ink));
 }
 
+.chat-tool-block,
+.chat-tool-accordion {
+  align-self: stretch;
+  padding: 0.15rem 0 0.35rem;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--muted) 92%, var(--ink));
+}
+
+.chat-tool-accordion {
+  border: none;
+}
+
+.chat-tool-summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.5rem;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.chat-tool-summary-row::-webkit-details-marker {
+  display: none;
+}
+
+.chat-tool-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.5rem;
+}
+
+.chat-tool-chevron,
+.chat-tool-marker,
 .chat-tool::before {
-  content: "›";
   flex-shrink: 0;
   color: var(--muted);
   font-weight: 500;
+  transition: transform 140ms ease;
+}
+
+.chat-tool-accordion[open] .chat-tool-chevron {
+  transform: rotate(90deg);
+}
+
+.chat-tool-marker {
+  content: none;
+}
+
+.chat-tool-label {
+  color: color-mix(in srgb, var(--ink) 78%, var(--muted));
+  font-weight: 500;
+}
+
+.chat-tool-summary {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.chat-tool-detail {
+  margin: 0.35rem 0 0 1rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  overflow-x: auto;
+  max-height: 14rem;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font: inherit;
+  color: color-mix(in srgb, var(--muted) 95%, var(--ink));
+}
+
+.chat-tool-accordion.active .chat-tool-chevron,
+.chat-tool-block.active .chat-tool-marker {
+  animation: tool-pulse 1.2s ease-in-out infinite;
+}
+
+.chat-tool::before {
+  content: "›";
 }
 
 .chat-tool.active {
@@ -641,6 +720,39 @@ button:disabled {
   line-height: 1.45;
   text-align: center;
   white-space: normal;
+}
+
+.chat-thinking {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.35rem 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.chat-thinking-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--accent);
+  animation: tool-pulse 1.2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.chat-thinking-text {
+  animation: thinking-fade 2.4s ease-in-out infinite;
+}
+
+@keyframes thinking-fade {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .streaming-caret::after {

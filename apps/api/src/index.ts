@@ -44,6 +44,15 @@ function resolveStaticDir(): string | undefined {
 }
 
 async function main(): Promise<void> {
+  if (process.env.NODE_ENV === "production") {
+    if (!process.env.BETTER_AUTH_SECRET?.trim()) {
+      throw new Error("BETTER_AUTH_SECRET is required in production");
+    }
+    if (!process.env.BETTER_AUTH_URL?.trim()) {
+      throw new Error("BETTER_AUTH_URL is required in production (public https origin)");
+    }
+  }
+
   await preferIpv4Outbound();
   await ensureHarnessReady();
   console.log("memory schema ready");

@@ -6,7 +6,8 @@ import { MemoryDropdown } from "./components/MemoryDropdown";
 import { MessageList } from "./components/MessageList";
 import { UiMessageList } from "./components/UiMessageList";
 import { TopicTreeModal } from "./components/TopicTreeModal";
-import { apiUrl } from "./lib/api";
+import { apiFetch, apiUrl } from "./lib/api";
+import { authClient } from "./lib/auth-client";
 import { formatMemorySavedNotice } from "./lib/memory-notice";
 import type {
   ChatConfig,
@@ -67,13 +68,34 @@ function toUiMessages(messages: ThreadMessage[]): UIMessage[] {
   return messages.map((message) => ({
     id: message.id,
     role: message.role,
-    parts: [{ type: "text", text: message.content }],
+    parts: message.parts as UIMessage["parts"],
   }));
 }
 
+function patchLastAssistantDisplayMessage(messages: UIMessage[], displayMessage: string): UIMessage[] {
+  const next = [...messages];
+  for (let index = next.length - 1; index >= 0; index -= 1) {
+    if (next[index].role !== "assistant") continue;
+    const hasText = next[index].parts.some((part) => part.type === "text");
+    next[index] = {
+      ...next[index],
+      parts: hasText
+        ? next[index].parts.map((part) =>
+            part.type === "text"
+              ? { ...part, text: displayMessage, state: "done" as const }
+              : part,
+          )
+        : [...next[index].parts, { type: "text" as const, text: displayMessage, state: "done" as const }],
+    };
+    break;
+  }
+  return next;
+}
+
 export default function App() {
-  const [userId, setUserId] = useState("demo-user");
-  const [userDraft, setUserDraft] = useState("demo-user");
+  const [authStatus, setAuthStatus] = useState<"loading" | "signed_out" | "signed_in">("loading");
+  const [userId, setUserId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [subtitle, setSubtitle] = useState("SYRAA AI Chat");
   const [chatReady, setChatReady] = useState(true);
   const [input, setInput] = useState("");
@@ -81,7 +103,7 @@ export default function App() {
   const [uploading, setUploading] = useState(false);
   const [systemMessages, setSystemMessages] = useState<DisplayMessage[]>([]);
   const [memoryNoticeLines, setMemoryNoticeLines] = useState<MemoryNoticeLine[]>([]);
-  const [threadId, setThreadId] = useState<string | null>(() => loadStoredThreadId("demo-user"));
+  const [threadId, setThreadId] = useState<string | null>(null);
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [threadsLoading, setThreadsLoading] = useState(false);
   const [items, setItems] = useState<MemoryItem[]>([]);
@@ -96,11 +118,18 @@ export default function App() {
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formId = useId();
+  const [authMode, setAuthMode] = useState<"sign-in" | "sign-up">("sign-in");
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [authBusy, setAuthBusy] = useState(false);
+
 
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
         api: apiUrl("/api/chat/stream"),
+        credentials: "include",
         prepareSendMessagesRequest({ messages }) {
           const lastUser = [...messages].reverse().find((message) => message.role === "user");
           const text =
@@ -110,7 +139,6 @@ export default function App() {
               .join("\n") ?? "";
           return {
             body: {
-              userId,
               ...(threadId ? { threadId } : {}),
               message: text,
               messageId: nextId("msg"),
@@ -118,7 +146,7 @@ export default function App() {
           };
         },
       }),
-    [userId, threadId],
+    [threadId],
   );
 
   const {
@@ -136,10 +164,14 @@ export default function App() {
         const data = part.data as {
           threadId?: string;
           memoryItems?: MemoryItem[];
+          displayMessage?: string;
         };
         if (data.threadId) {
           setThreadId(data.threadId);
-          storeThreadId(userId, data.threadId);
+          if (userId) storeThreadId(userId, data.threadId);
+        }
+        if (typeof data.displayMessage === "string" && data.displayMessage.trim()) {
+          setChatMessages((prev) => patchLastAssistantDisplayMessage(prev, data.displayMessage!.trim()));
         }
         if (data.memoryItems?.length) {
           void (async () => {
@@ -159,9 +191,9 @@ export default function App() {
   const hasThread = chatMessages.some((message) => message.role === "user" || message.role === "assistant");
   const streaming = chatStatus === "streaming" || chatStatus === "submitted";
 
-  async function refreshMemory(activeUser = userId) {
+  async function refreshMemory() {
     try {
-      const res = await fetch(apiUrl(`/api/memory?userId=${encodeURIComponent(activeUser)}`));
+      const res = await apiFetch("/api/memory");
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(err.error ?? `HTTP ${res.status}`);
@@ -179,10 +211,10 @@ export default function App() {
     }
   }
 
-  async function refreshThreads(activeUser = userId) {
+  async function refreshThreads() {
     setThreadsLoading(true);
     try {
-      const res = await fetch(apiUrl(`/api/threads?userId=${encodeURIComponent(activeUser)}`));
+      const res = await apiFetch("/api/threads");
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(err.error ?? `HTTP ${res.status}`);
@@ -197,15 +229,13 @@ export default function App() {
     }
   }
 
-  async function openThread(nextThreadId: string, activeUser = userId) {
+  async function openThread(nextThreadId: string) {
     setThreadId(nextThreadId);
-    storeThreadId(activeUser, nextThreadId);
+    if (userId) storeThreadId(userId, nextThreadId);
     setMemoryOpen(false);
     setMemoryNoticeLines([]);
     try {
-      const res = await fetch(
-        apiUrl(`/api/threads/${encodeURIComponent(nextThreadId)}?userId=${encodeURIComponent(activeUser)}`),
-      );
+      const res = await apiFetch(`/api/threads/${encodeURIComponent(nextThreadId)}`);
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(err.error ?? `HTTP ${res.status}`);
@@ -225,9 +255,9 @@ export default function App() {
     inputRef.current?.focus();
   }
 
-  async function refreshResources(activeUser = userId) {
+  async function refreshResources() {
     try {
-      const res = await fetch(apiUrl(`/api/resources?userId=${encodeURIComponent(activeUser)}`));
+      const res = await apiFetch("/api/resources");
       if (!res.ok) return;
       const data = (await res.json()) as { resources: ContextResource[] };
       setResources(data.resources);
@@ -242,9 +272,7 @@ export default function App() {
     setTreeError(null);
     setTreeData(null);
     try {
-      const res = await fetch(
-        apiUrl(`/api/resources/${resourceId}/tree?userId=${encodeURIComponent(userId)}`),
-      );
+      const res = await apiFetch(`/api/resources/${resourceId}/tree`);
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(err.error ?? `HTTP ${res.status}`);
@@ -259,7 +287,7 @@ export default function App() {
   }
 
   async function loadConfig() {
-    const res = await fetch(apiUrl("/api/config"));
+    const res = await apiFetch("/api/config");
     if (!res.ok) return;
     const { chat } = (await res.json()) as { chat: ChatConfig };
     if (chat.configured) {
@@ -275,12 +303,34 @@ export default function App() {
   useEffect(() => {
     void (async () => {
       await loadConfig();
+      const me = await apiFetch("/api/me");
+      if (me.status === 401) {
+        setAuthStatus("signed_out");
+        return;
+      }
+      if (!me.ok) {
+        setAuthStatus("signed_out");
+        return;
+      }
+      const data = (await me.json()) as { userId: string; email: string };
+      setUserId(data.userId);
+      setUserEmail(data.email);
+      setAuthStatus("signed_in");
       await refreshMemory();
       await refreshResources();
       await refreshThreads();
-      const stored = loadStoredThreadId("demo-user");
+      const stored = loadStoredThreadId(data.userId);
       if (stored) {
-        await openThread(stored, "demo-user");
+        setThreadId(stored);
+        try {
+          const res = await apiFetch(`/api/threads/${encodeURIComponent(stored)}`);
+          if (res.ok) {
+            const threadData = (await res.json()) as { messages: ThreadMessage[] };
+            setChatMessages(toUiMessages(threadData.messages));
+          }
+        } catch (err) {
+          console.error(err);
+        }
       }
     })();
   }, []);
@@ -317,7 +367,7 @@ export default function App() {
 
   async function patchItem(id: string, status: "active" | "dismissed") {
     const item = items.find((entry) => entry.id === id);
-    const res = await fetch(apiUrl(`/api/memory/items/${id}?userId=${encodeURIComponent(userId)}`), {
+    const res = await apiFetch(`/api/memory/items/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
@@ -341,7 +391,7 @@ export default function App() {
 
   async function pollIngestJob(jobId: string): Promise<IngestJobStatus> {
     for (let attempt = 0; attempt < 90; attempt++) {
-      const res = await fetch(apiUrl(`/api/ingest/jobs/${jobId}`));
+      const res = await apiFetch(`/api/ingest/jobs/${jobId}`);
       if (!res.ok) throw new Error(`job poll failed: ${res.status}`);
       const status = (await res.json()) as IngestJobStatus;
       if (status.status === "ready" || status.status === "failed") return status;
@@ -354,15 +404,12 @@ export default function App() {
     setSystemMessages((prev) => [...prev, { id: nextId("system"), role: "system", content }]);
   }
 
-  async function refreshThreadMaterials(activeUser = userId, activeThreadId = threadId) {
+  async function refreshThreadMaterials(activeThreadId = threadId) {
     if (!activeThreadId) return;
     try {
-      await fetch(
-        apiUrl(
-          `/api/threads/${encodeURIComponent(activeThreadId)}/refresh-materials?userId=${encodeURIComponent(activeUser)}`,
-        ),
-        { method: "POST" },
-      );
+      await apiFetch(`/api/threads/${encodeURIComponent(activeThreadId)}/refresh-materials`, {
+        method: "POST",
+      });
     } catch (err) {
       console.error(err);
     }
@@ -373,7 +420,7 @@ export default function App() {
     try {
       const body = new FormData();
       body.append("file", file);
-      const res = await fetch(apiUrl(`/api/ingest/upload?userId=${encodeURIComponent(userId)}`), {
+      const res = await apiFetch("/api/ingest/upload", {
         method: "POST",
         body,
       });
@@ -418,7 +465,7 @@ export default function App() {
 
   function startNewChat() {
     setThreadId(null);
-    storeThreadId(userId, null);
+    if (userId) storeThreadId(userId, null);
     setChatMessages([]);
     setSystemMessages([]);
     setMemoryNoticeLines([]);
@@ -426,32 +473,160 @@ export default function App() {
     inputRef.current?.focus();
   }
 
-  function commitUserId() {
-    const next = userDraft.trim() || "demo-user";
-    setUserDraft(next);
-    if (next === userId) return;
-    setUserId(next);
-    const stored = loadStoredThreadId(next);
-    setThreadId(stored);
-    setSystemMessages([
-      {
-        id: nextId("system"),
-        role: "system",
-        content: `Switched to user “${next}”.`,
-      },
-    ]);
-    void (async () => {
-      await refreshMemory(next);
-      await refreshResources(next);
-      await refreshThreads(next);
-      if (stored) await openThread(stored, next);
-    })();
+  async function signOut() {
+    try {
+      await authClient.signOut();
+    } catch (err) {
+      console.error(err);
+    }
+    setAuthStatus("signed_out");
+    setUserId(null);
+    setUserEmail(null);
+    setThreadId(null);
+    setChatMessages([]);
+    setThreads([]);
+    setItems([]);
+    setResources([]);
+  }
+
+  async function submitAuth(event: FormEvent) {
+    event.preventDefault();
+    setAuthError(null);
+    setAuthBusy(true);
+    try {
+      const email = authEmail.trim();
+      const password = authPassword;
+      if (!email || !password) {
+        setAuthError("Email and password are required.");
+        return;
+      }
+      if (authMode === "sign-up") {
+        const result = await authClient.signUp.email({ email, password, name: email.split("@")[0] || "User" });
+        if (result.error) {
+          setAuthError(result.error.message || "Sign up failed");
+          return;
+        }
+      } else {
+        const result = await authClient.signIn.email({ email, password });
+        if (result.error) {
+          setAuthError(result.error.message || "Sign in failed");
+          return;
+        }
+      }
+      const me = await apiFetch("/api/me");
+      if (!me.ok) {
+        setAuthError("Signed in, but session was not available. Try again.");
+        return;
+      }
+      const data = (await me.json()) as { userId: string; email: string };
+      setUserId(data.userId);
+      setUserEmail(data.email);
+      setAuthStatus("signed_in");
+      setAuthPassword("");
+      await refreshMemory();
+      await refreshResources();
+      await refreshThreads();
+      const stored = loadStoredThreadId(data.userId);
+      if (stored) {
+        setThreadId(stored);
+        try {
+          const res = await apiFetch(`/api/threads/${encodeURIComponent(stored)}`);
+          if (res.ok) {
+            const threadData = (await res.json()) as { messages: ThreadMessage[] };
+            setChatMessages(toUiMessages(threadData.messages));
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setAuthBusy(false);
+    }
   }
 
   function applySuggestion(text: string) {
     setInput(text);
     inputRef.current?.focus();
   }
+
+  if (authStatus === "loading") {
+    return (
+      <div className="desk">
+        <div className="desk-glow" aria-hidden="true" />
+        <main className="stage">
+          <section className="canvas glass">
+            <div className="hero">
+              <p className="hero-eyebrow">SYRAA</p>
+              <h1>Loading…</h1>
+            </div>
+          </section>
+        </main>
+      </div>
+    );
+  }
+
+  if (authStatus === "signed_out") {
+    return (
+      <div className="desk">
+        <div className="desk-glow" aria-hidden="true" />
+        <main className="stage">
+          <section className="canvas glass">
+            <div className="hero">
+              <div className="hero-orb" aria-hidden="true" />
+              <p className="hero-eyebrow">SYRAA AI Chat</p>
+              <h1>{authMode === "sign-in" ? "Sign in" : "Create account"}</h1>
+              <p className="hero-sub">Your chats and memory stay with your account.</p>
+              <form className="prompt glass" style={{ marginTop: "1.5rem", flexDirection: "column", gap: "0.75rem" }} onSubmit={(e) => void submitAuth(e)}>
+                <input
+                  type="email"
+                  value={authEmail}
+                  onChange={(event) => setAuthEmail(event.target.value)}
+                  placeholder="Email"
+                  autoComplete="email"
+                  aria-label="Email"
+                  disabled={authBusy}
+                />
+                <input
+                  type="password"
+                  value={authPassword}
+                  onChange={(event) => setAuthPassword(event.target.value)}
+                  placeholder="Password"
+                  autoComplete={authMode === "sign-in" ? "current-password" : "new-password"}
+                  aria-label="Password"
+                  disabled={authBusy}
+                />
+                {authError ? <p className="hero-sub" style={{ color: "crimson" }}>{authError}</p> : null}
+                <button className="prompt-send" type="submit" disabled={authBusy}>
+                  {authBusy ? "…" : authMode === "sign-in" ? "Sign in" : "Sign up"}
+                </button>
+              </form>
+              <p className="hero-sub" style={{ marginTop: "1rem" }}>
+                {authMode === "sign-in" ? (
+                  <>
+                    No account?{" "}
+                    <button type="button" className="ghost-btn" onClick={() => { setAuthMode("sign-up"); setAuthError(null); }}>
+                      Sign up
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    Have an account?{" "}
+                    <button type="button" className="ghost-btn" onClick={() => { setAuthMode("sign-in"); setAuthError(null); }}>
+                      Sign in
+                    </button>
+                  </>
+                )}
+              </p>
+            </div>
+          </section>
+        </main>
+      </div>
+    );
+  }
+
+  const displayName = userEmail ?? userId ?? "there";
 
   return (
     <div className="desk">
@@ -578,20 +753,13 @@ export default function App() {
           </div>
         </div>
 
-        <label className="user-field">
-          <span>User</span>
-          <input
-            value={userDraft}
-            onChange={(event) => setUserDraft(event.target.value)}
-            onBlur={commitUserId}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.preventDefault();
-                commitUserId();
-              }
-            }}
-          />
-        </label>
+        <div className="user-field">
+          <span>Signed in</span>
+          <small title={userId ?? undefined}>{displayName}</small>
+          <button type="button" className="ghost-btn" onClick={() => void signOut()}>
+            Sign out
+          </button>
+        </div>
       </aside>
 
       <main className="stage">
@@ -619,7 +787,7 @@ export default function App() {
               <div className="hero-orb" aria-hidden="true" />
               <p className="hero-eyebrow">SYRAA AI Chat</p>
               <h1>
-                {greeting()}, {userId}
+                {greeting()}, {displayName}
               </h1>
               <p className="hero-sub">How can I help you today?</p>
             </div>

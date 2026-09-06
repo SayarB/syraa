@@ -10,7 +10,24 @@ const LESSON_KIND_TO_TYPE: Record<LessonKind, ItemType> = {
 };
 
 const EXPLICIT_MARKERS =
-  /\b(always|never|every time|from now on|remember that|don't ever|do not ever)\b/i;
+  /\b(always|never|every time|from now on|remember that|remember to|don't ever|do not ever)\b/i;
+
+/** User is explicitly teaching durable memory, not asking a one-off question. */
+const EXPLICIT_MEMORY_INTENT =
+  /\b(remember that|remember to|from now on|save (?:this|that|as)|add (?:this|that) to memory)\b/i;
+
+/** Task/research turns — topic interest must not become memory. */
+const ONE_OFF_TASK_QUERY =
+  /\b(research|recommend(?:ation)?s?|what should i (?:buy|get)|help me (?:choose|pick|find|decide)|compare|options for|best .+ (?:for|under)|under \d+\s*(?:l|lac|lakh|k|cr))\b/i;
+
+export function filterLessonsForTurn(userMessage: string, lessons: Lesson[]): Lesson[] {
+  if (lessons.length === 0) return lessons;
+  if (EXPLICIT_MEMORY_INTENT.test(userMessage) || EXPLICIT_MARKERS.test(userMessage)) {
+    return lessons;
+  }
+  if (ONE_OFF_TASK_QUERY.test(userMessage)) return [];
+  return lessons;
+}
 
 export function lessonToItemType(kind: LessonKind): ItemType {
   return LESSON_KIND_TO_TYPE[kind];
@@ -89,7 +106,7 @@ export async function applyLessons(
   },
 ): Promise<MemoryItem[]> {
   const created: MemoryItem[] = [];
-  const capped = opts.lessons.slice(0, 3);
+  const capped = filterLessonsForTurn(opts.userMessage, opts.lessons).slice(0, 3);
 
   for (const lesson of capped) {
     const text = lesson.text.trim();

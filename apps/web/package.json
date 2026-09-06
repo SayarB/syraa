@@ -13,6 +13,7 @@
   "dependencies": {
     "@ai-sdk/react": "^4.0.90",
     "ai": "^7.0.87",
+    "better-auth": "^1.7.2",
     "dompurify": "^3.4.14",
     "marked": "^18.0.11",
     "react": "^19.2.8",

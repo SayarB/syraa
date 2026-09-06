@@ -33,7 +33,6 @@ export const chatMessageSchema = z.object({
 });
 
 export const chatRequestSchema = z.object({
-  userId: z.string().trim().min(1).optional(),
   message: z.string().trim().min(1),
   messageId: z.string().optional(),
   /** Mastra Memory thread id. Created server-side when omitted. */
@@ -46,7 +45,6 @@ export const chatRequestSchema = z.object({
 });
 
 export const createThreadRequestSchema = z.object({
-  userId: z.string().trim().min(1).optional(),
   title: z.string().trim().min(1).max(120).optional(),
   projectId: z.string().trim().min(1).nullable().optional(),
   subprojectId: z.string().trim().min(1).nullable().optional(),

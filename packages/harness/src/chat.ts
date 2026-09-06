@@ -161,6 +161,7 @@ export async function pipeChatStream(request: ChatRequest, res: ServerResponse):
         threadId: prepared.threadId,
         memoryItems,
         lessons: turn.lessons,
+        displayMessage: turn.message,
       };
     },
   });

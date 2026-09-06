@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { isDuplicateLesson, shouldAutoActivate } from "../src/lessons.js";
+import { filterLessonsForTurn, isDuplicateLesson, shouldAutoActivate } from "../src/lessons.js";
 import { resolveChatProvider } from "../src/llm.js";
 import { formatMaterialsOutline } from "../src/mastra/prompt.js";
 import { buildMaterialsWorkingMemoryContent } from "../src/materials-working-memory.js";
@@ -89,12 +89,22 @@ describe("chatRequestSchema (Mastra thread)", () => {
     const parsed = chatRequestSchema.safeParse({
       message: "hello",
       threadId: "thread-1",
-      userId: "demo-user",
     });
     expect(parsed.success).toBe(true);
     if (parsed.success) {
       expect(parsed.data.threadId).toBe("thread-1");
       expect(parsed.data.history).toBeUndefined();
+    }
+  });
+
+  it("does not use body userId for identity", () => {
+    const parsed = chatRequestSchema.safeParse({
+      message: "hello",
+      userId: "spoofed",
+    });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect("userId" in parsed.data).toBe(false);
     }
   });
 
@@ -148,7 +158,7 @@ describe("thread titles", () => {
 });
 
 describe("createThreadRequestSchema", () => {
-  it("accepts empty body (server fills userId)", () => {
+  it("accepts empty body (session supplies userId)", () => {
     expect(createThreadRequestSchema.safeParse({}).success).toBe(true);
   });
 
@@ -216,5 +226,29 @@ describe("lesson deduplication", () => {
         "When providing prices, always convert to INR using same-day rates.",
       ),
     ).toBe(false);
+  });
+});
+
+describe("filterLessonsForTurn", () => {
+  const bikeLesson = [
+    {
+      text: "User is interested in motorcycle recommendations",
+      kind: "preference" as const,
+    },
+  ];
+
+  it("drops lessons for research / recommendation questions", () => {
+    expect(
+      filterLessonsForTurn("do a research on bikes that I should buy with 12L budget", bikeLesson),
+    ).toEqual([]);
+    expect(
+      filterLessonsForTurn("what cars should I buy under 12 lac", bikeLesson),
+    ).toEqual([]);
+  });
+
+  it("keeps lessons when user explicitly asks to remember", () => {
+    expect(
+      filterLessonsForTurn("Remember that I prefer concise answers.", bikeLesson),
+    ).toEqual(bikeLesson);
   });
 });

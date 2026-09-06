@@ -1,37 +1,39 @@
-import { getToolName, isTextUIPart, isToolUIPart, type UIMessage } from "ai";
-import { useEffect, useMemo, useRef } from "react";
+import { isTextUIPart, isToolUIPart, type UIMessage } from "ai";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { formatMemoryDraftNotice } from "../lib/memory-notice";
+import { pickThinkingPhrase } from "../lib/thinking-status";
+import { formatToolActivity } from "../lib/tool-activity";
 import { extractTurnMessage } from "../lib/turn-message";
 import { renderMarkdown } from "../lib/markdown";
 import type { MemoryItem } from "../lib/types";
 
 type ChatBlock =
   | { kind: "user"; id: string; text: string }
-  | { kind: "tool"; id: string; label: string; active: boolean }
+  | { kind: "tool"; id: string; label: string; summary: string; detail: string; active: boolean }
   | { kind: "assistant"; id: string; html: string; showCaret: boolean }
   | { kind: "memory"; id: string; text: string; variant: "draft" | "saved" };
-
-function toolLabel(part: Extract<UIMessage["parts"][number], { type: string }>): string {
-  if (!isToolUIPart(part)) return "Working…";
-  const name = getToolName(part);
-  const labels: Record<string, string> = {
-    list_materials: "Listed materials",
-    read_materials_section: "Read document section",
-  };
-  const label = labels[name] ?? name.replaceAll("_", " ");
-  const done = part.state === "output-available" || part.state === "output-error";
-  if (done) return label;
-  if (part.state === "input-streaming" || part.state === "input-available") {
-    return `${label.replace(/^(\w)/, (c) => c.toUpperCase())}…`;
-  }
-  return `${label}…`;
-}
 
 function lastTextPartIndex(parts: UIMessage["parts"]): number {
   for (let index = parts.length - 1; index >= 0; index -= 1) {
     if (isTextUIPart(parts[index])) return index;
   }
   return -1;
+}
+
+function assistantHasVisibleText(message: UIMessage): boolean {
+  return message.parts
+    .filter(isTextUIPart)
+    .some((part) => extractTurnMessage(part.text).trim().length > 0);
+}
+
+export function shouldShowThinking(messages: UIMessage[], streaming: boolean): boolean {
+  if (!streaming) return false;
+
+  const last = messages.at(-1);
+  if (!last || last.role === "user") return true;
+  if (last.role !== "assistant") return false;
+
+  return !assistantHasVisibleText(last);
 }
 
 function flattenMessages(
@@ -64,12 +66,17 @@ function flattenMessages(
 
       if (isToolUIPart(part)) {
         const done = part.state === "output-available" || part.state === "output-error";
-        blocks.push({
-          kind: "tool",
-          id: `${message.id}-tool-${index}`,
-          label: toolLabel(part),
-          active: !done && streaming && isLastMessage,
-        });
+        const activity = formatToolActivity(part, !done && streaming && isLastMessage);
+        if (activity) {
+          blocks.push({
+            kind: "tool",
+            id: `${message.id}-tool-${index}`,
+            label: activity.label,
+            summary: activity.summary,
+            detail: activity.detail,
+            active: activity.active,
+          });
+        }
         return;
       }
 
@@ -128,6 +135,15 @@ type Props = {
   onOpenMemory?: () => void;
 };
 
+function ThinkingIndicator({ phrase }: { phrase: string }) {
+  return (
+    <div className="chat-thinking" aria-live="polite" aria-busy="true">
+      <span className="chat-thinking-dot" aria-hidden="true" />
+      <span className="chat-thinking-text">{phrase}</span>
+    </div>
+  );
+}
+
 export function UiMessageList({
   messages,
   streaming = false,
@@ -135,14 +151,22 @@ export function UiMessageList({
   onOpenMemory,
 }: Props) {
   const endRef = useRef<HTMLDivElement>(null);
+  const [thinkingTick, setThinkingTick] = useState(0);
+  const showThinking = shouldShowThinking(messages, streaming);
   const blocks = useMemo(
     () => flattenMessages(messages, streaming, memoryNoticeLines),
     [messages, streaming, memoryNoticeLines],
   );
 
   useEffect(() => {
+    if (!showThinking) return;
+    const id = window.setInterval(() => setThinkingTick((tick) => tick + 1), 2400);
+    return () => window.clearInterval(id);
+  }, [showThinking]);
+
+  useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [blocks]);
+  }, [blocks, showThinking, thinkingTick]);
 
   return (
     <>
@@ -158,13 +182,19 @@ export function UiMessageList({
 
         if (block.kind === "tool") {
           return (
-            <div
+            <details
               key={block.id}
-              className={`chat-tool${block.active ? " active" : ""}`}
-              aria-label="Agent tool activity"
+              className={`chat-tool-accordion${block.active ? " active" : ""}`}
             >
-              {block.label}
-            </div>
+              <summary className="chat-tool-summary-row" aria-label="Agent tool activity">
+                <span className="chat-tool-chevron" aria-hidden="true">
+                  ›
+                </span>
+                <span className="chat-tool-label">{block.label}</span>
+                <span className="chat-tool-summary">{block.summary}</span>
+              </summary>
+              {block.detail ? <pre className="chat-tool-detail">{block.detail}</pre> : null}
+            </details>
           );
         }
 
@@ -190,6 +220,7 @@ export function UiMessageList({
           />
         );
       })}
+      {showThinking ? <ThinkingIndicator phrase={pickThinkingPhrase(thinkingTick)} /> : null}
       <div ref={endRef} />
     </>
   );

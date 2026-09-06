@@ -21,13 +21,32 @@ data/drive/                # Local PDF blob store
 ## Run with Docker
 
 ```bash
-cp .env.example .env   # set FIREWORKS_API_KEY for chat
-npm run dev:up         # postgres + redis + api (serves UI) + ingest-worker
+cp .env.example .env
+# Required for sign-in + chat:
+#   BETTER_AUTH_SECRET=$(openssl rand -base64 32)
+#   BETTER_AUTH_URL=http://localhost:3000
+#   FIREWORKS_API_KEY=...
+npm run dev:up             # postgres + redis + api (serves UI) + ingest-worker
 ```
 
 Open **http://localhost:3000** — React UI is baked into the API image (`apps/web/dist`).
 
 Stop: `npm run dev:down`
+
+## Deploy (VPS / Dokploy)
+
+Use the repo root [`compose.yaml`](compose.yaml) (or Dokploy “Docker Compose” with the same file).
+
+1. Set secrets in Dokploy / `.env` (do **not** use the sample DB password on a public host):
+   - `POSTGRES_PASSWORD` — strong password
+   - `BETTER_AUTH_SECRET` — `openssl rand -base64 32`
+   - `BETTER_AUTH_URL` — public HTTPS origin, e.g. `https://syraa.example.com` (no trailing slash)
+   - `FIREWORKS_API_KEY` (or `CHAT_PROVIDER=openai` + `OPENAI_API_KEY`)
+2. Point the domain / Traefik to the **api** service on port **3000** (UI is same-origin).
+3. Leave Postgres and Redis on the internal compose network (host ports bind to `127.0.0.1` by default).
+4. First boot runs memory, context, and Better Auth migrations via [`docker/entrypoint.sh`](docker/entrypoint.sh).
+
+Smoke after deploy: open the domain → sign up → one chat turn → upload a PDF → sign out. Health: `GET /api/health`.
 
 ## Run locally (hot reload)
 
@@ -60,3 +79,5 @@ Tests live next to code:
 - `GET|PATCH /api/memory…`
 - `POST /api/ingest/upload`, `GET /api/ingest/jobs/:id`
 - `GET /api/resources`, `GET /api/resources/:id/tree`
+- `GET|POST /api/auth/*` (Better Auth)
+- `GET /api/me`

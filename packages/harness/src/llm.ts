@@ -4,7 +4,7 @@ import { getSyraaAgent } from "./mastra/index.js";
 import { resolveTurnFromGenerateOutput } from "./mastra/resolve-turn.js";
 import { buildStructuredTurnOutput } from "./mastra/structured-turn.js";
 import { resolveChatModel, resolveChatProvider } from "./mastra/model.js";
-import { buildSystemPrompt } from "./mastra/prompt.js";
+import { buildTurnInstructions } from "./turn-instructions.js";
 import {
   type ChatMessage,
   type ChatProvider,
@@ -29,7 +29,7 @@ const DEFAULTS: Record<ChatProvider, { model: string; apiKeyEnv: string; modelEn
   },
 };
 
-function buildChatTurnOptions(opts: {
+async function buildChatTurnOptions(opts: {
   userId: string;
   threadId: string;
   memoryItems: MemoryItem[];
@@ -39,13 +39,13 @@ function buildChatTurnOptions(opts: {
       thread: opts.threadId,
       resource: opts.userId,
     },
-    instructions: buildSystemPrompt(opts.memoryItems),
+    instructions: await buildTurnInstructions(opts.userId, opts.memoryItems),
     structuredOutput: buildStructuredTurnOutput(),
     modelSettings: {
       temperature: 0.4,
       maxOutputTokens: 2048,
     },
-    maxSteps: 8,
+    maxSteps: 50,
   };
 }
 
@@ -75,12 +75,10 @@ export async function runChatTurn(opts: {
 
   const agent = getSyraaAgent();
 
-  return runWithChatContext(
-    { userId: opts.userId, threadId: opts.threadId },
-    async () => {
+  return runWithChatContext({ userId: opts.userId, threadId: opts.threadId }, async () => {
       let output: Awaited<ReturnType<typeof agent.generate>>;
       try {
-        output = await agent.generate(opts.userMessage, buildChatTurnOptions(opts));
+        output = await agent.generate(opts.userMessage, await buildChatTurnOptions(opts));
       } catch (error) {
         const detail = error instanceof Error ? error.message : String(error);
         throw new Error(`${chat.provider} generate failed: ${detail}`);

@@ -9,7 +9,7 @@ export {
   getIngestQueue,
 } from "./context.js";
 export { formatHarnessError } from "./errors.js";
-export { applyLessons, isDuplicateLesson, lessonDedupKey, lessonToItemType, normalizeLessonText, shouldAutoActivate } from "./lessons.js";
+export { applyLessons, filterLessonsForTurn, isDuplicateLesson, lessonDedupKey, lessonToItemType, normalizeLessonText, shouldAutoActivate } from "./lessons.js";
 export type { ChatConfig, ChatMessage, ChatProvider } from "./llm.js";
 export { getChatConfig, resolveChatProvider, runChatTurn } from "./llm.js";
 export type { MemoryHandle, SaveCommand } from "./memory.js";

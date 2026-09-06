@@ -5,12 +5,17 @@ export type ChatRunContext = {
   threadId: string;
   projectId?: string | null;
   subprojectId?: string | null;
+  /** Per-turn tool results for turn-end fallback only. */
+  toolCallCache?: Map<string, unknown>;
 };
 
 const storage = new AsyncLocalStorage<ChatRunContext>();
 
-export function runWithChatContext<T>(ctx: ChatRunContext, fn: () => Promise<T>): Promise<T> {
-  return storage.run(ctx, fn);
+export function runWithChatContext<T>(
+  ctx: Omit<ChatRunContext, "toolCallCache">,
+  fn: () => Promise<T>,
+): Promise<T> {
+  return storage.run({ ...ctx, toolCallCache: new Map() }, fn);
 }
 
 export function getChatRunContext(): ChatRunContext {

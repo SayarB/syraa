@@ -4,8 +4,11 @@ import { toAISdkStream } from "@mastra/ai-sdk";
 import { createUIMessageStream, type UIMessage } from "ai";
 import { runWithChatContext } from "../chat-run-context.js";
 import { getSyraaAgent } from "./index.js";
-import { buildSystemPrompt } from "./prompt.js";
-import { resolveTurnFromStreamOutput, type SyraaTurnMeta } from "./resolve-turn.js";
+import { buildTurnInstructions } from "../turn-instructions.js";
+import {
+  resolveTurnFromStreamOutput,
+  type SyraaTurnMeta,
+} from "./resolve-turn.js";
 import { buildStructuredTurnOutput } from "./structured-turn.js";
 
 export type { SyraaTurnMeta };
@@ -15,7 +18,9 @@ export async function createSyraaUIMessageStream(opts: {
   threadId: string;
   userMessage: string;
   memoryItems: MemoryItem[];
-  onTurnComplete: (turn: SyraaTurnMeta) => Promise<Record<string, unknown> | undefined>;
+  onTurnComplete: (
+    turn: SyraaTurnMeta,
+  ) => Promise<Record<string, unknown> | undefined>;
 }) {
   return runWithChatContext(
     { userId: opts.userId, threadId: opts.threadId },
@@ -32,9 +37,12 @@ export async function createSyraaUIMessageStream(opts: {
           thread: opts.threadId,
           resource: opts.userId,
         },
-        instructions: buildSystemPrompt(opts.memoryItems),
+        instructions: await buildTurnInstructions(
+          opts.userId,
+          opts.memoryItems,
+        ),
         structuredOutput: buildStructuredTurnOutput(),
-        maxSteps: 8,
+        maxSteps: 50,
         modelSettings: {
           temperature: 0.4,
           maxOutputTokens: 2048,
@@ -51,7 +59,21 @@ export async function createSyraaUIMessageStream(opts: {
             await writer.write(part);
           }
 
+          const agentText = (await result.text)?.trim() ?? "";
           const turn = await resolveTurnFromStreamOutput(result);
+          const message = turn.message.trim();
+
+          if (message && !agentText) {
+            const textId = randomUUID();
+            await writer.write({ type: "text-start", id: textId });
+            await writer.write({
+              type: "text-delta",
+              id: textId,
+              delta: message,
+            });
+            await writer.write({ type: "text-end", id: textId });
+          }
+
           const meta = await opts.onTurnComplete(turn);
           if (meta) {
             await writer.write({

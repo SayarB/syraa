@@ -16,7 +16,9 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "auth:migrate": "tsx src/auth/migrate.ts",
+    "auth:migrate:dist": "node dist/auth/migrate.js"
   },
   "dependencies": {
     "@mastra/ai-sdk": "^1.10.0",
@@ -27,7 +29,9 @@
     "@syraa/ingest": "*",
     "@syraa/memory": "*",
     "ai": "^7.0.87",
+    "better-auth": "^1.7.2",
     "busboy": "^1.6.0",
+    "dotenv": "^17.4.2",
     "pg": "^8.23.0",
     "zod": "^3.24.0",
     "zod-to-json-schema": "^3.24.0"
@@ -36,6 +40,7 @@
     "@types/busboy": "^1.5.4",
     "@types/node": "^24.0.0",
     "@types/pg": "^8.23.1",
+    "tsx": "^4.20.0",
     "typescript": "^5.9.0",
     "vitest": "^3.2.0"
   },

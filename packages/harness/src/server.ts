@@ -1,6 +1,14 @@
 import { createReadStream, existsSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { extname, join } from "node:path";
+import { toNodeHandler } from "better-auth/node";
+import {
+  getAuth,
+  isBetterAuthConfigured,
+  requireUser,
+  trustedOrigins,
+  UnauthorizedError,
+} from "./auth/better-auth.js";
 import { handleChat, pipeChatStream } from "./chat.js";
 import { getContextStore } from "./context.js";
 import { formatHarnessError } from "./errors.js";
@@ -49,10 +57,17 @@ export type HarnessServerOptions = {
 function applyCors(req: IncomingMessage, res: ServerResponse): boolean {
   const origin = req.headers.origin;
   if (origin) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Vary", "Origin");
-    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    const allowed =
+      !isBetterAuthConfigured() ||
+      process.env.NODE_ENV !== "production" ||
+      trustedOrigins().includes(origin);
+    if (allowed) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+      res.setHeader("Vary", "Origin");
+      res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,OPTIONS");
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    }
   }
   if (req.method === "OPTIONS") {
     res.writeHead(204);
@@ -75,11 +90,6 @@ async function readBody(req: IncomingMessage): Promise<string> {
   return Buffer.concat(chunks).toString("utf8");
 }
 
-function defaultUserId(req: IncomingMessage): string {
-  const url = new URL(req.url ?? "/", "http://localhost");
-  return url.searchParams.get("userId") ?? "demo-user";
-}
-
 async function serveStatic(
   staticDir: string,
   pathname: string,
@@ -91,7 +101,6 @@ async function serveStatic(
     return false;
   }
   if (!existsSync(filePath)) {
-    // SPA fallback for client routes (no file extension)
     if (extname(safePath) === "") {
       filePath = join(staticDir, "index.html");
       if (!existsSync(filePath)) return false;
@@ -110,9 +119,6 @@ async function handleApi(
   res: ServerResponse,
   pathname: string,
 ): Promise<void> {
-  const { service } = await getMemory();
-  const userId = defaultUserId(req);
-
   if (req.method === "GET" && pathname === "/api/health") {
     sendJson(res, 200, { status: "ok", service: "@syraa/harness", chat: getChatConfig() });
     return;
@@ -122,6 +128,16 @@ async function handleApi(
     sendJson(res, 200, { chat: getChatConfig() });
     return;
   }
+
+  if (req.method === "GET" && pathname === "/api/me") {
+    const user = await requireUser(req);
+    sendJson(res, 200, { userId: user.userId, email: user.email });
+    return;
+  }
+
+  const { service } = await getMemory();
+  const user = await requireUser(req);
+  const userId = user.userId;
 
   if (req.method === "GET" && pathname === "/api/threads") {
     const url = new URL(req.url ?? "/", "http://localhost");
@@ -137,7 +153,7 @@ async function handleApi(
   if (req.method === "POST" && pathname === "/api/threads") {
     const body = await parseJsonBody(await readBody(req), createThreadRequestSchema);
     const thread = await createChatThread({
-      userId: body.userId ?? userId,
+      userId,
       title: body.title,
       projectId: body.projectId,
       subprojectId: body.subprojectId,
@@ -197,7 +213,7 @@ async function handleApi(
   if (req.method === "POST" && pathname === "/api/chat") {
     const body = await parseJsonBody(await readBody(req), chatRequestSchema);
     const result = await handleChat({
-      userId: body.userId ?? userId,
+      userId,
       message: body.message,
       messageId: body.messageId,
       threadId: body.threadId,
@@ -213,7 +229,7 @@ async function handleApi(
     try {
       await pipeChatStream(
         {
-          userId: body.userId ?? userId,
+          userId,
           message: body.message,
           messageId: body.messageId,
           threadId: body.threadId,
@@ -310,11 +326,22 @@ async function handleApi(
 
 export function createHarnessServer(options: HarnessServerOptions = {}) {
   const staticDir = options.staticDir;
+  const authHandler = isBetterAuthConfigured() ? toNodeHandler(getAuth()) : null;
 
   return createServer(async (req, res) => {
     try {
       if (applyCors(req, res)) return;
       const url = new URL(req.url ?? "/", "http://localhost");
+
+      if (url.pathname === "/api/auth" || url.pathname.startsWith("/api/auth/")) {
+        if (!authHandler) {
+          sendJson(res, 503, { error: "Better Auth is not configured" });
+          return;
+        }
+        await authHandler(req, res);
+        return;
+      }
+
       if (url.pathname.startsWith("/api/")) {
         await handleApi(req, res, url.pathname);
         return;
@@ -325,6 +352,10 @@ export function createHarnessServer(options: HarnessServerOptions = {}) {
       }
       sendJson(res, 404, { error: "not found" });
     } catch (err) {
+      if (err instanceof UnauthorizedError) {
+        sendJson(res, 401, { error: err.message });
+        return;
+      }
       if (err instanceof ValidationError) {
         sendJson(res, 400, { error: err.message });
         return;

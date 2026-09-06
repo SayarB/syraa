@@ -2,6 +2,7 @@ import type { MastraDBMessage } from "@mastra/core/agent";
 import { getSyraaMemory } from "./mastra/memory.js";
 import { seedMaterialsWorkingMemory, refreshMaterialsWorkingMemory } from "./materials-working-memory.js";
 import { ValidationError } from "./schemas.js";
+import { mastraThreadToUiMessages, type ThreadUiMessageDto } from "./thread-ui-messages.js";
 
 /** Thread metadata shaped for future Works (Project → Subproject → sessions). */
 export type ThreadWorksMetadata = {
@@ -20,12 +21,7 @@ export type ThreadDto = {
   subprojectId: string | null;
 };
 
-export type ThreadMessageDto = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  createdAt: string;
-};
+export type ThreadMessageDto = ThreadUiMessageDto;
 
 export function buildThreadWorksMetadata(opts?: {
   projectId?: string | null;
@@ -311,18 +307,7 @@ export async function listThreadMessages(opts: {
     perPage: false,
   });
 
-  const messages: ThreadMessageDto[] = [];
-  for (const message of recalled.messages) {
-    const content = extractDisplayText(message);
-    if (!content) continue;
-    if (message.role !== "user" && message.role !== "assistant") continue;
-    messages.push({
-      id: message.id,
-      role: message.role,
-      content,
-      createdAt: toIso(message.createdAt),
-    });
-  }
+  const messages = mastraThreadToUiMessages(recalled.messages);
 
   return { thread: toThreadDto(thread), messages };
 }

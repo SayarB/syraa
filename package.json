@@ -20,7 +20,7 @@
     "dev:down": "docker compose down",
     "db:up": "docker compose up -d postgres redis",
     "db:down": "docker compose stop postgres redis",
-    "db:migrate": "bash scripts/dev/with-env.sh npm run db:migrate -w @syraa/memory && bash scripts/dev/with-env.sh npm run db:migrate -w @syraa/context",
+    "db:migrate": "bash scripts/dev/with-env.sh npm run db:migrate -w @syraa/memory && bash scripts/dev/with-env.sh npm run db:migrate -w @syraa/context && bash scripts/dev/with-env.sh npm run auth:migrate -w @syraa/harness",
     "db:logs": "docker compose logs -f postgres",
     "dev:api": "bash scripts/dev/with-env.sh npm run dev -w @syraa/api",
     "dev:ui": "bash scripts/dev/with-env.sh npm run dev -w @syraa/web",

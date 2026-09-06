@@ -1,4 +1,5 @@
 import { parseTurnJson, turnResultSchema, type Lesson } from "../schemas.js";
+import { fallbackTurnFromToolCache } from "../tool-call-dedupe.js";
 
 export type SyraaTurnMeta = {
   message: string;
@@ -34,8 +35,24 @@ export async function resolveTurnFromGenerateOutput(output: {
     // fall through to text parse
   }
 
-  const text = await output.text;
-  return turnFromAgentText(text);
+  const text = (await output.text)?.trim() ?? "";
+  if (!text) {
+    const fallback = fallbackTurnFromToolCache();
+    return {
+      message: fallback.message.trim(),
+      lessons: fallback.lessons,
+    };
+  }
+
+  try {
+    return turnFromAgentText(text);
+  } catch {
+    const fallback = fallbackTurnFromToolCache();
+    return {
+      message: fallback.message.trim(),
+      lessons: fallback.lessons,
+    };
+  }
 }
 
 export async function resolveTurnFromStreamOutput(output: {

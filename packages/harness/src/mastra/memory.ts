@@ -16,6 +16,12 @@ export function getSyraaMemory(): Memory {
           scope: "thread",
           // Harness seeds materials L1; agent must not overwrite the overview.
           agentManaged: false,
+          // Avoid Mastra state-signal recap pressure; product memory is @syraa/memory.
+          useStateSignals: false,
+          template: `# Session materials
+
+Document names and top-level section titles only — not full text.
+User prefs/rules are in product memory, not here.`,
         },
       },
     });

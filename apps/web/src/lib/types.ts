@@ -54,7 +54,10 @@ export type ChatThread = {
 export type ThreadMessage = {
   id: string;
   role: "user" | "assistant";
-  content: string;
+  parts: Array<
+    | { type: "text"; text: string; state?: "done" | "streaming" }
+    | { type: string; [key: string]: unknown }
+  >;
   createdAt: string;
 };
 

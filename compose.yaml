@@ -6,8 +6,9 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-syraa}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-syraa}
       POSTGRES_DB: ${POSTGRES_DB:-syraa}
+    # Bind localhost only — safe on a VPS; host tools still reach via 127.0.0.1
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "${POSTGRES_HOST_BIND:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -21,7 +22,7 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "${REDIS_HOST_BIND:-127.0.0.1}:${REDIS_PORT:-6379}:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -50,6 +51,11 @@ services:
       STATIC_DIR: /app/apps/web/dist
       NODE_ENV: production
       PORT: "3000"
+      # Public origin (https://your.domain) — required for cookies behind Dokploy/Traefik
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-}
+      BETTER_AUTH_TRUSTED_ORIGINS: ${BETTER_AUTH_TRUSTED_ORIGINS:-}
+      TRUST_PROXY: ${TRUST_PROXY:-1}
       CHAT_PROVIDER: ${CHAT_PROVIDER:-fireworks}
       FIREWORKS_API_KEY: ${FIREWORKS_API_KEY:-}
       FIREWORKS_MODEL: ${FIREWORKS_MODEL:-accounts/fireworks/models/gpt-oss-120b}
