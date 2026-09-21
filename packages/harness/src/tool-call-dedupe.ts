@@ -26,7 +26,7 @@ type ReadMaterialsOutput = {
   error?: string;
 };
 
-function fallbackFromReadMaterialsCache(): { message: string; lessons: [] } | null {
+function fallbackFromReadMaterialsCache(): { message: string } | null {
   try {
     const cache = getChatRunContext().toolCallCache;
     if (!cache) return null;
@@ -46,7 +46,6 @@ function fallbackFromReadMaterialsCache(): { message: string; lessons: [] } | nu
       : "";
     return {
       message: `${header}${best.text.trim().slice(0, 4000)}`,
-      lessons: [],
     };
   } catch {
     return null;
@@ -54,7 +53,7 @@ function fallbackFromReadMaterialsCache(): { message: string; lessons: [] } | nu
 }
 
 /** When the agent hits maxSteps without text, recover from tool results if we have them. */
-export function fallbackTurnFromToolCache(): { message: string; lessons: [] } {
+export function fallbackTurnFromToolCache(): { message: string } {
   try {
     const fromRead = fallbackFromReadMaterialsCache();
     if (fromRead) return fromRead;
@@ -68,7 +67,6 @@ export function fallbackTurnFromToolCache(): { message: string; lessons: [] } {
       if (names.length > 0) {
         return {
           message: `Available documents:\n${names.map((name) => `- ${name}`).join("\n")}`,
-          lessons: [],
         };
       }
     }
@@ -78,6 +76,5 @@ export function fallbackTurnFromToolCache(): { message: string; lessons: [] } {
 
   return {
     message: "I couldn't finish that turn — please try again.",
-    lessons: [],
   };
 }

@@ -9,7 +9,6 @@ import {
   resolveTurnFromStreamOutput,
   type SyraaTurnMeta,
 } from "./resolve-turn.js";
-import { buildStructuredTurnOutput } from "./structured-turn.js";
 
 export type { SyraaTurnMeta };
 
@@ -41,7 +40,6 @@ export async function createSyraaUIMessageStream(opts: {
           opts.userId,
           opts.memoryItems,
         ),
-        structuredOutput: buildStructuredTurnOutput(),
         maxSteps: 50,
         modelSettings: {
           temperature: 0.4,

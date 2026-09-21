@@ -2,7 +2,6 @@ import type { MemoryItem } from "@syraa/memory";
 import { runWithChatContext } from "./chat-run-context.js";
 import { getSyraaAgent } from "./mastra/index.js";
 import { resolveTurnFromGenerateOutput } from "./mastra/resolve-turn.js";
-import { buildStructuredTurnOutput } from "./mastra/structured-turn.js";
 import { resolveChatModel, resolveChatProvider } from "./mastra/model.js";
 import { buildTurnInstructions } from "./turn-instructions.js";
 import {
@@ -40,7 +39,6 @@ async function buildChatTurnOptions(opts: {
       resource: opts.userId,
     },
     instructions: await buildTurnInstructions(opts.userId, opts.memoryItems),
-    structuredOutput: buildStructuredTurnOutput(),
     modelSettings: {
       temperature: 0.4,
       maxOutputTokens: 2048,
@@ -88,7 +86,6 @@ export async function runChatTurn(opts: {
 
       return {
         message: turn.message,
-        lessons: turn.lessons,
         model: chat.model,
         provider: chat.provider,
       };

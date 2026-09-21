@@ -10,7 +10,6 @@ describe("tool call cache", () => {
       });
       expect(fallbackTurnFromToolCache()).toEqual({
         message: "Available documents:\n- THE_BREAKUP.pdf\n- Principles.pdf",
-        lessons: [],
       });
     });
   });
@@ -28,7 +27,6 @@ describe("tool call cache", () => {
       );
       expect(fallbackTurnFromToolCache()).toEqual({
         message: "From **Principles.pdf** (Chroma):\n\nChromaDB is a vector database used for embeddings.",
-        lessons: [],
       });
     });
   });

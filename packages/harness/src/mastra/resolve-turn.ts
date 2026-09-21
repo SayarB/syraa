@@ -1,63 +1,29 @@
-import { parseTurnJson, turnResultSchema, type Lesson } from "../schemas.js";
 import { fallbackTurnFromToolCache } from "../tool-call-dedupe.js";
 
 export type SyraaTurnMeta = {
   message: string;
-  lessons: Lesson[];
 };
 
-export function turnFromStructuredObject(object: unknown): SyraaTurnMeta | null {
-  const parsed = turnResultSchema.safeParse(object);
-  if (!parsed.success) return null;
-  return {
-    message: parsed.data.message.trim(),
-    lessons: parsed.data.lessons ?? [],
-  };
-}
+const FOOTER_LINE =
+  /^\s*(?:[-*_]{3,}\s*)?[*_]*\s*(?:working memory updated|memory updated|lessons? (?:extracted|saved|recorded)|_?agentNote)(?![a-z0-9]).*$/i;
+const BLANK_OR_RULE = /^\s*(?:[-*_]{3,})?\s*$/;
 
-export function turnFromAgentText(text: string): SyraaTurnMeta {
-  const turn = parseTurnJson(text);
-  return {
-    message: turn.message.trim(),
-    lessons: turn.lessons ?? [],
-  };
+/** Drop trailing runtime/status lines the model sometimes appends (and a dangling rule before them). */
+export function stripRuntimeFooters(text: string): string {
+  const lines = text.trimEnd().split("\n");
+  while (lines.length > 0) {
+    const last = lines[lines.length - 1];
+    if (!FOOTER_LINE.test(last) && !BLANK_OR_RULE.test(last)) break;
+    lines.pop();
+  }
+  return lines.join("\n").trim();
 }
 
 export async function resolveTurnFromGenerateOutput(output: {
-  object?: unknown | Promise<unknown>;
   text: string | Promise<string>;
 }): Promise<SyraaTurnMeta> {
-  try {
-    const object = await output.object;
-    const fromObject = turnFromStructuredObject(object);
-    if (fromObject) return fromObject;
-  } catch {
-    // fall through to text parse
-  }
-
-  const text = (await output.text)?.trim() ?? "";
-  if (!text) {
-    const fallback = fallbackTurnFromToolCache();
-    return {
-      message: fallback.message.trim(),
-      lessons: fallback.lessons,
-    };
-  }
-
-  try {
-    return turnFromAgentText(text);
-  } catch {
-    const fallback = fallbackTurnFromToolCache();
-    return {
-      message: fallback.message.trim(),
-      lessons: fallback.lessons,
-    };
-  }
+  const text = stripRuntimeFooters((await output.text) ?? "");
+  return { message: text || fallbackTurnFromToolCache().message.trim() };
 }
 
-export async function resolveTurnFromStreamOutput(output: {
-  object?: unknown | Promise<unknown>;
-  text: string | Promise<string>;
-}): Promise<SyraaTurnMeta> {
-  return resolveTurnFromGenerateOutput(output);
-}
+export const resolveTurnFromStreamOutput = resolveTurnFromGenerateOutput;

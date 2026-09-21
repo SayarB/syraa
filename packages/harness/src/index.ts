@@ -22,23 +22,16 @@ export {
 } from "./memory.js";
 export type {
   ChatRequestInput,
-  Lesson,
   LessonKind,
-  TurnResult,
 } from "./schemas.js";
 export {
   chatMessageSchema,
   chatProviderSchema,
   chatRequestSchema,
   createThreadRequestSchema,
-  confidenceSchema,
   lessonKindSchema,
-  lessonSchema,
   memoryItemPatchSchema,
   parseJsonBody,
-  parseTurnJson,
-  turnResultJsonSchema,
-  turnResultSchema,
   ValidationError,
 } from "./schemas.js";
 export type { HarnessServerOptions } from "./server.js";
