@@ -1,6 +1,6 @@
 # Plan: Semantic materials search (Phase 04)
 
-**Status:** draft — pick up later  
+**Status:** implemented 2026-09-21 (review pass; see `.plans/semantic-retrieve/`). Follow-ups: pgvector, worker EMBEDDING_MODEL="" bug.  
 **Trigger:** Thread `630ad805…` — user asked what Syraa knows about their company (`madverse`). Agent called `list_materials` ×6 and `read_materials_section` on an unrelated PDF section, then said it had no info. It never searched chunk embeddings.
 
 ---

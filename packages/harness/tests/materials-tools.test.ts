@@ -1,4 +1,6 @@
+import type { TopicTreeNode } from "@syraa/context";
 import { describe, expect, it } from "vitest";
+import { syraaTools } from "../src/mastra/tools/materials-tools.js";
 import {
   collectTextUnderNode,
   findAllDocumentText,
@@ -7,8 +9,6 @@ import {
   normalizeTitle,
   resolveResourceIdByName,
 } from "../src/materials-retrieve.js";
-import { syraaTools } from "../src/mastra/tools/materials-tools.js";
-import type { TopicTreeNode } from "@syraa/context";
 
 const sampleTree: TopicTreeNode[] = [
   {
@@ -95,7 +95,11 @@ describe("materials-retrieve", () => {
 
 describe("syraaTools", () => {
   it("registers materials tools on the agent", () => {
-    expect(Object.keys(syraaTools).sort()).toEqual(["list_materials", "read_materials_section"]);
+    expect(Object.keys(syraaTools).sort()).toEqual([
+      "list_materials",
+      "read_materials_section",
+      "search_materials",
+    ]);
     expect(syraaTools.read_materials_section.id).toBe("read_materials_section");
   });
 });

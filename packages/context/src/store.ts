@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, or, type SQL, sql } from "drizzle-orm";
 import type { ContextDb } from "./db/client.js";
 import {
   type ContextResourceRow,
@@ -9,6 +9,16 @@ import {
   contextTopics,
 } from "./db/schema.js";
 import { type ResourceStatus, utcNow } from "./models.js";
+import { createQueryEmbedder, type QueryEmbedder } from "./retrieve/embed.js";
+import {
+  cosineSimilarity,
+  makeSnippet,
+  queryTerms,
+  type RetrieveMode,
+  reciprocalRankFusion,
+  toLikePatterns,
+  toOrTsQuery,
+} from "./retrieve/search.js";
 
 export type CreateResourceInput = {
   userId: string;
@@ -52,6 +62,43 @@ export type MaterialsLayer1Outline = {
   sectionTitles: string[];
 };
 
+export type SearchMaterialsInput = {
+  query: string;
+  /** Default 8, clamped to 1..20. */
+  limit?: number;
+  resourceIds?: string[];
+  /** Default "hybrid". */
+  mode?: RetrieveMode;
+};
+
+export type RetrieveHit = {
+  chunkId: string;
+  resourceId: string;
+  documentName: string;
+  /** Parent topic title (bridge chunk → the child topic it summarizes). */
+  sectionTitle: string;
+  sectionPath: string;
+  role: string;
+  snippet: string;
+  score: number;
+  matchedBy: ("lexical" | "semantic")[];
+  anchor: Record<string, unknown>;
+};
+
+export type SemanticSkippedReason = "no_embedder" | "embed_failed" | "no_matching_vectors";
+
+export type SearchMaterialsResult = {
+  hits: RetrieveHit[];
+  /** Effective mode — hybrid/semantic fall back to lexical when semantic is unavailable. */
+  modeUsed: RetrieveMode;
+  semanticSkippedReason?: SemanticSkippedReason;
+};
+
+export type ContextStoreOptions = {
+  /** Query embedder for semantic search. Default: `createQueryEmbedder()` from env. */
+  embedQuery?: QueryEmbedder | null;
+};
+
 export type ContextStore = {
   createResource(input: CreateResourceInput): Promise<ContextResourceRow>;
   getResource(userId: string, resourceId: string): Promise<ContextResourceRow | null>;
@@ -59,6 +106,8 @@ export type ContextStore = {
   /** Ready materials + first topic layer (depth 1) for chat injection. */
   listMaterialsLayer1(userId: string, limit?: number): Promise<MaterialsLayer1Outline[]>;
   getResourceTopicTree(userId: string, resourceId: string): Promise<ResourceTopicTree | null>;
+  /** Lexical + semantic (RRF) passage search across the user's ready materials. */
+  searchMaterials(userId: string, input: SearchMaterialsInput): Promise<SearchMaterialsResult>;
   setResourceStatus(
     userId: string,
     resourceId: string,
@@ -163,7 +212,83 @@ function buildTopicTree(
   return walk(null);
 }
 
-export function createContextStore(db: ContextDb): ContextStore {
+/** Common English filler — dropped so "what do you know about X" searches for X. */
+const STOPWORDS = new Set(
+  (
+    "a an and are as at be but by can could did do does for from had has have how i if in is it its " +
+    "me my of on or our please should so tell than that the their them then there these they this " +
+    "to was we were what when where which who why will with would you your about any anything " +
+    "know find show give mention mentions mentioned say says said"
+  ).split(" "),
+);
+
+const MIN_LIKE_TERM = 4;
+
+function readyChunkScope(userId: string, resourceIds?: string[]): SQL {
+  const conditions: SQL[] = [
+    eq(contextChunks.userId, userId),
+    eq(contextResources.status, "ready"),
+  ];
+  if (resourceIds) conditions.push(inArray(contextChunks.resourceId, resourceIds));
+  return and(...conditions) as SQL;
+}
+
+export function createContextStore(db: ContextDb, opts: ContextStoreOptions = {}): ContextStore {
+  const embedQuery = opts.embedQuery === undefined ? createQueryEmbedder() : opts.embedQuery;
+
+  async function lexicalCandidates(
+    userId: string,
+    terms: string[],
+    resourceIds: string[] | undefined,
+    limit: number,
+  ): Promise<Array<{ id: string; score: number }>> {
+    const tsQuery = toOrTsQuery(terms);
+    if (!tsQuery) return [];
+    const tsv = sql`to_tsvector('english', ${contextChunks.text})`;
+    const tsq = sql`to_tsquery('english', ${tsQuery})`;
+    const rank = sql<number>`ts_rank(${tsv}, ${tsq})`;
+    const rows = await db
+      .select({ id: contextChunks.id, rank })
+      .from(contextChunks)
+      .innerJoin(contextResources, eq(contextResources.id, contextChunks.resourceId))
+      .where(
+        and(
+          readyChunkScope(userId, resourceIds),
+          or(
+            sql`${tsv} @@ ${tsq}`,
+            // Substring match catches tokens FTS splits oddly (e.g. "madverse.com"); short
+            // terms are FTS-only so "db" doesn't match "sandbox".
+            ...toLikePatterns(terms.filter((term) => term.length >= MIN_LIKE_TERM)).map((pattern) =>
+              ilike(contextChunks.text, pattern),
+            ),
+          ),
+        ),
+      )
+      .orderBy(desc(rank), asc(contextChunks.ordinal))
+      .limit(limit);
+    return rows.map((row) => ({ id: row.id, score: Number(row.rank) }));
+  }
+
+  async function semanticCandidates(
+    userId: string,
+    vector: number[],
+    resourceIds: string[] | undefined,
+    limit: number,
+  ): Promise<Array<{ id: string; score: number }>> {
+    // Only compare vectors from the same model (dimension); skips hash-fallback stubs.
+    const dims = sql`CASE WHEN jsonb_typeof(${contextChunks.embedding}) = 'array' THEN jsonb_array_length(${contextChunks.embedding}) END`;
+    const rows = await db
+      .select({ id: contextChunks.id, embedding: contextChunks.embedding })
+      .from(contextChunks)
+      .innerJoin(contextResources, eq(contextResources.id, contextChunks.resourceId))
+      .where(and(readyChunkScope(userId, resourceIds), sql`${dims} = ${vector.length}`));
+    return rows
+      .map((row) => ({ id: row.id, score: cosineSimilarity(vector, row.embedding ?? []) }))
+      .filter((row) => row.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit);
+  }
+
   return {
     async createResource(input) {
       const now = utcNow();
@@ -290,6 +415,125 @@ export function createContextStore(db: ContextDb): ContextStore {
         topicCount: topics.length,
         chunkCount: chunks.length,
       };
+    },
+
+    async searchMaterials(userId, input) {
+      const mode = input.mode ?? "hybrid";
+      const limit = Math.min(20, Math.max(1, Math.floor(input.limit ?? 8)));
+      const candidateLimit = limit * 4;
+      const resourceIds = input.resourceIds;
+      const allTerms = queryTerms(input.query);
+      const contentTerms = allTerms.filter((term) => !STOPWORDS.has(term));
+      const terms = contentTerms.length > 0 ? contentTerms : allTerms;
+
+      if (resourceIds && resourceIds.length === 0) {
+        return { hits: [], modeUsed: mode };
+      }
+
+      const lexical =
+        mode === "semantic"
+          ? []
+          : await lexicalCandidates(userId, terms, resourceIds, candidateLimit);
+
+      let semantic: Array<{ id: string; score: number }> = [];
+      let semanticSkippedReason: SemanticSkippedReason | undefined;
+      if (mode !== "lexical") {
+        if (!embedQuery) {
+          semanticSkippedReason = "no_embedder";
+        } else {
+          try {
+            const vector = await embedQuery(input.query);
+            semantic = vector
+              ? await semanticCandidates(userId, vector, resourceIds, candidateLimit)
+              : [];
+            if (semantic.length === 0) semanticSkippedReason = "no_matching_vectors";
+          } catch (err) {
+            semanticSkippedReason = "embed_failed";
+            console.warn(
+              `[context.search] query embedding failed: ${err instanceof Error ? err.message : String(err)}`,
+            );
+          }
+        }
+      }
+
+      const lexicalIds = new Set(lexical.map((row) => row.id));
+      const semanticIds = new Set(semantic.map((row) => row.id));
+      let modeUsed: RetrieveMode = mode;
+      let ranked: Array<{ id: string; score: number }>;
+      if (mode !== "lexical" && semantic.length > 0) {
+        ranked =
+          mode === "hybrid"
+            ? reciprocalRankFusion([lexical.map((row) => row.id), semantic.map((row) => row.id)])
+            : semantic;
+      } else {
+        // Lexical requested, or semantic unavailable → lexical ranking.
+        modeUsed = "lexical";
+        ranked =
+          mode === "semantic"
+            ? await lexicalCandidates(userId, terms, resourceIds, candidateLimit)
+            : lexical;
+        for (const row of ranked) lexicalIds.add(row.id);
+      }
+      ranked = ranked.slice(0, limit);
+
+      let hits: RetrieveHit[] = [];
+      if (ranked.length > 0) {
+        const sectionTopicId = sql`CASE WHEN ${contextChunks.role} = 'bridge' AND ${contextChunks.childTopicId} IS NOT NULL THEN ${contextChunks.childTopicId} ELSE ${contextChunks.parentTopicId} END`;
+        const rows = await db
+          .select({
+            id: contextChunks.id,
+            resourceId: contextChunks.resourceId,
+            role: contextChunks.role,
+            text: contextChunks.text,
+            anchor: contextChunks.anchor,
+            documentName: contextResources.name,
+            sectionTitle: contextTopics.title,
+            sectionPath: contextTopics.path,
+          })
+          .from(contextChunks)
+          .innerJoin(contextResources, eq(contextResources.id, contextChunks.resourceId))
+          .leftJoin(contextTopics, sql`${contextTopics.id} = ${sectionTopicId}`)
+          .where(
+            and(
+              eq(contextChunks.userId, userId),
+              inArray(
+                contextChunks.id,
+                ranked.map((row) => row.id),
+              ),
+            ),
+          );
+        const byId = new Map(rows.map((row) => [row.id, row]));
+        hits = ranked.flatMap(({ id, score }) => {
+          const row = byId.get(id);
+          if (!row) return [];
+          const matchedBy: RetrieveHit["matchedBy"] = [];
+          if (lexicalIds.has(id)) matchedBy.push("lexical");
+          if (semanticIds.has(id)) matchedBy.push("semantic");
+          return [
+            {
+              chunkId: id,
+              resourceId: row.resourceId,
+              documentName: row.documentName,
+              sectionTitle: row.sectionTitle ?? "",
+              sectionPath: row.sectionPath ?? "",
+              role: row.role,
+              snippet: makeSnippet(row.text, terms),
+              score,
+              matchedBy,
+              anchor: row.anchor,
+            },
+          ];
+        });
+      }
+
+      const topResources = [...new Set(hits.map((hit) => hit.resourceId))].slice(0, 3);
+      console.info(
+        `[context.search] mode=${mode} used=${modeUsed} terms=${terms.length} lexical=${lexical.length} semantic=${semantic.length} hits=${hits.length}` +
+          (semanticSkippedReason ? ` semanticSkipped=${semanticSkippedReason}` : "") +
+          ` top=${topResources.join(",") || "-"} q="${input.query.slice(0, 80)}"`,
+      );
+
+      return { hits, modeUsed, semanticSkippedReason };
     },
 
     async setResourceStatus(userId, resourceId, status, opts = {}) {
