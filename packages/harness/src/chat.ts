@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { ServerResponse } from "node:http";
 import { pipeUIMessageStreamToResponse } from "ai";
+import { type GatedLesson, gateLesson } from "./lesson-gate.js";
 import { applyLessons } from "./lessons.js";
 import { runChatTurn } from "./llm.js";
 import { getMemory, listMemoryForUser, parseSaveCommand, saveMemoryItem } from "./memory.js";
@@ -26,7 +27,7 @@ export type ChatResponse = {
   model?: string;
   provider?: string;
   memoryItems?: Awaited<ReturnType<typeof applyLessons>>;
-  lessons?: Awaited<ReturnType<typeof runChatTurn>>["lessons"];
+  lessons?: GatedLesson[];
 };
 
 export async function handleChat(request: ChatRequest): Promise<ChatResponse> {
@@ -54,11 +55,11 @@ export async function handleChat(request: ChatRequest): Promise<ChatResponse> {
     title: prepared.message,
   });
 
+  const lessons = await prepared.lessonGate;
   const memoryItems = await applyLessons(prepared.service, {
     userId: request.userId,
     memoryId: prepared.memoryId,
-    lessons: turn.lessons,
-    userMessage: prepared.message,
+    lessons,
     messageId: request.messageId,
     existingItems: prepared.dedupItems,
   });
@@ -70,7 +71,7 @@ export async function handleChat(request: ChatRequest): Promise<ChatResponse> {
     model: turn.model,
     provider: turn.provider,
     memoryItems,
-    lessons: turn.lessons,
+    lessons,
   };
 }
 
@@ -112,6 +113,9 @@ async function prepareChatTurn(request: ChatRequest) {
     };
   }
 
+  // Started now, awaited after the reply — runs in parallel with the chat model. Never rejects.
+  const lessonGate = gateLesson({ userId: request.userId, threadId, userMessage: message });
+
   const { memory, items, dedupItems } = await listMemoryForUser(service, request.userId);
   const activeItems = items.filter((item) => item.status === "active");
 
@@ -124,6 +128,7 @@ async function prepareChatTurn(request: ChatRequest) {
     activeItems,
     items,
     dedupItems,
+    lessonGate,
   };
 }
 
@@ -148,11 +153,11 @@ export async function pipeChatStream(request: ChatRequest, res: ServerResponse):
         title: prepared.message,
       });
 
+      const lessons = await prepared.lessonGate;
       const memoryItems = await applyLessons(prepared.service, {
         userId: request.userId,
         memoryId: prepared.memoryId,
-        lessons: turn.lessons,
-        userMessage: prepared.message,
+        lessons,
         messageId: request.messageId,
         existingItems: prepared.dedupItems,
       });
@@ -160,7 +165,7 @@ export async function pipeChatStream(request: ChatRequest, res: ServerResponse):
       return {
         threadId: prepared.threadId,
         memoryItems,
-        lessons: turn.lessons,
+        lessons,
         displayMessage: turn.message,
       };
     },

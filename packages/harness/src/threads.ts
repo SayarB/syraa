@@ -179,6 +179,30 @@ async function firstUserMessageTitle(threadId: string, resourceId: string): Prom
   return null;
 }
 
+/** Newest assistant reply in the thread (for the lesson gate), capped at 2,000 chars. */
+export async function lastAssistantMessageText(opts: {
+  userId: string;
+  threadId: string;
+}): Promise<string | null> {
+  const memory = getSyraaMemory();
+  const recalled = await memory.recall({
+    threadId: opts.threadId,
+    resourceId: opts.userId,
+    perPage: 6,
+    orderBy: { field: "createdAt", direction: "DESC" },
+  });
+
+  // Sort here too — recall may return the page in chronological order.
+  const newestFirst = recalled.messages
+    .filter((message) => message.role === "assistant")
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  for (const message of newestFirst) {
+    const text = extractDisplayText(message);
+    if (text) return text.slice(0, 2000);
+  }
+  return null;
+}
+
 export async function listChatThreads(opts: {
   userId: string;
   projectId?: string | null;
