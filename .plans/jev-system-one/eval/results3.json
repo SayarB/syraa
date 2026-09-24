@@ -1,0 +1,1890 @@
+{
+  "results": [
+    {
+      "id": "X01",
+      "cat": "explicit",
+      "diff": "easy",
+      "user": "Remember that my daughter's name is Mira.",
+      "expect": "auto",
+      "strict": 0.94,
+      "reveals": 0.79,
+      "explicit": "explicit",
+      "explicitConf": 1,
+      "got": "auto",
+      "ms": 733,
+      "tokens": {
+        "input_tokens": 726,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "X02",
+      "cat": "explicit",
+      "diff": "easy",
+      "user": "Going forward, write all dates as DD/MM/YYYY.",
+      "expect": "auto",
+      "strict": 0.9,
+      "reveals": 0.94,
+      "explicit": "explicit",
+      "explicitConf": 1,
+      "got": "auto",
+      "ms": 721,
+      "tokens": {
+        "input_tokens": 728,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "X03",
+      "cat": "explicit",
+      "diff": "easy",
+      "user": "Always cite the source file and line when you talk about code.",
+      "expect": "auto",
+      "strict": 0.84,
+      "reveals": 0.91,
+      "explicit": "explicit",
+      "explicitConf": 1,
+      "got": "auto",
+      "ms": 708,
+      "tokens": {
+        "input_tokens": 730,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "X04",
+      "cat": "explicit",
+      "diff": "easy",
+      "user": "Never suggest Jira. We don't use it and never will.",
+      "expect": "auto",
+      "strict": 0.96,
+      "reveals": 0.97,
+      "explicit": "explicit",
+      "explicitConf": 0.99,
+      "got": "auto",
+      "ms": 711,
+      "tokens": {
+        "input_tokens": 731,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "X05",
+      "cat": "explicit",
+      "diff": "medium",
+      "user": "Every time you write SQL for me, use lowercase keywords.",
+      "expect": "auto",
+      "strict": 0.87,
+      "reveals": 0.86,
+      "explicit": "explicit",
+      "explicitConf": 1,
+      "got": "auto",
+      "ms": 684,
+      "tokens": {
+        "input_tokens": 729,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "X06",
+      "cat": "explicit",
+      "diff": "medium",
+      "user": "Please keep in mind for the future that I'm allergic to peanuts.",
+      "expect": "auto",
+      "strict": 0.97,
+      "reveals": 0.98,
+      "explicit": "explicit",
+      "explicitConf": 1,
+      "got": "auto",
+      "ms": 708,
+      "tokens": {
+        "input_tokens": 731,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "X07",
+      "cat": "explicit",
+      "diff": "medium",
+      "user": "Save this: my standup is at 9:45 on weekdays.",
+      "expect": "auto",
+      "strict": 0.94,
+      "reveals": 0.81,
+      "explicit": "explicit",
+      "explicitConf": 0.85,
+      "got": "auto",
+      "ms": 240,
+      "tokens": {
+        "input_tokens": 733,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "X08",
+      "cat": "explicit",
+      "diff": "medium",
+      "user": "Note for later — I prefer window seats on flights.",
+      "expect": "auto",
+      "accept": [
+        "pending"
+      ],
+      "strict": 0.97,
+      "reveals": 0.92,
+      "explicit": "explicit",
+      "explicitConf": 0.4,
+      "got": "auto",
+      "ms": 266,
+      "tokens": {
+        "input_tokens": 728,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "X09",
+      "cat": "explicit",
+      "diff": "hard",
+      "user": "Make it a habit to ask before deleting anything in my repos.",
+      "expect": "auto",
+      "note": "no classic marker words",
+      "strict": 0.94,
+      "reveals": 0.92,
+      "explicit": "explicit",
+      "explicitConf": 0.99,
+      "got": "auto",
+      "ms": 246,
+      "tokens": {
+        "input_tokens": 730,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "X10",
+      "cat": "explicit",
+      "diff": "hard",
+      "user": "Stick to metric units with me, all the time.",
+      "expect": "auto",
+      "strict": 0.77,
+      "reveals": 0.95,
+      "explicit": "explicit",
+      "explicitConf": 1,
+      "got": "auto",
+      "ms": 231,
+      "tokens": {
+        "input_tokens": 728,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "I01",
+      "cat": "implicit",
+      "diff": "easy",
+      "user": "I'm vegan.",
+      "expect": "pending",
+      "strict": 0.92,
+      "reveals": 0.94,
+      "explicit": "implicit",
+      "explicitConf": 1,
+      "got": "pending",
+      "ms": 231,
+      "tokens": {
+        "input_tokens": 721,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "I02",
+      "cat": "implicit",
+      "diff": "easy",
+      "user": "I don't drink coffee, only tea.",
+      "expect": "pending",
+      "strict": 0.9,
+      "reveals": 0.91,
+      "explicit": "implicit",
+      "explicitConf": 1,
+      "got": "pending",
+      "ms": 252,
+      "tokens": {
+        "input_tokens": 726,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "I03",
+      "cat": "implicit",
+      "diff": "easy",
+      "user": "I like my code reviews blunt. Don't sugarcoat.",
+      "expect": "pending",
+      "accept": [
+        "auto"
+      ],
+      "strict": 0.84,
+      "reveals": 0.93,
+      "explicit": "implicit",
+      "explicitConf": 0.96,
+      "got": "pending",
+      "ms": 237,
+      "tokens": {
+        "input_tokens": 730,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "I04",
+      "cat": "implicit",
+      "diff": "medium",
+      "user": "I'm left-handed, if that matters for the desk setup stuff.",
+      "expect": "pending",
+      "strict": 0.84,
+      "reveals": 0.84,
+      "explicit": "implicit",
+      "explicitConf": 1,
+      "got": "pending",
+      "ms": 278,
+      "tokens": {
+        "input_tokens": 731,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "I05",
+      "cat": "implicit",
+      "diff": "medium",
+      "user": "Long emails stress me out.",
+      "expect": "pending",
+      "strict": 0.8,
+      "reveals": 0.9,
+      "explicit": "implicit",
+      "explicitConf": 1,
+      "got": "pending",
+      "ms": 290,
+      "tokens": {
+        "input_tokens": 723,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "I06",
+      "cat": "implicit",
+      "diff": "medium",
+      "user": "I work best with checklists rather than paragraphs.",
+      "expect": "pending",
+      "strict": 0.9,
+      "reveals": 0.96,
+      "explicit": "implicit",
+      "explicitConf": 1,
+      "got": "pending",
+      "ms": 271,
+      "tokens": {
+        "input_tokens": 728,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "I07",
+      "cat": "implicit",
+      "diff": "medium",
+      "user": "My timezone is PST, I moved to Seattle in May.",
+      "expect": "pending",
+      "strict": 0.87,
+      "reveals": 0.88,
+      "explicit": "implicit",
+      "explicitConf": 1,
+      "got": "pending",
+      "ms": 239,
+      "tokens": {
+        "input_tokens": 729,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "I08",
+      "cat": "implicit",
+      "diff": "hard",
+      "user": "Tabs, not spaces. Obviously.",
+      "expect": "pending",
+      "note": "terse, no context",
+      "strict": 0.65,
+      "reveals": 0.82,
+      "explicit": "implicit",
+      "explicitConf": 0.94,
+      "got": "pending",
+      "ms": 236,
+      "tokens": {
+        "input_tokens": 724,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "I09",
+      "cat": "implicit",
+      "diff": "hard",
+      "user": "I'm not a numbers person, so charts help more than tables.",
+      "expect": "pending",
+      "strict": 0.85,
+      "reveals": 0.92,
+      "explicit": "implicit",
+      "explicitConf": 1,
+      "got": "pending",
+      "ms": 251,
+      "tokens": {
+        "input_tokens": 731,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "I10",
+      "cat": "implicit",
+      "diff": "hard",
+      "user": "Dark roast, no sugar — that's me.",
+      "expect": "pending",
+      "strict": 0.82,
+      "reveals": 0.68,
+      "explicit": "implicit",
+      "explicitConf": 1,
+      "got": "pending",
+      "ms": 257,
+      "tokens": {
+        "input_tokens": 727,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "A01",
+      "cat": "aside",
+      "diff": "medium",
+      "user": "Can you help me plan a birthday dinner for 8 people next Saturday? I don't eat seafood so let's skip anything coastal. Something in Koramangala, around 1500 per head.",
+      "expect": "pending",
+      "strict": 0.22,
+      "reveals": 0.78,
+      "explicit": "implicit",
+      "explicitConf": 0.98,
+      "got": "pending",
+      "ms": 291,
+      "tokens": {
+        "input_tokens": 759,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "A02",
+      "cat": "aside",
+      "diff": "medium",
+      "user": "Write a short cover letter for a senior backend role at a fintech. I've been doing Go for six years, mostly payments systems. Keep it under 250 words.",
+      "expect": "pending",
+      "strict": 0.14,
+      "reveals": 0.75,
+      "explicit": "implicit",
+      "explicitConf": 0.67,
+      "got": "pending",
+      "ms": 253,
+      "tokens": {
+        "input_tokens": 754,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "A03",
+      "cat": "aside",
+      "diff": "medium",
+      "user": "Explain how CRDTs work at a high level. I have a physics background so feel free to use analogies from there. Then give me a tiny example.",
+      "expect": "pending",
+      "strict": 0.2,
+      "reveals": 0.77,
+      "explicit": "implicit",
+      "explicitConf": 0.85,
+      "got": "pending",
+      "ms": 267,
+      "tokens": {
+        "input_tokens": 751,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "A04",
+      "cat": "aside",
+      "diff": "medium",
+      "user": "Summarise this PDF on the new tax rules. I file as a freelancer, so focus on what changes for me. Bullet points are fine.",
+      "expect": "pending",
+      "strict": 0.21,
+      "reveals": 0.78,
+      "explicit": "implicit",
+      "explicitConf": 0.94,
+      "got": "pending",
+      "ms": 244,
+      "tokens": {
+        "input_tokens": 747,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "A05",
+      "cat": "aside",
+      "diff": "hard",
+      "user": "Need a gift idea for my manager's farewell, budget around 3k. She's into pottery I think. Since I work remotely I'll need something that ships well.",
+      "expect": "pending",
+      "strict": 0.05,
+      "reveals": 0.57,
+      "explicit": "implicit",
+      "explicitConf": 0.7,
+      "got": "drop",
+      "ms": 250,
+      "tokens": {
+        "input_tokens": 752,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "A06",
+      "cat": "aside",
+      "diff": "hard",
+      "user": "Help me debug why the websocket drops after exactly 60 seconds in production but not locally. We're on Fly.io and I always forget how their proxy timeouts work. Here's the server config.",
+      "expect": "pending",
+      "accept": [
+        "drop"
+      ],
+      "note": "deploy platform is durable-ish",
+      "strict": 0.05,
+      "reveals": 0.68,
+      "explicit": "implicit",
+      "explicitConf": 0.4,
+      "got": "pending",
+      "ms": 243,
+      "tokens": {
+        "input_tokens": 758,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "A07",
+      "cat": "aside",
+      "diff": "hard",
+      "user": "Can you make a weekly grocery list for two? My partner and I cook most nights, mostly South Indian food, and we shop on Sundays.",
+      "expect": "pending",
+      "strict": 0.5,
+      "reveals": 0.77,
+      "explicit": "implicit",
+      "explicitConf": 0.99,
+      "got": "pending",
+      "ms": 344,
+      "tokens": {
+        "input_tokens": 746,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "A08",
+      "cat": "aside",
+      "diff": "hard",
+      "user": "Draft a message to the landlord about the leaking tap. Keep it polite but firm. English isn't his first language so simple words please.",
+      "expect": "drop",
+      "accept": [
+        "pending"
+      ],
+      "note": "landlord's language, not user's — third party",
+      "strict": 0.05,
+      "reveals": 0.41,
+      "explicit": "implicit",
+      "explicitConf": 0.47,
+      "got": "drop",
+      "ms": 266,
+      "tokens": {
+        "input_tokens": 745,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "A09",
+      "cat": "aside",
+      "diff": "hard",
+      "user": "I want to learn Rust over the next three months. I have about 5 hours a week, mostly weekends because weekdays are packed with calls. Build me a study plan.",
+      "expect": "pending",
+      "strict": 0.2,
+      "reveals": 0.61,
+      "explicit": "implicit",
+      "explicitConf": 0.83,
+      "got": "pending",
+      "ms": 266,
+      "tokens": {
+        "input_tokens": 752,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "A10",
+      "cat": "aside",
+      "diff": "hard",
+      "user": "Compare these three phone plans for me. I barely make calls, it's all data and WhatsApp, and I travel to Singapore a couple of times a year.",
+      "expect": "pending",
+      "strict": 0.34,
+      "reveals": 0.73,
+      "explicit": "implicit",
+      "explicitConf": 0.98,
+      "got": "pending",
+      "ms": 363,
+      "tokens": {
+        "input_tokens": 751,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "F01",
+      "cat": "inferred-rule",
+      "diff": "medium",
+      "user": "Again with the disclaimers. I know you're not a lawyer. Just tell me what the clause means.",
+      "expect": "pending",
+      "prev": "I'm not a lawyer, but here is a general overview. Please consult a legal professional...",
+      "strict": 0.3,
+      "reveals": 0.87,
+      "explicit": "implicit",
+      "explicitConf": 0.86,
+      "got": "pending",
+      "ms": 245,
+      "tokens": {
+        "input_tokens": 753,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "F02",
+      "cat": "inferred-rule",
+      "diff": "medium",
+      "user": "Why is this in British spelling? Our docs are all US English.",
+      "expect": "pending",
+      "prev": "Here's the revised colour configuration and the optimised behaviour notes...",
+      "strict": 0.54,
+      "reveals": 0.92,
+      "explicit": "implicit",
+      "explicitConf": 0.99,
+      "got": "pending",
+      "ms": 332,
+      "tokens": {
+        "input_tokens": 738,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "F03",
+      "cat": "inferred-rule",
+      "diff": "medium",
+      "user": "You used semicolons everywhere again, our lint config forbids them.",
+      "expect": "pending",
+      "prev": "const a = 1;\nconst b = 2;",
+      "strict": 0.79,
+      "reveals": 0.94,
+      "explicit": "implicit",
+      "explicitConf": 0.97,
+      "got": "pending",
+      "ms": 264,
+      "tokens": {
+        "input_tokens": 737,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "F04",
+      "cat": "inferred-rule",
+      "diff": "hard",
+      "user": "I didn't ask for a summary at the end.",
+      "expect": "pending",
+      "prev": "(answer)... In summary, we covered three approaches...",
+      "strict": 0.28,
+      "reveals": 0.8,
+      "explicit": "implicit",
+      "explicitConf": 0.97,
+      "got": "pending",
+      "ms": 234,
+      "tokens": {
+        "input_tokens": 732,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "F05",
+      "cat": "inferred-rule",
+      "diff": "hard",
+      "user": "Ugh, not another numbered list.",
+      "expect": "pending",
+      "prev": "1. First...\n2. Second...\n3. Third...",
+      "strict": 0.39,
+      "reveals": 0.82,
+      "explicit": "implicit",
+      "explicitConf": 0.97,
+      "got": "pending",
+      "ms": 257,
+      "tokens": {
+        "input_tokens": 731,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "F06",
+      "cat": "inferred-rule",
+      "diff": "hard",
+      "user": "I had to reformat all the times to 24h before sending that out.",
+      "expect": "pending",
+      "strict": 0.24,
+      "reveals": 0.44,
+      "explicit": "implicit",
+      "explicitConf": 0.95,
+      "got": "drop",
+      "ms": 282,
+      "tokens": {
+        "input_tokens": 736,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "F07",
+      "cat": "inferred-rule",
+      "diff": "hard",
+      "user": "Could you not open every reply with 'Great question'?",
+      "expect": "pending",
+      "accept": [
+        "auto"
+      ],
+      "prev": "Great question! Here's how...",
+      "strict": 0.69,
+      "reveals": 0.94,
+      "explicit": "explicit",
+      "explicitConf": 0.61,
+      "got": "auto",
+      "ms": 288,
+      "tokens": {
+        "input_tokens": 728,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "F08",
+      "cat": "inferred-rule",
+      "diff": "hard",
+      "user": "That's way more than I needed.",
+      "expect": "pending",
+      "accept": [
+        "drop"
+      ],
+      "prev": "(a 1,200-word explanation of a one-line fix)",
+      "note": "could be one-off",
+      "strict": 0.35,
+      "reveals": 0.8,
+      "explicit": "implicit",
+      "explicitConf": 0.86,
+      "got": "pending",
+      "ms": 262,
+      "tokens": {
+        "input_tokens": 734,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "F09",
+      "cat": "inferred-rule",
+      "diff": "hard",
+      "user": "You keep assuming I'm on Windows.",
+      "expect": "pending",
+      "prev": "Open PowerShell and run...",
+      "strict": 0.56,
+      "reveals": 0.84,
+      "explicit": "implicit",
+      "explicitConf": 1,
+      "got": "pending",
+      "ms": 282,
+      "tokens": {
+        "input_tokens": 726,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "F10",
+      "cat": "inferred-rule",
+      "diff": "hard",
+      "user": "The last three plans you made had me working past 8pm. That's not happening.",
+      "expect": "pending",
+      "strict": 0.76,
+      "reveals": 0.85,
+      "explicit": "implicit",
+      "explicitConf": 0.85,
+      "got": "pending",
+      "ms": 234,
+      "tokens": {
+        "input_tokens": 736,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "P01",
+      "cat": "referential",
+      "diff": "medium",
+      "user": "yes, do that every time",
+      "expect": "auto",
+      "prev": "Want me to add type annotations to Python snippets by default?",
+      "strict": 0.9,
+      "reveals": 0.94,
+      "explicit": "explicit",
+      "explicitConf": 1,
+      "got": "auto",
+      "ms": 274,
+      "tokens": {
+        "input_tokens": 728,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "P02",
+      "cat": "referential",
+      "diff": "medium",
+      "user": "sure",
+      "expect": "drop",
+      "prev": "Want me to also generate a test for this function?",
+      "strict": 0.03,
+      "reveals": 0.21,
+      "explicit": "none",
+      "explicitConf": 0.67,
+      "got": "drop",
+      "ms": 265,
+      "tokens": {
+        "input_tokens": 722,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "P03",
+      "cat": "referential",
+      "diff": "medium",
+      "user": "please remember that",
+      "expect": "auto",
+      "prev": "Noted that you're flying out on the 14th and back on the 20th.",
+      "accept": [
+        "pending"
+      ],
+      "note": "trip dates are temporary but user asked",
+      "strict": 0.6,
+      "reveals": 0.3,
+      "explicit": "explicit",
+      "explicitConf": 0.96,
+      "got": "drop",
+      "ms": 291,
+      "tokens": {
+        "input_tokens": 735,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "P04",
+      "cat": "referential",
+      "diff": "hard",
+      "user": "yep, that's my usual",
+      "expect": "pending",
+      "prev": "So a flat white with oat milk?",
+      "strict": 0.87,
+      "reveals": 0.79,
+      "explicit": "implicit",
+      "explicitConf": 0.99,
+      "got": "pending",
+      "ms": 250,
+      "tokens": {
+        "input_tokens": 724,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "P05",
+      "cat": "referential",
+      "diff": "hard",
+      "user": "no, the other one",
+      "expect": "drop",
+      "prev": "Did you mean the staging database or production?",
+      "strict": 0.06,
+      "reveals": 0.11,
+      "explicit": "none",
+      "explicitConf": 0.51,
+      "got": "drop",
+      "ms": 251,
+      "tokens": {
+        "input_tokens": 724,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "P06",
+      "cat": "referential",
+      "diff": "hard",
+      "user": "perfect, that's exactly the tone I want from you",
+      "expect": "pending",
+      "accept": [
+        "auto"
+      ],
+      "prev": "Short answer: no. The migration will lock the table. Run it at night.",
+      "strict": 0.62,
+      "reveals": 0.86,
+      "explicit": "implicit",
+      "explicitConf": 0.97,
+      "got": "pending",
+      "ms": 227,
+      "tokens": {
+        "input_tokens": 738,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "P07",
+      "cat": "referential",
+      "diff": "hard",
+      "user": "ok for now",
+      "expect": "drop",
+      "prev": "Should I keep using the mock API until the real one is ready?",
+      "strict": 0.17,
+      "reveals": 0.23,
+      "explicit": "implicit",
+      "explicitConf": 0.68,
+      "got": "drop",
+      "ms": 269,
+      "tokens": {
+        "input_tokens": 727,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "P08",
+      "cat": "referential",
+      "diff": "hard",
+      "user": "correct, and that won't change",
+      "expect": "pending",
+      "accept": [
+        "auto"
+      ],
+      "prev": "Just to confirm, you deploy only from the release branch, not main?",
+      "strict": 0.94,
+      "reveals": 0.91,
+      "explicit": "implicit",
+      "explicitConf": 0.28,
+      "got": "pending",
+      "ms": 280,
+      "tokens": {
+        "input_tokens": 732,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "D01",
+      "cat": "decision",
+      "diff": "easy",
+      "user": "We've standardised on pnpm across all repos.",
+      "expect": "pending",
+      "strict": 0.92,
+      "reveals": 0.95,
+      "explicit": "implicit",
+      "explicitConf": 1,
+      "got": "pending",
+      "ms": 235,
+      "tokens": {
+        "input_tokens": 729,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "D02",
+      "cat": "decision",
+      "diff": "medium",
+      "user": "The team agreed: no more feature flags in the mobile app, we ship behind remote config.",
+      "expect": "pending",
+      "strict": 0.85,
+      "reveals": 0.91,
+      "explicit": "implicit",
+      "explicitConf": 0.67,
+      "got": "pending",
+      "ms": 309,
+      "tokens": {
+        "input_tokens": 736,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "D03",
+      "cat": "decision",
+      "diff": "medium",
+      "user": "I've decided to stop freelancing on weekends.",
+      "expect": "pending",
+      "strict": 0.86,
+      "reveals": 0.83,
+      "explicit": "implicit",
+      "explicitConf": 0.99,
+      "got": "pending",
+      "ms": 258,
+      "tokens": {
+        "input_tokens": 728,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "D04",
+      "cat": "decision",
+      "diff": "medium",
+      "user": "After the outage we moved all cron jobs to Temporal. Can you rewrite this job for it?",
+      "expect": "pending",
+      "strict": 0.26,
+      "reveals": 0.87,
+      "explicit": "implicit",
+      "explicitConf": 0.69,
+      "got": "pending",
+      "ms": 274,
+      "tokens": {
+        "input_tokens": 737,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "D05",
+      "cat": "decision",
+      "diff": "hard",
+      "user": "Going with Tailwind for the new site, the designer gave up fighting it.",
+      "expect": "pending",
+      "strict": 0.62,
+      "reveals": 0.71,
+      "explicit": "implicit",
+      "explicitConf": 0.99,
+      "got": "pending",
+      "ms": 243,
+      "tokens": {
+        "input_tokens": 733,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "D06",
+      "cat": "decision",
+      "diff": "hard",
+      "user": "Postgres it is. Can you draft the schema for the orders table?",
+      "expect": "pending",
+      "accept": [
+        "drop"
+      ],
+      "note": "could be a one-project choice",
+      "strict": 0.27,
+      "reveals": 0.77,
+      "explicit": "implicit",
+      "explicitConf": 0.82,
+      "got": "pending",
+      "ms": 266,
+      "tokens": {
+        "input_tokens": 732,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "M01",
+      "cat": "marker-trap",
+      "diff": "easy",
+      "user": "Is it true that goldfish never forget anything?",
+      "expect": "drop",
+      "strict": 0.02,
+      "reveals": 0.04,
+      "explicit": "none",
+      "explicitConf": 0.83,
+      "got": "drop",
+      "ms": 258,
+      "tokens": {
+        "input_tokens": 727,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "M02",
+      "cat": "marker-trap",
+      "diff": "easy",
+      "user": "Translate 'I will always remember you' into Japanese.",
+      "expect": "drop",
+      "strict": 0.01,
+      "reveals": 0.04,
+      "explicit": "none",
+      "explicitConf": 0.84,
+      "got": "drop",
+      "ms": 241,
+      "tokens": {
+        "input_tokens": 728,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "M03",
+      "cat": "marker-trap",
+      "diff": "medium",
+      "user": "Why does my React effect always run twice in dev?",
+      "expect": "drop",
+      "strict": 0.01,
+      "reveals": 0.46,
+      "explicit": "none",
+      "explicitConf": 0.97,
+      "got": "drop",
+      "ms": 258,
+      "tokens": {
+        "input_tokens": 728,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "M04",
+      "cat": "marker-trap",
+      "diff": "medium",
+      "user": "Write a regex that never matches empty strings.",
+      "expect": "drop",
+      "strict": 0.02,
+      "reveals": 0.04,
+      "explicit": "none",
+      "explicitConf": 0.72,
+      "got": "drop",
+      "ms": 256,
+      "tokens": {
+        "input_tokens": 726,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "M05",
+      "cat": "marker-trap",
+      "diff": "medium",
+      "user": "Remember to check the last paragraph of the doc I sent — does it contradict the intro?",
+      "expect": "drop",
+      "strict": 0.08,
+      "reveals": 0.18,
+      "explicit": "explicit",
+      "explicitConf": 0.12,
+      "got": "drop",
+      "ms": 306,
+      "tokens": {
+        "input_tokens": 735,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "M06",
+      "cat": "marker-trap",
+      "diff": "medium",
+      "user": "From now on in the story, the dragon should be friendly. Continue the chapter.",
+      "expect": "drop",
+      "note": "fiction instruction",
+      "strict": 0.21,
+      "reveals": 0.12,
+      "explicit": "explicit",
+      "explicitConf": 1,
+      "got": "drop",
+      "ms": 310,
+      "tokens": {
+        "input_tokens": 734,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "M07",
+      "cat": "marker-trap",
+      "diff": "hard",
+      "user": "My tests pass locally but always fail in CI with a timeout. Here's the log.",
+      "expect": "drop",
+      "strict": 0.02,
+      "reveals": 0.18,
+      "explicit": "none",
+      "explicitConf": 0.91,
+      "got": "drop",
+      "ms": 261,
+      "tokens": {
+        "input_tokens": 735,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "M08",
+      "cat": "marker-trap",
+      "diff": "hard",
+      "user": "Draft a company policy that says employees must always lock their screens.",
+      "expect": "drop",
+      "strict": 0.04,
+      "reveals": 0.1,
+      "explicit": "none",
+      "explicitConf": 0.34,
+      "got": "drop",
+      "ms": 376,
+      "tokens": {
+        "input_tokens": 730,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "M09",
+      "cat": "marker-trap",
+      "diff": "hard",
+      "user": "What's a good way to remember the order of the planets?",
+      "expect": "drop",
+      "strict": 0.01,
+      "reveals": 0.04,
+      "explicit": "none",
+      "explicitConf": 0.66,
+      "got": "drop",
+      "ms": 250,
+      "tokens": {
+        "input_tokens": 730,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "M10",
+      "cat": "marker-trap",
+      "diff": "hard",
+      "user": "Keep in mind the doc has two appendices when you summarise it.",
+      "expect": "drop",
+      "note": "memory phrase scoped to this task",
+      "strict": 0.2,
+      "reveals": 0.3,
+      "explicit": "explicit",
+      "explicitConf": 0.4,
+      "got": "drop",
+      "ms": 260,
+      "tokens": {
+        "input_tokens": 734,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "R01",
+      "cat": "research",
+      "diff": "easy",
+      "user": "What are the pros and cons of solar panels for an apartment?",
+      "expect": "drop",
+      "strict": 0.01,
+      "reveals": 0.08,
+      "explicit": "none",
+      "explicitConf": 0.98,
+      "got": "drop",
+      "ms": 231,
+      "tokens": {
+        "input_tokens": 730,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "R02",
+      "cat": "research",
+      "diff": "easy",
+      "user": "Best mechanical keyboards under 10k?",
+      "expect": "drop",
+      "strict": 0.02,
+      "reveals": 0.17,
+      "explicit": "none",
+      "explicitConf": 0.67,
+      "got": "drop",
+      "ms": 296,
+      "tokens": {
+        "input_tokens": 726,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "R03",
+      "cat": "research",
+      "diff": "medium",
+      "user": "I've been reading a lot about stoicism lately. Which book should I start with?",
+      "expect": "drop",
+      "accept": [
+        "pending"
+      ],
+      "strict": 0.04,
+      "reveals": 0.5,
+      "explicit": "none",
+      "explicitConf": 0.3,
+      "got": "drop",
+      "ms": 281,
+      "tokens": {
+        "input_tokens": 736,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "R04",
+      "cat": "research",
+      "diff": "medium",
+      "user": "Explain the difference between an ETF and a mutual fund.",
+      "expect": "drop",
+      "strict": 0.02,
+      "reveals": 0.03,
+      "explicit": "none",
+      "explicitConf": 0.99,
+      "got": "drop",
+      "ms": 232,
+      "tokens": {
+        "input_tokens": 728,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "R05",
+      "cat": "research",
+      "diff": "medium",
+      "user": "What's the history of the Kolkata tram system?",
+      "expect": "drop",
+      "strict": 0.01,
+      "reveals": 0.03,
+      "explicit": "none",
+      "explicitConf": 0.98,
+      "got": "drop",
+      "ms": 282,
+      "tokens": {
+        "input_tokens": 727,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "R06",
+      "cat": "research",
+      "diff": "medium",
+      "user": "Compare Supabase and Firebase for a small side project.",
+      "expect": "drop",
+      "strict": 0.02,
+      "reveals": 0.13,
+      "explicit": "none",
+      "explicitConf": 0.97,
+      "got": "drop",
+      "ms": 372,
+      "tokens": {
+        "input_tokens": 728,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "R07",
+      "cat": "research",
+      "diff": "hard",
+      "user": "I'm curious about bouldering, is it bad for your fingers long term?",
+      "expect": "drop",
+      "accept": [
+        "pending"
+      ],
+      "strict": 0.02,
+      "reveals": 0.13,
+      "explicit": "none",
+      "explicitConf": 0.88,
+      "got": "drop",
+      "ms": 252,
+      "tokens": {
+        "input_tokens": 734,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "R08",
+      "cat": "research",
+      "diff": "hard",
+      "user": "Find me 5 papers on retrieval-augmented generation from 2025.",
+      "expect": "drop",
+      "strict": 0.02,
+      "reveals": 0.08,
+      "explicit": "none",
+      "explicitConf": 0.86,
+      "got": "drop",
+      "ms": 262,
+      "tokens": {
+        "input_tokens": 735,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "T01",
+      "cat": "temporary",
+      "diff": "easy",
+      "user": "For this chat, pretend you're a pirate.",
+      "expect": "drop",
+      "strict": 0.03,
+      "reveals": 0.11,
+      "explicit": "explicit",
+      "explicitConf": 0.25,
+      "got": "drop",
+      "ms": 287,
+      "tokens": {
+        "input_tokens": 727,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "T02",
+      "cat": "temporary",
+      "diff": "easy",
+      "user": "I'm in a meeting, answer in one line for now.",
+      "expect": "drop",
+      "strict": 0.07,
+      "reveals": 0.34,
+      "explicit": "implicit",
+      "explicitConf": 0.81,
+      "got": "drop",
+      "ms": 284,
+      "tokens": {
+        "input_tokens": 730,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "T03",
+      "cat": "temporary",
+      "diff": "medium",
+      "user": "This week I'm on call, so keep reminders about the incident channel handy.",
+      "expect": "drop",
+      "strict": 0.19,
+      "reveals": 0.28,
+      "explicit": "implicit",
+      "explicitConf": 0.67,
+      "got": "drop",
+      "ms": 248,
+      "tokens": {
+        "input_tokens": 733,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "T04",
+      "cat": "temporary",
+      "diff": "medium",
+      "user": "I have a cold today, suggest something easy for lunch.",
+      "expect": "drop",
+      "strict": 0.02,
+      "reveals": 0.05,
+      "explicit": "implicit",
+      "explicitConf": 0.55,
+      "got": "drop",
+      "ms": 233,
+      "tokens": {
+        "input_tokens": 729,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "T05",
+      "cat": "temporary",
+      "diff": "medium",
+      "user": "Until the demo on Friday, prioritise the checkout flow over everything.",
+      "expect": "drop",
+      "accept": [
+        "pending"
+      ],
+      "strict": 0.1,
+      "reveals": 0.11,
+      "explicit": "implicit",
+      "explicitConf": 0.71,
+      "got": "drop",
+      "ms": 229,
+      "tokens": {
+        "input_tokens": 732,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "T06",
+      "cat": "temporary",
+      "diff": "hard",
+      "user": "I'm using my work laptop today, so no personal account links please.",
+      "expect": "drop",
+      "strict": 0.14,
+      "reveals": 0.46,
+      "explicit": "implicit",
+      "explicitConf": 0.99,
+      "got": "drop",
+      "ms": 277,
+      "tokens": {
+        "input_tokens": 732,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "T07",
+      "cat": "temporary",
+      "diff": "hard",
+      "user": "Right now I only care about the numbers, skip the explanation.",
+      "expect": "drop",
+      "strict": 0.15,
+      "reveals": 0.67,
+      "explicit": "implicit",
+      "explicitConf": 0.96,
+      "got": "pending",
+      "ms": 253,
+      "tokens": {
+        "input_tokens": 730,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "T08",
+      "cat": "temporary",
+      "diff": "hard",
+      "user": "Just for this answer, use Python instead of TypeScript.",
+      "expect": "drop",
+      "note": "implies TS is the default — but ask is one-off",
+      "strict": 0.03,
+      "reveals": 0.13,
+      "explicit": "implicit",
+      "explicitConf": 0.78,
+      "got": "drop",
+      "ms": 239,
+      "tokens": {
+        "input_tokens": 731,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "Q01",
+      "cat": "quoted",
+      "diff": "medium",
+      "user": "My colleague always writes 'per my last email'. Is that passive aggressive?",
+      "expect": "drop",
+      "strict": 0.02,
+      "reveals": 0.08,
+      "explicit": "none",
+      "explicitConf": 0.8,
+      "got": "drop",
+      "ms": 255,
+      "tokens": {
+        "input_tokens": 732,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "Q02",
+      "cat": "quoted",
+      "diff": "medium",
+      "user": "Rewrite this support macro: 'We always respond within 24 hours and never share your data.'",
+      "expect": "drop",
+      "strict": 0.03,
+      "reveals": 0.08,
+      "explicit": "none",
+      "explicitConf": 0.47,
+      "got": "drop",
+      "ms": 282,
+      "tokens": {
+        "input_tokens": 737,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "Q03",
+      "cat": "quoted",
+      "diff": "hard",
+      "user": "My mom prefers phone calls to texts. Help me write her a voicemail script for her birthday.",
+      "expect": "drop",
+      "strict": 0.39,
+      "reveals": 0.09,
+      "explicit": "implicit",
+      "explicitConf": 0.99,
+      "got": "drop",
+      "ms": 271,
+      "tokens": {
+        "input_tokens": 738,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "Q04",
+      "cat": "quoted",
+      "diff": "hard",
+      "user": "Here's our style guide excerpt: 'Always use sentence case for headings. Never use exclamation marks.' Does my draft follow it?",
+      "expect": "drop",
+      "accept": [
+        "pending"
+      ],
+      "note": "their team's guide — arguably durable",
+      "strict": 0.18,
+      "reveals": 0.44,
+      "explicit": "implicit",
+      "explicitConf": 0.91,
+      "got": "drop",
+      "ms": 244,
+      "tokens": {
+        "input_tokens": 745,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "Q05",
+      "cat": "quoted",
+      "diff": "hard",
+      "user": "If I were vegetarian, what protein sources would you suggest?",
+      "expect": "drop",
+      "strict": 0.05,
+      "reveals": 0.11,
+      "explicit": "implicit",
+      "explicitConf": 0.6,
+      "got": "drop",
+      "ms": 314,
+      "tokens": {
+        "input_tokens": 729,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "Q06",
+      "cat": "quoted",
+      "diff": "hard",
+      "user": "The client said: 'please remember we never work on Fridays'. Draft a reply acknowledging it.",
+      "expect": "drop",
+      "strict": 0.81,
+      "reveals": 0.28,
+      "explicit": "explicit",
+      "explicitConf": 1,
+      "got": "drop",
+      "ms": 252,
+      "tokens": {
+        "input_tokens": 736,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "Q07",
+      "cat": "quoted",
+      "diff": "hard",
+      "user": "Hypothetically, if I told you to always answer in French, how would that work?",
+      "expect": "drop",
+      "strict": 0.09,
+      "reveals": 0.08,
+      "explicit": "explicit",
+      "explicitConf": 0.67,
+      "got": "drop",
+      "ms": 260,
+      "tokens": {
+        "input_tokens": 738,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "Q08",
+      "cat": "quoted",
+      "diff": "medium",
+      "user": "My boss hates bullet points. Can you turn this list into a paragraph for him?",
+      "expect": "drop",
+      "accept": [
+        "pending"
+      ],
+      "strict": 0.16,
+      "reveals": 0.27,
+      "explicit": "implicit",
+      "explicitConf": 0.96,
+      "got": "drop",
+      "ms": 284,
+      "tokens": {
+        "input_tokens": 734,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "Q09",
+      "cat": "quoted",
+      "diff": "hard",
+      "user": "A user on our forum wrote 'I always get logged out after 5 minutes'. What could cause that?",
+      "expect": "drop",
+      "strict": 0.02,
+      "reveals": 0.07,
+      "explicit": "none",
+      "explicitConf": 0.81,
+      "got": "drop",
+      "ms": 270,
+      "tokens": {
+        "input_tokens": 739,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "Q10",
+      "cat": "quoted",
+      "diff": "hard",
+      "user": "Pretend I'm a customer who never reads emails. How would you get my attention?",
+      "expect": "drop",
+      "strict": 0.06,
+      "reveals": 0.11,
+      "explicit": "implicit",
+      "explicitConf": 0.49,
+      "got": "drop",
+      "ms": 266,
+      "tokens": {
+        "input_tokens": 735,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "E01",
+      "cat": "meta",
+      "diff": "easy",
+      "user": "What do you know about me so far?",
+      "expect": "drop",
+      "strict": 0.02,
+      "reveals": 0.05,
+      "explicit": "none",
+      "explicitConf": 0.98,
+      "got": "drop",
+      "ms": 286,
+      "tokens": {
+        "input_tokens": 726,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "E02",
+      "cat": "meta",
+      "diff": "medium",
+      "user": "Delete the thing you saved about my coffee.",
+      "expect": "drop",
+      "strict": 0.04,
+      "reveals": 0.29,
+      "explicit": "none",
+      "explicitConf": 0.93,
+      "got": "drop",
+      "ms": 351,
+      "tokens": {
+        "input_tokens": 726,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "E03",
+      "cat": "meta",
+      "diff": "medium",
+      "user": "Do you actually remember past conversations?",
+      "expect": "drop",
+      "strict": 0.02,
+      "reveals": 0.19,
+      "explicit": "none",
+      "explicitConf": 0.59,
+      "got": "drop",
+      "ms": 227,
+      "tokens": {
+        "input_tokens": 724,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "E04",
+      "cat": "meta",
+      "diff": "hard",
+      "user": "You can stop assuming I'm vegan, that was a month-long experiment.",
+      "expect": "drop",
+      "accept": [
+        "pending"
+      ],
+      "note": "correction to memory; arguably a new fact",
+      "strict": 0.76,
+      "reveals": 0.76,
+      "explicit": "implicit",
+      "explicitConf": 0.9,
+      "got": "pending",
+      "ms": 256,
+      "tokens": {
+        "input_tokens": 732,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "N01",
+      "cat": "noisy",
+      "diff": "medium",
+      "user": "bro stop giving me 10 options, 2-3 max ok",
+      "expect": "pending",
+      "accept": [
+        "auto"
+      ],
+      "strict": 0.58,
+      "reveals": 0.92,
+      "explicit": "implicit",
+      "explicitConf": 0.88,
+      "got": "pending",
+      "ms": 266,
+      "tokens": {
+        "input_tokens": 732,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "N02",
+      "cat": "noisy",
+      "diff": "medium",
+      "user": "mujhe spicy khana pasand nahi, kuch mild batao dinner ke liye",
+      "expect": "pending",
+      "note": "Hindi: I don't like spicy food, suggest something mild for dinner",
+      "strict": 0.35,
+      "reveals": 0.78,
+      "explicit": "implicit",
+      "explicitConf": 0.99,
+      "got": "pending",
+      "ms": 252,
+      "tokens": {
+        "input_tokens": 734,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "N03",
+      "cat": "noisy",
+      "diff": "hard",
+      "user": "rmbr i use vim keybinds everywhere so dont tell me to click stuff",
+      "expect": "auto",
+      "accept": [
+        "pending"
+      ],
+      "strict": 0.92,
+      "reveals": 0.97,
+      "explicit": "explicit",
+      "explicitConf": 1,
+      "got": "auto",
+      "ms": 229,
+      "tokens": {
+        "input_tokens": 733,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "N04",
+      "cat": "noisy",
+      "diff": "hard",
+      "user": "```\n# TODO: always use UTC here\nts = datetime.now()\n```\nwhy is this off by 5.5 hours",
+      "expect": "drop",
+      "strict": 0.33,
+      "reveals": 0.62,
+      "explicit": "explicit",
+      "explicitConf": 0.57,
+      "got": "pending",
+      "ms": 256,
+      "tokens": {
+        "input_tokens": 743,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "N05",
+      "cat": "noisy",
+      "diff": "hard",
+      "user": "ok so long story but basically the vendor changed their API again, which is the third time this quarter, and our integration broke over the weekend, I spent all Sunday on it and I'm exhausted, anyway can you look at this error and tell me what changed in their response format",
+      "expect": "drop",
+      "strict": 0.03,
+      "reveals": 0.22,
+      "explicit": "none",
+      "explicitConf": 0.71,
+      "got": "drop",
+      "ms": 255,
+      "tokens": {
+        "input_tokens": 773,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "N06",
+      "cat": "noisy",
+      "diff": "hard",
+      "user": "thx. btw im always on mobile so short answrs pls",
+      "expect": "pending",
+      "accept": [
+        "auto"
+      ],
+      "strict": 0.87,
+      "reveals": 0.96,
+      "explicit": "explicit",
+      "explicitConf": 0.9,
+      "got": "auto",
+      "ms": 308,
+      "tokens": {
+        "input_tokens": 731,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    }
+  ]
+}

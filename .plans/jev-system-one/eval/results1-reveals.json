@@ -1,0 +1,351 @@
+[
+  {
+    "id": "A1",
+    "accept": [
+      "auto"
+    ],
+    "strict": 0.81,
+    "explicitness": "explicit",
+    "reveals": 0.92
+  },
+  {
+    "id": "A2",
+    "accept": [
+      "auto"
+    ],
+    "strict": 0.96,
+    "explicitness": "explicit",
+    "reveals": 0.97
+  },
+  {
+    "id": "A3",
+    "accept": [
+      "auto"
+    ],
+    "strict": 0.77,
+    "explicitness": "explicit",
+    "reveals": 0.96
+  },
+  {
+    "id": "A4",
+    "accept": [
+      "auto"
+    ],
+    "strict": 0.68,
+    "explicitness": "explicit",
+    "reveals": 0.91
+  },
+  {
+    "id": "B1",
+    "accept": [
+      "pending",
+      "auto"
+    ],
+    "strict": 0.82,
+    "explicitness": "implicit",
+    "reveals": 0.92
+  },
+  {
+    "id": "B2",
+    "accept": [
+      "pending",
+      "auto"
+    ],
+    "strict": 0.6,
+    "explicitness": "implicit",
+    "reveals": 0.93
+  },
+  {
+    "id": "B3",
+    "accept": [
+      "pending",
+      "auto"
+    ],
+    "strict": 0.55,
+    "explicitness": "implicit",
+    "reveals": 0.95
+  },
+  {
+    "id": "B4",
+    "accept": [
+      "pending",
+      "auto"
+    ],
+    "strict": 0.85,
+    "explicitness": "implicit",
+    "reveals": 0.21
+  },
+  {
+    "id": "B5",
+    "accept": [
+      "pending",
+      "auto"
+    ],
+    "strict": 0.78,
+    "explicitness": "implicit",
+    "reveals": 0.89
+  },
+  {
+    "id": "C1",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.02,
+    "explicitness": "none",
+    "reveals": 0.07
+  },
+  {
+    "id": "C2",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.04,
+    "explicitness": "implicit",
+    "reveals": 0.21
+  },
+  {
+    "id": "C3",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.04,
+    "explicitness": "none",
+    "reveals": 0.09
+  },
+  {
+    "id": "C4",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.02,
+    "explicitness": "none",
+    "reveals": 0.06
+  },
+  {
+    "id": "C5",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.01,
+    "explicitness": "none",
+    "reveals": 0.07
+  },
+  {
+    "id": "C6",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.05,
+    "explicitness": "implicit",
+    "reveals": 0.18
+  },
+  {
+    "id": "D1",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.02,
+    "explicitness": "none",
+    "reveals": 0.2
+  },
+  {
+    "id": "D2",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.07,
+    "explicitness": "implicit",
+    "reveals": 0.67
+  },
+  {
+    "id": "D3",
+    "accept": [
+      "drop",
+      "pending"
+    ],
+    "strict": 0.16,
+    "explicitness": "implicit",
+    "reveals": 0.68
+  },
+  {
+    "id": "E1",
+    "accept": [
+      "auto",
+      "pending"
+    ],
+    "strict": 0.79,
+    "explicitness": "explicit",
+    "reveals": 0.94
+  },
+  {
+    "id": "E2",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.08,
+    "explicitness": "none",
+    "reveals": 0.3
+  },
+  {
+    "id": "E3",
+    "accept": [
+      "auto",
+      "pending"
+    ],
+    "strict": 0.88,
+    "explicitness": "explicit",
+    "reveals": 0.96
+  },
+  {
+    "id": "E4",
+    "accept": [
+      "auto",
+      "pending"
+    ],
+    "strict": 0.73,
+    "explicitness": "explicit",
+    "reveals": 0.82
+  },
+  {
+    "id": "F1",
+    "accept": [
+      "auto",
+      "pending"
+    ],
+    "strict": 0.91,
+    "explicitness": "explicit",
+    "reveals": 0.96
+  },
+  {
+    "id": "F2",
+    "accept": [
+      "auto",
+      "pending"
+    ],
+    "strict": 0.86,
+    "explicitness": "explicit",
+    "reveals": 0.88
+  },
+  {
+    "id": "G1",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.02,
+    "explicitness": "implicit",
+    "reveals": 0.09
+  },
+  {
+    "id": "G2",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.13,
+    "explicitness": "implicit",
+    "reveals": 0.26
+  },
+  {
+    "id": "G3",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.03,
+    "explicitness": "none",
+    "reveals": 0.2
+  },
+  {
+    "id": "H1",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.22,
+    "explicitness": "none",
+    "reveals": 0.29
+  },
+  {
+    "id": "H2",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.06,
+    "explicitness": "implicit",
+    "reveals": 0.08
+  },
+  {
+    "id": "H3",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.02,
+    "explicitness": "none",
+    "reveals": 0.12
+  },
+  {
+    "id": "H4",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.23,
+    "explicitness": "explicit",
+    "reveals": 0.58
+  },
+  {
+    "id": "I1",
+    "accept": [
+      "pending",
+      "drop"
+    ],
+    "strict": 0.26,
+    "explicitness": "implicit",
+    "reveals": 0.33
+  },
+  {
+    "id": "I2",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.2,
+    "explicitness": "implicit",
+    "reveals": 0.06
+  },
+  {
+    "id": "J1",
+    "accept": [
+      "auto",
+      "pending"
+    ],
+    "strict": 0.85,
+    "explicitness": "explicit",
+    "reveals": 0.96
+  },
+  {
+    "id": "J2",
+    "accept": [
+      "auto",
+      "pending"
+    ],
+    "strict": 0.85,
+    "explicitness": "explicit",
+    "reveals": 0.96
+  },
+  {
+    "id": "J3",
+    "accept": [
+      "pending",
+      "drop"
+    ],
+    "strict": 0.21,
+    "explicitness": "none",
+    "reveals": 0.75
+  },
+  {
+    "id": "J4",
+    "accept": [
+      "auto",
+      "pending"
+    ],
+    "strict": 0.95,
+    "explicitness": "explicit",
+    "reveals": 0.97
+  }
+]
