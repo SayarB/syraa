@@ -12,6 +12,7 @@ const TOOL_LABELS: Record<string, string> = {
   list_materials: "Listed materials",
   read_materials_section: "Read document section",
   get_my_memory: "Checked memory",
+  web_search: "Searched the web",
 };
 
 function toolTitle(name: string, active: boolean): string {
@@ -112,6 +113,40 @@ function formatReadSectionOutput(output: unknown): { summary: string; detail: st
   };
 }
 
+type WebSearchOutput = {
+  query?: string;
+  results?: Array<{ title?: string; url?: string; snippet?: string }>;
+  error?: string;
+};
+
+function formatWebSearchOutput(output: unknown): { summary: string; detail: string } {
+  const data = output as WebSearchOutput;
+  if (data.error) return { summary: data.error, detail: `Output\n  error: ${data.error}` };
+
+  const results = data.results ?? [];
+  const query = data.query ? ` for “${data.query}”` : "";
+  const lines = results.map(
+    (result, index) => `  ${index + 1}. ${result.title ?? "Untitled"}\n     ${result.url ?? ""}`,
+  );
+  return {
+    summary: `${results.length} result${results.length === 1 ? "" : "s"}${query}`,
+    detail: ["Output", ...(lines.length > 0 ? lines : ["  (no results)"])].join("\n"),
+  };
+}
+
+export type WebSource = { title: string; url: string };
+
+/** Links a finished web tool call contributed, for the Sources list under the reply. */
+export function webSourcesFromPart(part: UIMessage["parts"][number]): WebSource[] {
+  if (!isToolUIPart(part) || part.state !== "output-available") return [];
+  if (getToolName(part) !== "web_search") return [];
+
+  const results = (part.output as WebSearchOutput | undefined)?.results ?? [];
+  return results.flatMap((result) =>
+    result.url ? [{ title: result.title || result.url, url: result.url }] : [],
+  );
+}
+
 function formatGenericOutput(output: unknown): { summary: string; detail: string } {
   const json = JSON.stringify(output, null, 2);
   const oneLine = json.replace(/\s+/g, " ").slice(0, 120);
@@ -173,6 +208,8 @@ export function formatToolActivity(
     formatted = formatListMaterialsOutput(output);
   } else if (toolName === "read_materials_section") {
     formatted = formatReadSectionOutput(output);
+  } else if (toolName === "web_search") {
+    formatted = formatWebSearchOutput(output);
   } else {
     formatted = formatGenericOutput(output);
   }

@@ -1,0 +1,22 @@
+# Internal-only SearXNG used by the Syraa API (web_search tool). Not exposed publicly.
+# server.secret_key comes from the SEARXNG_SECRET environment variable.
+use_default_settings: true
+
+general:
+  instance_name: "syraa-search"
+
+server:
+  # The API is the only client (port bound to 127.0.0.1), so the bot limiter is not needed.
+  limiter: false
+  image_proxy: false
+
+search:
+  safe_search: 1
+  # json is what the API reads; html kept for manual debugging via the local port.
+  formats:
+    - html
+    - json
+
+outgoing:
+  request_timeout: 3.0
+  max_request_timeout: 6.0
