@@ -26,7 +26,7 @@ describe("fullReplyText", () => {
         text: "Found it.",
         steps: [{ text: "Let me check. " }, { text: "Found it." }],
       }),
-    ).toBe("Let me check. Found it.");
+    ).toBe("Let me check.\n\nFound it.");
   });
 
   it("falls back to text when steps carry none", () => {

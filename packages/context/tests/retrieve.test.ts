@@ -14,6 +14,26 @@ describe("queryTerms", () => {
     expect(queryTerms("Chroma-DB & chroma: a vector DB!")).toEqual(["chroma", "db", "vector"]);
   });
 
+  it("drops filler words before the term cap", () => {
+    const filler = new Set([
+      "can",
+      "you",
+      "please",
+      "tell",
+      "me",
+      "what",
+      "my",
+      "say",
+      "about",
+      "the",
+      "of",
+    ]);
+    const query =
+      "can you please tell me what my notes say about the history of the ottoman empire";
+    expect(queryTerms(query, filler)).toEqual(["notes", "history", "ottoman", "empire"]);
+    expect(queryTerms("the of", filler)).toEqual(["the", "of"]);
+  });
+
   it("keeps words with combining marks (Indic scripts) whole", () => {
     expect(queryTerms("हिन्दी व्याकरण")).toEqual(["हिन्दी", "व्याकरण"]);
   });

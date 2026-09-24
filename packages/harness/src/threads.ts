@@ -304,8 +304,15 @@ function extractDisplayText(message: MastraDBMessage): string | null {
   if (!raw) return null;
 
   try {
-    const parsed = JSON.parse(raw) as { message?: unknown };
-    if (typeof parsed.message === "string" && parsed.message.trim()) {
+    // Legacy `{ message, lessons }` turn JSON only — a reply that is itself JSON stays as is.
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      typeof parsed.message === "string" &&
+      parsed.message.trim() &&
+      Object.keys(parsed).every((key) => key === "message" || key === "lessons")
+    ) {
       return parsed.message.trim();
     }
   } catch {

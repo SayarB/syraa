@@ -2,15 +2,18 @@ export type RetrieveMode = "hybrid" | "lexical" | "semantic";
 
 const MAX_TERMS = 12;
 
-/** Split on non-letter/mark/digit (marks keep Indic words whole), lowercase, drop 1-char tokens, dedupe, cap. */
-export function queryTerms(query: string): string[] {
-  const terms: string[] = [];
+/**
+ * Split on non-letter/mark/digit (marks keep Indic words whole), lowercase, drop 1-char tokens,
+ * dedupe, cap. Words in `skip` (filler) are dropped before the cap so a long question keeps its
+ * topic words; if every word is filler, the filler is kept.
+ */
+export function queryTerms(query: string, skip?: ReadonlySet<string>): string[] {
+  const all: string[] = [];
   for (const raw of query.toLowerCase().split(/[^\p{L}\p{M}\p{N}]+/u)) {
-    if (raw.length < 2 || terms.includes(raw)) continue;
-    terms.push(raw);
-    if (terms.length >= MAX_TERMS) break;
+    if (raw.length >= 2 && !all.includes(raw)) all.push(raw);
   }
-  return terms;
+  const content = skip ? all.filter((term) => !skip.has(term)) : all;
+  return (content.length > 0 ? content : all).slice(0, MAX_TERMS);
 }
 
 /** OR query for `to_tsquery` — terms are already `[\p{L}\p{M}\p{N}]+`, so no tsquery syntax leaks in. */

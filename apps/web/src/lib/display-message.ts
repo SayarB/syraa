@@ -1,17 +1,18 @@
 import type { UIMessage } from "ai";
 
 /**
- * Replace the streamed text of the last assistant message with the server's final reply.
+ * Replace the streamed text of assistant message `messageId` with the server's final reply.
  * displayMessage is the whole streamed reply with runtime footers stripped from the end (or a
- * fallback when nothing usable streamed).
+ * fallback when nothing usable streamed). No-op when that message isn't on screen (thread switched).
  */
-export function patchLastAssistantDisplayMessage(
+export function patchAssistantDisplayMessage(
   messages: UIMessage[],
+  messageId: string,
   displayMessage: string,
 ): UIMessage[] {
   const next = [...messages];
   for (let index = next.length - 1; index >= 0; index -= 1) {
-    if (next[index].role !== "assistant") continue;
+    if (next[index].id !== messageId || next[index].role !== "assistant") continue;
     const parts = next[index].parts;
     const streamed = parts.flatMap((part) => (part.type === "text" ? [part.text] : [])).join("");
     if (streamed.trim() === displayMessage) break;

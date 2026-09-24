@@ -422,9 +422,7 @@ export function createContextStore(db: ContextDb, opts: ContextStoreOptions = {}
       const limit = Math.min(20, Math.max(1, Math.floor(input.limit ?? 8)));
       const candidateLimit = limit * 4;
       const resourceIds = input.resourceIds;
-      const allTerms = queryTerms(input.query);
-      const contentTerms = allTerms.filter((term) => !STOPWORDS.has(term));
-      const terms = contentTerms.length > 0 ? contentTerms : allTerms;
+      const terms = queryTerms(input.query, STOPWORDS);
 
       if (resourceIds && resourceIds.length === 0) {
         return { hits: [], modeUsed: mode };

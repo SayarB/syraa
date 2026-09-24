@@ -8,7 +8,7 @@ import { TopicTreeModal } from "./components/TopicTreeModal";
 import { UiMessageList } from "./components/UiMessageList";
 import { apiFetch, apiUrl } from "./lib/api";
 import { authClient } from "./lib/auth-client";
-import { patchLastAssistantDisplayMessage } from "./lib/display-message";
+import { patchAssistantDisplayMessage } from "./lib/display-message";
 import { formatMemorySavedNotice } from "./lib/memory-notice";
 import type {
   ChatConfig,
@@ -168,11 +168,11 @@ export default function App() {
         }
       }
     },
-    onFinish: () => {
+    onFinish: ({ message }) => {
       const displayMessage = pendingDisplayMessage.current;
       pendingDisplayMessage.current = null;
       if (displayMessage) {
-        setChatMessages((prev) => patchLastAssistantDisplayMessage(prev, displayMessage));
+        setChatMessages((prev) => patchAssistantDisplayMessage(prev, message.id, displayMessage));
       }
       void refreshThreads();
     },

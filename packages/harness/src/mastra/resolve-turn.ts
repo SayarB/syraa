@@ -24,7 +24,10 @@ export function stripRuntimeFooters(text: string): string {
  * step's text, so join every step's text instead.
  */
 export function fullReplyText(output: { text?: string; steps?: { text?: string }[] }): string {
-  const fromSteps = (output.steps ?? []).map((step) => step.text ?? "").join("");
+  const fromSteps = (output.steps ?? [])
+    .map((step) => step.text?.trim() ?? "")
+    .filter(Boolean)
+    .join("\n\n");
   return fromSteps.trim() ? fromSteps : (output.text ?? "");
 }
 
