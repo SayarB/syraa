@@ -38,6 +38,18 @@ function jevTurn(scores: TurnScores) {
   };
 }
 
+function jevConfirm(scores: TurnScores & { confirms: number }) {
+  const turn = jevTurn(scores);
+  return {
+    answers: { ...turn.answers, confirms: { type: "noul", noul: scores.confirms } },
+  };
+}
+
+/** True for the call that carries the previous assistant message (the confirmation check). */
+function isConfirmationCall(init: RequestInit): boolean {
+  return "confirms" in JSON.parse(init.body as string).questions;
+}
+
 function jevSentence(reveals: number, selfContained: number) {
   return {
     answers: {
@@ -154,18 +166,110 @@ describe("gateLesson", () => {
     expect(state).toContain("why is this off?");
   });
 
-  it("includes the previous assistant message in the state", async () => {
+  it("judges the user's message on its own, without the previous assistant message", async () => {
     fetchMock.mockResolvedValue(
       okJson(jevTurn({ strict: 0.05, reveals: 0.1, explicitness: "none", self_contained: 0.2 })),
     );
-    lastAssistantMessageText.mockResolvedValueOnce("Want me to keep answers short going forward?");
-    await gateLesson({ ...baseOpts, userMessage: "yes please" });
-    expect(stateOf(fetchMock.mock.calls[0])).toContain(
-      "Want me to keep answers short going forward?",
-    );
+    lastAssistantMessageText.mockResolvedValueOnce("You run an independent music label.");
+    await gateLesson({ ...baseOpts, userMessage: "What do you already know about me?" });
 
-    await gateLesson({ ...baseOpts, userMessage: "yes please" });
-    expect(stateOf(fetchMock.mock.calls[1])).toContain("(none — start of conversation)");
+    const userOnlyCall = fetchMock.mock.calls.find(([, init]) => !isConfirmationCall(init));
+    const confirmationCall = fetchMock.mock.calls.find(([, init]) => isConfirmationCall(init));
+    expect(stateOf(userOnlyCall!)).not.toContain("music label");
+    expect(stateOf(userOnlyCall!)).toContain("What do you already know about me?");
+    // Only the narrow confirmation check ever sees the previous reply.
+    expect(stateOf(confirmationCall!)).toContain("music label");
+  });
+
+  it("skips the confirmation check when there is no previous assistant message", async () => {
+    fetchMock.mockResolvedValue(
+      okJson(jevTurn({ strict: 0.05, reveals: 0.1, explicitness: "none", self_contained: 0.2 })),
+    );
+    await gateLesson({ ...baseOpts, userMessage: "hello" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(isConfirmationCall(fetchMock.mock.calls[0][1])).toBe(false);
+  });
+
+  it("never learns a fact that only appears in the previous assistant message", async () => {
+    lastAssistantMessageText.mockResolvedValue(
+      "Here's what I know: you run a music label and study thermodynamics.",
+    );
+    fetchMock.mockImplementation(async (_url, init) => {
+      if (isConfirmationCall(init)) {
+        // Jev sees durable facts in the combined state, but the user isn't confirming anything.
+        return okJson(
+          jevConfirm({
+            strict: 0.7,
+            reveals: 0.9,
+            explicitness: "implicit",
+            self_contained: 0.1,
+            confirms: 0.08,
+          }),
+        );
+      }
+      return okJson(
+        jevTurn({ strict: 0.04, reveals: 0.12, explicitness: "none", self_contained: 0.3 }),
+      );
+    });
+
+    await expect(
+      gateLesson({ ...baseOpts, userMessage: "What do you already know about me?" }),
+    ).resolves.toEqual([]);
+    expect(generate).not.toHaveBeenCalled();
+  });
+
+  it("uses the previous assistant message when the user explicitly confirms it", async () => {
+    lastAssistantMessageText.mockResolvedValue(
+      "Want me to keep answers under 100 words going forward?",
+    );
+    fetchMock.mockImplementation(async (_url, init) => {
+      if (isConfirmationCall(init)) {
+        return okJson(
+          jevConfirm({
+            strict: 0.8,
+            reveals: 0.9,
+            explicitness: "explicit",
+            self_contained: 0.1,
+            confirms: 0.93,
+          }),
+        );
+      }
+      return okJson(
+        jevTurn({ strict: 0.1, reveals: 0.2, explicitness: "none", self_contained: 0.1 }),
+      );
+    });
+    generate.mockResolvedValue({ text: "User wants answers under 100 words." });
+
+    const lessons = await gateLesson({ ...baseOpts, userMessage: "yes please" });
+
+    expect(generate.mock.calls[0][0]).toContain(
+      "Previous assistant message: Want me to keep answers under 100 words going forward?",
+    );
+    expect(lessons).toEqual<GatedLesson[]>([
+      {
+        text: "User wants answers under 100 words.",
+        kind: "preference",
+        activate: true,
+        confidence: "high",
+      },
+    ]);
+  });
+
+  it("ignores a failed confirmation check and keeps the user's own lesson", async () => {
+    lastAssistantMessageText.mockResolvedValue("Here's the Lisbon itinerary.");
+    fetchMock.mockImplementation(async (_url, init) => {
+      if (isConfirmationCall(init)) throw new DOMException("timed out", "TimeoutError");
+      return okJson(
+        jevTurn({
+          strict: 0.81,
+          reveals: 0.92,
+          explicitness: "explicit",
+          self_contained: 0.9,
+        }),
+      );
+    });
+    const lessons = await gateLesson({ ...baseOpts, userMessage: "Remember that I'm vegetarian." });
+    expect(lessons.map((lesson) => lesson.text)).toEqual(["Remember that I'm vegetarian."]);
   });
 
   it("drops without calling the writer", async () => {
@@ -219,6 +323,7 @@ describe("gateLesson", () => {
       return okJson(jevSentence(0.1, 0.5));
     });
     generate.mockResolvedValue({ text: "User doesn't eat seafood." });
+    lastAssistantMessageText.mockResolvedValue("You mentioned you love oysters last week.");
 
     const lessons = await gateLesson({ ...baseOpts, userMessage: message });
 
@@ -226,6 +331,8 @@ describe("gateLesson", () => {
     expect(generate.mock.calls[0][0]).toContain(
       "Most relevant part: I don't eat seafood so skip coastal places.",
     );
+    // Learned from the user's own words: the writer never sees the assistant's reply.
+    expect(generate.mock.calls[0][0]).not.toContain("oysters");
     expect(lessons).toEqual<GatedLesson[]>([
       {
         text: "User doesn't eat seafood.",
@@ -247,6 +354,14 @@ describe("gateLesson", () => {
     );
     generate.mockResolvedValue({ text: "" });
     await expect(gateLesson({ ...baseOpts, userMessage: "yes please" })).resolves.toEqual([]);
+  });
+
+  it("treats a NONE answer from the writer as no lesson", async () => {
+    fetchMock.mockResolvedValue(
+      okJson(jevTurn({ strict: 0.4, reveals: 0.7, explicitness: "implicit", self_contained: 0.2 })),
+    );
+    generate.mockResolvedValue({ text: "NONE" });
+    await expect(gateLesson({ ...baseOpts, userMessage: "ok cool" })).resolves.toEqual([]);
   });
 
   it("gives the writer a timeout and fails closed when it aborts", async () => {

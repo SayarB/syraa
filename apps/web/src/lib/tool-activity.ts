@@ -11,6 +11,7 @@ export type ToolActivity = {
 const TOOL_LABELS: Record<string, string> = {
   list_materials: "Listed materials",
   read_materials_section: "Read document section",
+  get_my_memory: "Checked memory",
 };
 
 function toolTitle(name: string, active: boolean): string {
