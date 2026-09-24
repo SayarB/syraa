@@ -1,5 +1,22 @@
+import pytest
 from syraa_ingest.embed import embed_texts, resolve_embedding_config
 from syraa_ingest.queue_protocol import QUEUE_KEY, IngestJob
+
+EMBEDDING_ENV = (
+    "EMBEDDING_PROVIDER",
+    "EMBEDDING_MODEL",
+    "EMBEDDING_BASE_URL",
+    "EMBEDDING_API_KEY",
+    "EMBEDDING_DIMS",
+    "FIREWORKS_API_KEY",
+    "OPENAI_API_KEY",
+)
+
+
+@pytest.fixture(autouse=True)
+def _clean_embedding_env(monkeypatch) -> None:
+    for name in EMBEDDING_ENV:
+        monkeypatch.delenv(name, raising=False)
 
 
 def test_queue_key() -> None:
@@ -29,8 +46,6 @@ def test_hash_embeddings(monkeypatch) -> None:
 
 def test_none_embeddings(monkeypatch) -> None:
     monkeypatch.setenv("EMBEDDING_PROVIDER", "none")
-    monkeypatch.delenv("FIREWORKS_API_KEY", raising=False)
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     vectors, provider = embed_texts(["hello"])
     assert provider == "none"
     assert vectors == [None]
@@ -65,3 +80,42 @@ def test_explicit_model_kept(monkeypatch) -> None:
     monkeypatch.setenv("OPENAI_API_KEY", "k")
     monkeypatch.setenv("EMBEDDING_MODEL", "text-embedding-3-large")
     assert resolve_embedding_config()["model"] == "text-embedding-3-large"
+
+
+def test_blank_provider_means_auto(monkeypatch) -> None:
+    monkeypatch.setenv("EMBEDDING_PROVIDER", " ")
+    monkeypatch.setenv("OPENAI_API_KEY", "k")
+    assert resolve_embedding_config()["provider"] == "openai"
+
+
+def test_whitespace_key_is_unset(monkeypatch) -> None:
+    monkeypatch.setenv("FIREWORKS_API_KEY", "  ")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-real\n")
+    cfg = resolve_embedding_config()
+    assert cfg["provider"] == "openai"
+    assert cfg["api_key"] == "sk-real"
+
+
+def test_blank_provider_key_falls_back_to_embedding_api_key(monkeypatch) -> None:
+    monkeypatch.setenv("EMBEDDING_PROVIDER", "openai")
+    monkeypatch.setenv("OPENAI_API_KEY", "")
+    monkeypatch.setenv("EMBEDDING_API_KEY", "sk-embed")
+    assert resolve_embedding_config()["api_key"] == "sk-embed"
+
+
+@pytest.mark.parametrize("dims", ["auto", "768d", "0", "-3"])
+def test_bad_dims_never_raise(monkeypatch, dims) -> None:
+    monkeypatch.setenv("EMBEDDING_PROVIDER", "hash")
+    monkeypatch.setenv("EMBEDDING_DIMS", dims)
+    vectors, _ = embed_texts(["hello"])
+    assert len(vectors[0]) == 64
+
+
+def test_remote_failure_falls_back_even_with_bad_dims(monkeypatch) -> None:
+    monkeypatch.setenv("EMBEDDING_PROVIDER", "openai")
+    monkeypatch.setenv("OPENAI_API_KEY", "k")
+    monkeypatch.setenv("EMBEDDING_BASE_URL", "http://127.0.0.1:9")
+    monkeypatch.setenv("EMBEDDING_DIMS", "auto")
+    vectors, provider = embed_texts(["hello"])
+    assert provider == "hash-fallback:openai"
+    assert len(vectors[0]) == 64

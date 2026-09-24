@@ -11,18 +11,27 @@ import urllib.request
 from typing import Any
 
 
-def _env(name: str, default: str) -> str:
+def _env(name: str, default: str = "") -> str:
     """Env var, or ``default`` when unset or blank (compose passes ``${X:-}`` as "")."""
     return (os.environ.get(name) or "").strip() or default
 
 
+def _dims() -> int:
+    """EMBEDDING_DIMS for hash vectors; a missing or bad value means 64 (never raises)."""
+    try:
+        dims = int(_env("EMBEDDING_DIMS", "64"))
+    except ValueError:
+        return 64
+    return dims if dims > 0 else 64
+
+
 def resolve_embedding_config() -> dict[str, Any]:
-    provider = (os.environ.get("EMBEDDING_PROVIDER") or "auto").strip().lower()
-    if provider in ("", "none", "off", "null"):
+    provider = _env("EMBEDDING_PROVIDER", "auto").lower()
+    if provider in ("none", "off", "null"):
         return {"provider": "none", "model": None, "base_url": None, "api_key": None}
 
-    fireworks_key = os.environ.get("FIREWORKS_API_KEY") or ""
-    openai_key = os.environ.get("OPENAI_API_KEY") or ""
+    fireworks_key = _env("FIREWORKS_API_KEY")
+    openai_key = _env("OPENAI_API_KEY")
 
     if provider == "auto":
         if fireworks_key:
@@ -40,7 +49,7 @@ def resolve_embedding_config() -> dict[str, Any]:
                 "EMBEDDING_BASE_URL",
                 "https://api.fireworks.ai/inference/v1",
             ).rstrip("/"),
-            "api_key": fireworks_key or os.environ.get("EMBEDDING_API_KEY") or "",
+            "api_key": fireworks_key or _env("EMBEDDING_API_KEY"),
         }
 
     if provider == "openai":
@@ -48,12 +57,12 @@ def resolve_embedding_config() -> dict[str, Any]:
             "provider": "openai",
             "model": _env("EMBEDDING_MODEL", "text-embedding-3-small"),
             "base_url": _env("EMBEDDING_BASE_URL", "https://api.openai.com/v1").rstrip("/"),
-            "api_key": openai_key or os.environ.get("EMBEDDING_API_KEY") or "",
+            "api_key": openai_key or _env("EMBEDDING_API_KEY"),
         }
 
     if provider == "hash":
         # Deterministic local stub for tests / offline MVP (not semantic).
-        dims = int(_env("EMBEDDING_DIMS", "64"))
+        dims = _dims()
         return {"provider": "hash", "model": f"hash-{dims}", "base_url": None, "api_key": None}
 
     raise ValueError(f"unknown EMBEDDING_PROVIDER={provider}")
@@ -144,7 +153,7 @@ def embed_texts(texts: list[str]) -> tuple[list[list[float] | None], str]:
         )
         return vectors, provider
     except Exception as err:  # noqa: BLE001 — keep ingest moving
-        dims = int(_env("EMBEDDING_DIMS", "64"))
+        dims = _dims()
         print(
             f"embedding via {provider} failed ({err}); falling back to hash-{dims}",
             flush=True,
