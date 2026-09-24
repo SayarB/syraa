@@ -8,6 +8,7 @@ import os
 import ssl
 import urllib.error
 import urllib.request
+from functools import lru_cache
 from typing import Any
 
 
@@ -17,11 +18,19 @@ def _env(name: str, default: str = "") -> str:
 
 
 MAX_HASH_DIMS = 4096
+# Remote-failure stubs always use this size, which no real embedding model has, so search's
+# dimension filter keeps them out of semantic results whatever EMBEDDING_DIMS says.
+FALLBACK_DIMS = 64
 
 
 def _dims() -> int:
-    """EMBEDDING_DIMS for hash vectors; a missing or bad value means 64 (never raises)."""
-    raw = _env("EMBEDDING_DIMS", "64")
+    """EMBEDDING_DIMS for the hash provider; a missing or bad value means 64 (never raises)."""
+    return _parse_dims(_env("EMBEDDING_DIMS", "64"))
+
+
+@lru_cache(maxsize=8)
+def _parse_dims(raw: str) -> int:
+    # Cached per value so a bad setting is logged once, not on every job.
     try:
         dims = int(raw)
     except ValueError:
@@ -70,7 +79,13 @@ def resolve_embedding_config() -> dict[str, Any]:
     if provider == "hash":
         # Deterministic local stub for tests / offline MVP (not semantic).
         dims = _dims()
-        return {"provider": "hash", "model": f"hash-{dims}", "base_url": None, "api_key": None}
+        return {
+            "provider": "hash",
+            "model": f"hash-{dims}",
+            "dims": dims,
+            "base_url": None,
+            "api_key": None,
+        }
 
     raise ValueError(f"unknown EMBEDDING_PROVIDER={provider}")
 
@@ -148,7 +163,7 @@ def embed_texts(texts: list[str]) -> tuple[list[list[float] | None], str]:
         return [None for _ in texts], "none"
 
     if provider == "hash":
-        dims = _dims()
+        dims = int(cfg["dims"])
         return [_hash_embedding(t, dims) for t in texts], "hash"
 
     try:
@@ -160,7 +175,7 @@ def embed_texts(texts: list[str]) -> tuple[list[list[float] | None], str]:
         )
         return vectors, provider
     except Exception as err:  # noqa: BLE001 — keep ingest moving
-        dims = _dims()
+        dims = FALLBACK_DIMS
         print(
             f"embedding via {provider} failed ({err}); falling back to hash-{dims}",
             flush=True,

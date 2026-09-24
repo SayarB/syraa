@@ -18,6 +18,7 @@ EMBEDDING_ENV = (
 def _clean_embedding_env(monkeypatch) -> None:
     for name in EMBEDDING_ENV:
         monkeypatch.delenv(name, raising=False)
+    embed._parse_dims.cache_clear()
 
 
 def test_queue_key() -> None:
@@ -109,14 +110,15 @@ def test_bad_dims_never_raise(monkeypatch, capsys, dims) -> None:
     monkeypatch.setenv("EMBEDDING_PROVIDER", "hash")
     monkeypatch.setenv("EMBEDDING_DIMS", dims)
     vectors, _ = embed_texts(["hello"])
+    embed_texts(["again"])
     assert len(vectors[0]) == 64
-    assert "EMBEDDING_DIMS" in capsys.readouterr().out
+    assert capsys.readouterr().out.count("EMBEDDING_DIMS") == 1
 
 
-def test_remote_failure_falls_back_even_with_bad_dims(monkeypatch) -> None:
+def test_remote_failure_falls_back_to_fixed_dims(monkeypatch) -> None:
     monkeypatch.setenv("EMBEDDING_PROVIDER", "openai")
     monkeypatch.setenv("OPENAI_API_KEY", "k")
-    monkeypatch.setenv("EMBEDDING_DIMS", "auto")
+    monkeypatch.setenv("EMBEDDING_DIMS", "768")
 
     def refuse(*_args, **_kwargs):
         raise RuntimeError("embedding HTTP 503")
