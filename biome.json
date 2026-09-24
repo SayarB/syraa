@@ -49,6 +49,17 @@
           }
         }
       }
+    },
+    {
+      "includes": ["apps/web/src/components/ui/**", "apps/web/src/components/ai-elements/**"],
+      "linter": {
+        "enabled": false
+      }
     }
-  ]
+  ],
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  }
 }

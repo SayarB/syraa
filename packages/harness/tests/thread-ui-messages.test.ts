@@ -51,8 +51,7 @@ describe("mastraThreadToUiMessages", () => {
       "tool-list_materials",
       "text",
     ]);
-    expect(
-      (messages[1]?.parts[1] as { output?: { materials?: unknown[] } }).output?.materials,
-    ).toHaveLength(1);
+    const toolPart = messages[1]?.parts[1] as { output?: { materials?: unknown[] } } | undefined;
+    expect(toolPart?.output?.materials).toHaveLength(1);
   });
 });

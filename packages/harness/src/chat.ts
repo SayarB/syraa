@@ -1,15 +1,11 @@
-import { randomUUID } from "node:crypto";
 import type { ServerResponse } from "node:http";
 import type { MemoryItem } from "@syraa/memory";
 import { pipeUIMessageStreamToResponse } from "ai";
 import { type GatedLesson, gateLesson } from "./lesson-gate.js";
 import { applyLessons } from "./lessons.js";
 import { runChatTurn } from "./llm.js";
+import { createStaticUIMessageStream, createSyraaUIMessageStream } from "./mastra/chat-stream.js";
 import { getMemory, listMemoryForUser, parseSaveCommand, saveMemoryItem } from "./memory.js";
-import {
-  createStaticUIMessageStream,
-  createSyraaUIMessageStream,
-} from "./mastra/chat-stream.js";
 import { ensureChatThread, maybeSetThreadTitle } from "./threads.js";
 
 export type ChatRequest = {

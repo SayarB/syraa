@@ -1,7 +1,8 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
 import type { IncomingMessage } from "node:http";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   isBetterAuthConfigured,
+  readThemePreference,
   requireUserId,
   resetBetterAuthForTests,
   trustedOrigins,
@@ -44,9 +45,23 @@ describe("requireUserId / AUTH_DEV_USER", () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("BETTER_AUTH_URL", "https://syraa.example.com");
     vi.stubEnv("BETTER_AUTH_TRUSTED_ORIGINS", "https://alt.example.com/");
-    expect(trustedOrigins()).toEqual([
-      "https://syraa.example.com",
-      "https://alt.example.com",
-    ]);
+    expect(trustedOrigins()).toEqual(["https://syraa.example.com", "https://alt.example.com"]);
+  });
+});
+
+describe("readThemePreference", () => {
+  it("keeps known palette and mode values", () => {
+    expect(readThemePreference({ themePalette: "stone", themeMode: "light" })).toEqual({
+      palette: "stone",
+      mode: "light",
+    });
+  });
+
+  it("drops unknown or missing values", () => {
+    expect(readThemePreference({ themePalette: "neon", themeMode: 3 })).toEqual({
+      palette: null,
+      mode: null,
+    });
+    expect(readThemePreference({})).toEqual({ palette: null, mode: null });
   });
 });

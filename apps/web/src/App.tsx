@@ -1,15 +1,36 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
-import { type FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
-import { BrainButton } from "./components/BrainButton";
-import { MemoryDropdown } from "./components/MemoryDropdown";
-import { MessageList } from "./components/MessageList";
-import { TopicTreeModal } from "./components/TopicTreeModal";
-import { UiMessageList } from "./components/UiMessageList";
+import { PaperclipIcon } from "lucide-react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Conversation,
+  ConversationContent,
+  ConversationEmptyState,
+  ConversationScrollButton,
+} from "@/components/ai-elements/conversation";
+import {
+  PromptInput,
+  PromptInputBody,
+  PromptInputButton,
+  PromptInputFooter,
+  type PromptInputMessage,
+  PromptInputSubmit,
+  PromptInputTextarea,
+  PromptInputTools,
+} from "@/components/ai-elements/prompt-input";
+import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
+import { AppSidebar } from "@/components/app-sidebar";
+import { AuthShell, SignInCard } from "@/components/auth-screen";
+import { ChatMessages, type MemoryNoticeLine } from "@/components/chat-messages";
+import { ThemeModeToggle } from "@/components/theme-mode-toggle";
+import { TopicTreeDialog } from "@/components/topic-tree-dialog";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { apiFetch, apiUrl } from "./lib/api";
 import { authClient } from "./lib/auth-client";
 import { patchAssistantDisplayMessage } from "./lib/display-message";
 import { formatMemorySavedNotice } from "./lib/memory-notice";
+import { type SavedTheme, useTheme } from "./lib/theme";
 import type {
   ChatConfig,
   ChatThread,
@@ -23,11 +44,10 @@ import type {
   UploadIngestResponse,
 } from "./lib/types";
 
-type MemoryNoticeLine = {
-  id: string;
-  text: string;
-  variant: "draft" | "saved";
-};
+const SUGGESTIONS = [
+  { label: "prefer concise answers", prompt: "Remember that I prefer concise answers." },
+  { label: "what do you know about me", prompt: "What do you already know about me?" },
+];
 
 function nextId(prefix: string): string {
   return `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
@@ -95,15 +115,14 @@ export default function App() {
   const [treeLoading, setTreeLoading] = useState(false);
   const [treeError, setTreeError] = useState<string | null>(null);
   const [treeData, setTreeData] = useState<ResourceTopicTree | null>(null);
-  const memoryAnchorRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const formId = useId();
   const [authEmail, setAuthEmail] = useState("");
   const [authError, setAuthError] = useState<string | null>(null);
   const [authBusy, setAuthBusy] = useState(false);
   const [authSent, setAuthSent] = useState(false);
   const [googleAuthEnabled, setGoogleAuthEnabled] = useState(false);
+  const { theme, setPalette, toggleMode, adoptSaved } = useTheme(authStatus === "signed_in");
 
   const transport = useMemo(
     () =>
@@ -138,6 +157,7 @@ export default function App() {
     setMessages: setChatMessages,
     sendMessage,
     status: chatStatus,
+    stop,
   } = useChat({
     transport,
     onError: (error) => {
@@ -309,7 +329,8 @@ export default function App() {
         setAuthStatus("signed_out");
         return;
       }
-      const data = (await me.json()) as { userId: string; email: string };
+      const data = (await me.json()) as { userId: string; email: string; theme?: SavedTheme };
+      adoptSaved(data.theme);
       setUserId(data.userId);
       setUserEmail(data.email);
       setAuthStatus("signed_in");
@@ -331,36 +352,6 @@ export default function App() {
       }
     })();
   }, []);
-
-  useEffect(() => {
-    if (!treeOpen) return;
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setTreeOpen(false);
-    }
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [treeOpen]);
-
-  useEffect(() => {
-    if (!memoryOpen) return;
-
-    function onPointerDown(event: MouseEvent) {
-      if (!memoryAnchorRef.current?.contains(event.target as Node)) {
-        setMemoryOpen(false);
-      }
-    }
-
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setMemoryOpen(false);
-    }
-
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [memoryOpen]);
 
   async function patchItem(id: string, status: "active" | "dismissed") {
     const item = items.find((entry) => entry.id === id);
@@ -442,10 +433,9 @@ export default function App() {
     }
   }
 
-  async function onSubmit(event: FormEvent) {
-    event.preventDefault();
+  async function onSubmit({ text }: PromptInputMessage) {
     if (streaming || !chatReady) return;
-    const message = input.trim();
+    const message = text.trim();
     if (!message) return;
 
     setInput("");
@@ -538,274 +528,122 @@ export default function App() {
     inputRef.current?.focus();
   }
 
+  const modeToggle = <ThemeModeToggle mode={theme.mode} onToggle={toggleMode} />;
+
   if (authStatus === "loading") {
     return (
-      <div className="desk desk-auth">
-        <div className="desk-glow" aria-hidden="true" />
-        <main className="auth-shell">
-          <p className="hero-eyebrow">SYRAA</p>
-          <h1>Loading…</h1>
-        </main>
-      </div>
+      <TooltipProvider>
+        <AuthShell toolbar={modeToggle}>
+          <p className="text-muted-foreground text-sm">Loading…</p>
+        </AuthShell>
+      </TooltipProvider>
     );
   }
 
   if (authStatus === "signed_out") {
     return (
-      <div className="desk desk-auth">
-        <div className="desk-glow" aria-hidden="true" />
-        <main className="auth-shell">
-          <section className="auth-card glass">
-            <div className="hero-orb" aria-hidden="true" />
-            <p className="hero-eyebrow">SYRAA</p>
-            <h1>Welcome back</h1>
-            <p className="hero-sub">Sign in to continue your chats and memory.</p>
-
-            {googleAuthEnabled ? (
-              <button
-                type="button"
-                className="auth-google"
-                onClick={() => void signInWithGoogle()}
-                disabled={authBusy}
-              >
-                <span className="auth-google-icon" aria-hidden="true">
-                  G
-                </span>
-                Continue with Google
-              </button>
-            ) : null}
-
-            {googleAuthEnabled ? <div className="auth-divider">or</div> : null}
-
-            {authSent ? (
-              <p className="auth-sent">
-                Check <strong>{authEmail.trim()}</strong> for a sign-in link. It expires in a few
-                minutes.
-              </p>
-            ) : (
-              <form className="auth-form" onSubmit={(e) => void submitMagicLink(e)}>
-                <label className="auth-label" htmlFor={`${formId}-email`}>
-                  Email
-                </label>
-                <input
-                  id={`${formId}-email`}
-                  className="auth-input"
-                  type="email"
-                  value={authEmail}
-                  onChange={(event) => setAuthEmail(event.target.value)}
-                  placeholder="you@example.com"
-                  autoComplete="email"
-                  disabled={authBusy}
-                  required
-                />
-                {authError ? <p className="auth-error">{authError}</p> : null}
-                <button className="auth-submit" type="submit" disabled={authBusy}>
-                  {authBusy ? "Sending…" : "Email me a sign-in link"}
-                </button>
-              </form>
-            )}
-
-            {authSent && authError ? <p className="auth-error">{authError}</p> : null}
-            {authSent ? (
-              <button
-                type="button"
-                className="ghost-btn"
-                onClick={() => {
-                  setAuthSent(false);
-                  setAuthError(null);
-                }}
-              >
-                Use a different email
-              </button>
-            ) : null}
-          </section>
-        </main>
-      </div>
+      <TooltipProvider>
+        <AuthShell toolbar={modeToggle}>
+          <SignInCard
+            googleEnabled={googleAuthEnabled}
+            email={authEmail}
+            onEmailChange={setAuthEmail}
+            busy={authBusy}
+            sent={authSent}
+            error={authError}
+            onGoogle={() => void signInWithGoogle()}
+            onMagicLink={(event: FormEvent) => void submitMagicLink(event)}
+            onUseDifferentEmail={() => {
+              setAuthSent(false);
+              setAuthError(null);
+            }}
+          />
+        </AuthShell>
+      </TooltipProvider>
     );
   }
 
   const displayName = userEmail ?? userId ?? "there";
+  const activeThreadTitle = threads.find((thread) => thread.id === threadId)?.title ?? "New chat";
 
   return (
-    <div className="desk">
-      <div className="desk-glow" aria-hidden="true" />
+    <TooltipProvider>
+      <SidebarProvider className="h-full min-h-0">
+        <AppSidebar
+          subtitle={subtitle}
+          onNewChat={startNewChat}
+          memory={{
+            items,
+            meta: memoryMeta,
+            pendingCount,
+            open: memoryOpen,
+            onOpenChange: setMemoryOpen,
+            onRefresh: () => void refreshMemory(),
+            onConfirm: (id) => void patchItem(id, "active"),
+            onDismiss: (id) => void patchItem(id, "dismissed"),
+          }}
+          threads={threads}
+          threadsLoading={threadsLoading}
+          activeThreadId={threadId}
+          onOpenThread={(id) => void openThread(id)}
+          resources={resources}
+          onRefreshResources={() => void refreshResources()}
+          onOpenResource={(id) => void openResourceTree(id)}
+          displayName={displayName}
+          palette={theme.palette}
+          onPaletteChange={setPalette}
+          onSignOut={() => void signOut()}
+        />
 
-      <aside className="sidebar glass">
-        <div className="sidebar-brand">
-          <span className="orb" aria-hidden="true" />
-          <div>
-            <strong>SYRAA</strong>
-            <small>{subtitle}</small>
-          </div>
-        </div>
+        <SidebarInset className="min-h-0 overflow-hidden md:shadow-soft">
+          <header className="flex h-14 shrink-0 items-center gap-2 border-b px-3 md:px-5">
+            <SidebarTrigger className="md:hidden" />
+            <h1 className="min-w-0 flex-1 truncate font-semibold text-sm">{activeThreadTitle}</h1>
+            {modeToggle}
+          </header>
 
-        <button type="button" className="new-chat-btn" onClick={startNewChat}>
-          <span aria-hidden="true">+</span> New chat
-        </button>
-
-        <nav className="side-nav" aria-label="Primary">
-          <div className="memory-anchor side-memory" ref={memoryAnchorRef}>
-            <button
-              type="button"
-              className={`side-link${memoryOpen ? " is-active" : ""}`}
-              aria-expanded={memoryOpen}
-              aria-haspopup="dialog"
-              onClick={() => setMemoryOpen((open) => !open)}
-            >
-              <span className="side-ico" aria-hidden="true">
-                <BrainButton
-                  open={memoryOpen}
-                  pendingCount={0}
-                  onToggle={() => {}}
-                  variant="inline"
-                />
-              </span>
-              Memory
-              {pendingCount > 0 ? <em className="side-badge">{pendingCount}</em> : null}
-            </button>
-            <MemoryDropdown
-              open={memoryOpen}
-              items={items}
-              meta={memoryMeta}
-              onClose={() => setMemoryOpen(false)}
-              onRefresh={() => void refreshMemory()}
-              onConfirm={(id) => void patchItem(id, "active")}
-              onDismiss={(id) => void patchItem(id, "dismissed")}
-            />
-          </div>
-        </nav>
-
-        <div className="sidebar-scroll">
-          <div className="folders">
-            <div className="folders-label">Chats</div>
-            {threadsLoading && threads.length === 0 ? (
-              <p className="thread-empty">Loading…</p>
-            ) : threads.length === 0 ? (
-              <p className="thread-empty">No chats yet — send a message to start</p>
-            ) : (
-              <ul className="thread-list thread-list-bare">
-                {threads.map((thread) => (
-                  <li key={thread.id}>
-                    <button
-                      type="button"
-                      className={`thread-item${thread.id === threadId ? " is-active" : ""}`}
-                      onClick={() => void openThread(thread.id)}
-                      title={thread.title}
-                    >
-                      <span className="thread-title">{thread.title}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            <div className="folders-label">Folders</div>
-            <div className="folder materials-folder">
-              <div className="folder-head">
-                <span className="folder-dot peach" />
-                <div>
-                  <strong>Materials</strong>
-                  <small>
-                    {resources.length === 0
-                      ? "Upload PDFs from the composer"
-                      : `${resources.length} document(s)`}
-                  </small>
-                </div>
-                <button
-                  type="button"
-                  className="ghost-btn materials-refresh"
-                  onClick={() => void refreshResources()}
-                >
-                  Refresh
-                </button>
-              </div>
-              {resources.length > 0 ? (
-                <ul className="materials-list">
-                  {resources.map((resource) => (
-                    <li key={resource.id}>
-                      <button
-                        type="button"
-                        className="material-item"
-                        onClick={() => void openResourceTree(resource.id)}
-                        title="Open topic tree"
-                      >
-                        <span className="material-name">{resource.name}</span>
-                        <span className={`material-status status-${resource.status}`}>
-                          {resource.status}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </div>
-            <div className="folder">
-              <span className="folder-dot teal" />
-              <div>
-                <strong>Memory</strong>
-                <small>
-                  {items.length} item(s) · {pendingCount} pending
-                </small>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="user-field">
-          <span>Signed in</span>
-          <small title={userId ?? undefined}>{displayName}</small>
-          <button type="button" className="ghost-btn" onClick={() => void signOut()}>
-            Sign out
-          </button>
-        </div>
-      </aside>
-
-      <main className="stage">
-        <div className="suggestion-row">
-          <span className="suggestion-label">Suggestion</span>
-          <button
-            type="button"
-            className="suggestion-pill"
-            onClick={() => applySuggestion("Remember that I prefer concise answers.")}
-          >
-            prefer concise answers
-          </button>
-          <button
-            type="button"
-            className="suggestion-pill"
-            onClick={() => applySuggestion("What do you already know about me?")}
-          >
-            what do you know about me
-          </button>
-        </div>
-
-        <section className={`canvas glass${hasThread ? " has-thread" : ""}`}>
-          {!hasThread ? (
-            <div className="hero">
-              <div className="hero-orb" aria-hidden="true" />
-              <p className="hero-eyebrow">SYRAA AI Chat</p>
-              <h1>
-                {greeting()}, {displayName}
-              </h1>
-              <p className="hero-sub">How can I help you today?</p>
-            </div>
-          ) : (
-            <div className="messages-pane" aria-live="polite">
-              <div className="messages-inner">
-                <UiMessageList
+          <Conversation className="min-h-0 flex-1">
+            <ConversationContent className="mx-auto w-full max-w-3xl gap-5 px-4 py-6 md:px-6">
+              {hasThread ? (
+                <ChatMessages
                   messages={chatMessages}
                   streaming={streaming}
                   memoryNoticeLines={memoryNoticeLines}
+                  systemMessages={systemMessages}
                   onOpenMemory={() => setMemoryOpen(true)}
                 />
-                <MessageList messages={systemMessages} />
-              </div>
-            </div>
-          )}
-        </section>
+              ) : (
+                <ConversationEmptyState className="min-h-[50vh]">
+                  <span className="grid size-12 place-items-center rounded-2xl bg-primary font-semibold text-lg text-primary-foreground">
+                    S
+                  </span>
+                  <h2 className="font-semibold text-2xl tracking-tight">
+                    {greeting()}, {displayName}
+                  </h2>
+                  <p className="text-muted-foreground">How can I help you today?</p>
+                  {systemMessages.map((message) => (
+                    <p key={message.id} className="text-muted-foreground text-xs">
+                      {message.content}
+                    </p>
+                  ))}
+                </ConversationEmptyState>
+              )}
+            </ConversationContent>
+            <ConversationScrollButton />
+          </Conversation>
 
-        <div className="composer-stack">
-          <div className="upload-row">
+          <div className="mx-auto grid w-full max-w-3xl gap-3 px-4 pb-4 md:px-6 md:pb-5">
+            <Suggestions>
+              {SUGGESTIONS.map((suggestion) => (
+                <Suggestion
+                  key={suggestion.label}
+                  suggestion={suggestion.label}
+                  variant="secondary"
+                  onClick={() => applySuggestion(suggestion.prompt)}
+                />
+              ))}
+            </Suggestions>
+
             <input
               ref={fileInputRef}
               type="file"
@@ -816,45 +654,52 @@ export default function App() {
                 if (file) void onUpload(file);
               }}
             />
-            <button
-              type="button"
-              className="upload-btn"
-              disabled={uploading}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              {uploading ? "Uploading…" : "Upload a file"}
-            </button>
-            <span className="upload-hint">PDF → topic tree + embeddings</span>
-          </div>
-          <form id={formId} className="prompt glass" onSubmit={onSubmit}>
-            <input
-              ref={inputRef}
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              placeholder={chatReady ? "Ask anything…" : "Configure API key to chat"}
-              autoComplete="off"
-              disabled={!chatReady || streaming || sending}
-              aria-label="Message"
-            />
-            <button
-              className="prompt-send"
-              type="submit"
-              disabled={!chatReady || sending || !input.trim()}
-            >
-              {sending ? "…" : "Send"}
-            </button>
-          </form>
-        </div>
-      </main>
 
-      {treeOpen ? (
-        <TopicTreeModal
+            <PromptInput
+              onSubmit={(message) => onSubmit(message)}
+              className="rounded-2xl bg-field shadow-soft [&_[data-slot=input-group]]:rounded-2xl [&_[data-slot=input-group]]:border-input"
+            >
+              <PromptInputBody>
+                <PromptInputTextarea
+                  ref={inputRef}
+                  value={input}
+                  onChange={(event) => setInput(event.target.value)}
+                  placeholder={chatReady ? "Ask anything…" : "Configure API key to chat"}
+                  disabled={!chatReady || sending}
+                  aria-label="Message"
+                />
+              </PromptInputBody>
+              <PromptInputFooter>
+                <PromptInputTools>
+                  <PromptInputButton
+                    disabled={uploading}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <PaperclipIcon />
+                    {uploading ? "Uploading…" : "Upload PDF"}
+                  </PromptInputButton>
+                  <span className="hidden text-muted-foreground text-xs sm:inline">
+                    PDF → topic tree + embeddings
+                  </span>
+                </PromptInputTools>
+                <PromptInputSubmit
+                  status={chatStatus}
+                  onStop={stop}
+                  disabled={!chatReady || (!streaming && !input.trim())}
+                />
+              </PromptInputFooter>
+            </PromptInput>
+          </div>
+        </SidebarInset>
+
+        <TopicTreeDialog
+          open={treeOpen}
+          onOpenChange={setTreeOpen}
           data={treeData}
           loading={treeLoading}
           error={treeError}
-          onClose={() => setTreeOpen(false)}
         />
-      ) : null}
-    </div>
+      </SidebarProvider>
+    </TooltipProvider>
   );
 }

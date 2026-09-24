@@ -4,12 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SYRAA</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <script>
+      // Apply the cached theme before first paint (see src/lib/theme.ts, key "syraa:theme").
+      (() => {
+        const root = document.documentElement;
+        let mode = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+        let palette = "sage";
+        try {
+          const saved = JSON.parse(localStorage.getItem("syraa:theme") || "{}");
+          if (saved.mode === "light" || saved.mode === "dark") mode = saved.mode;
+          if (typeof saved.palette === "string") palette = saved.palette;
+        } catch {
+          // storage blocked — keep defaults
+        }
+        if (mode === "dark") root.classList.add("dark");
+        if (palette !== "sage") root.dataset.palette = palette;
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

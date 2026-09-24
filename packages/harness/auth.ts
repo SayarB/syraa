@@ -2,11 +2,12 @@
  * Better Auth CLI config (`npx auth migrate --config ./auth.ts`).
  * Prefer `npm run auth:migrate` (programmatic) for local + Docker.
  */
-import { config } from "dotenv";
+
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { betterAuth } from "better-auth";
 import { magicLink } from "better-auth/plugins";
+import { config } from "dotenv";
 import { Pool } from "pg";
 
 const here = dirname(fileURLToPath(import.meta.url));

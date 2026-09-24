@@ -1,7 +1,7 @@
 import type { IncomingMessage } from "node:http";
 import { betterAuth } from "better-auth";
-import { magicLink } from "better-auth/plugins";
 import { fromNodeHeaders } from "better-auth/node";
+import { magicLink } from "better-auth/plugins";
 import { Pool } from "pg";
 
 export class UnauthorizedError extends Error {
@@ -11,10 +11,37 @@ export class UnauthorizedError extends Error {
   }
 }
 
+export const THEME_PALETTES = ["sage", "stone", "dusk", "ash", "olive"] as const;
+export const THEME_MODES = ["dark", "light"] as const;
+
+export type ThemePalette = (typeof THEME_PALETTES)[number];
+export type ThemeMode = (typeof THEME_MODES)[number];
+
+/** Saved UI theme; null fields mean "not chosen yet". */
+export type ThemePreference = {
+  palette: ThemePalette | null;
+  mode: ThemeMode | null;
+};
+
 export type AuthUser = {
   userId: string;
   email: string;
+  theme: ThemePreference;
 };
+
+function pickAllowed<T extends string>(allowed: readonly T[], value: unknown): T | null {
+  if (typeof value !== "string") return null;
+  const match = allowed.find((option) => option === value);
+  return match ?? null;
+}
+
+/** Read the theme columns off a Better Auth user row, dropping unknown values. */
+export function readThemePreference(user: Record<string, unknown>): ThemePreference {
+  return {
+    palette: pickAllowed(THEME_PALETTES, user.themePalette),
+    mode: pickAllowed(THEME_MODES, user.themeMode),
+  };
+}
 
 export type AuthProvidersStatus = {
   google: boolean;
@@ -146,6 +173,12 @@ export function buildBetterAuthOptions(database: Pool): Parameters<typeof better
     emailAndPassword: {
       enabled: false,
     },
+    user: {
+      additionalFields: {
+        themePalette: { type: "string", required: false, input: true },
+        themeMode: { type: "string", required: false, input: true },
+      },
+    },
     ...(google ? { socialProviders: google } : {}),
     plugins: [
       magicLink({
@@ -194,7 +227,11 @@ export async function requireUser(req: IncomingMessage): Promise<AuthUser> {
   if (!isBetterAuthConfigured()) {
     const devUser = process.env.AUTH_DEV_USER?.trim();
     if (devUser) {
-      return { userId: devUser, email: `${devUser}@localhost` };
+      return {
+        userId: devUser,
+        email: `${devUser}@localhost`,
+        theme: { palette: null, mode: null },
+      };
     }
     throw new UnauthorizedError("Authentication is not configured");
   }
@@ -211,6 +248,7 @@ export async function requireUser(req: IncomingMessage): Promise<AuthUser> {
   return {
     userId: session.user.id,
     email: session.user.email,
+    theme: readThemePreference(session.user),
   };
 }
 
