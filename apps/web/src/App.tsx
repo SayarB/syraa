@@ -4,8 +4,8 @@ import { type FormEvent, useEffect, useId, useMemo, useRef, useState } from "rea
 import { BrainButton } from "./components/BrainButton";
 import { MemoryDropdown } from "./components/MemoryDropdown";
 import { MessageList } from "./components/MessageList";
-import { UiMessageList } from "./components/UiMessageList";
 import { TopicTreeModal } from "./components/TopicTreeModal";
+import { UiMessageList } from "./components/UiMessageList";
 import { apiFetch, apiUrl } from "./lib/api";
 import { authClient } from "./lib/auth-client";
 import { formatMemorySavedNotice } from "./lib/memory-notice";
@@ -162,6 +162,10 @@ export default function App() {
     [threadId],
   );
 
+  // Final reply from data-syraa-turn. Applied in onFinish: useChat re-writes its own copy of the
+  // streamed message right after onData, so a patch made there would be overwritten.
+  const pendingDisplayMessage = useRef<string | null>(null);
+
   const {
     messages: chatMessages,
     setMessages: setChatMessages,
@@ -184,9 +188,7 @@ export default function App() {
           if (userId) storeThreadId(userId, data.threadId);
         }
         if (typeof data.displayMessage === "string" && data.displayMessage.trim()) {
-          setChatMessages((prev) =>
-            patchLastAssistantDisplayMessage(prev, data.displayMessage!.trim()),
-          );
+          pendingDisplayMessage.current = data.displayMessage.trim();
         }
         if (data.memoryItems?.length) {
           void (async () => {
@@ -199,6 +201,11 @@ export default function App() {
       }
     },
     onFinish: () => {
+      const displayMessage = pendingDisplayMessage.current;
+      pendingDisplayMessage.current = null;
+      if (displayMessage) {
+        setChatMessages((prev) => patchLastAssistantDisplayMessage(prev, displayMessage));
+      }
       void refreshThreads();
     },
   });

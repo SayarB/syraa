@@ -117,6 +117,7 @@ describe("gateLesson", () => {
       [],
     );
     expect(fetchMock).not.toHaveBeenCalled();
+    expect(lastAssistantMessageText).not.toHaveBeenCalled();
   });
 
   it("fails closed on HTTP errors", async () => {

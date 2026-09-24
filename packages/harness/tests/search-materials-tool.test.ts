@@ -106,4 +106,13 @@ describe("search_materials tool", () => {
     });
     expect(listResources).toHaveBeenCalledWith("u1", 1000);
   });
+
+  it("says a scoped empty search only covered that document", async () => {
+    listResources.mockResolvedValue([{ id: "r1", name: "Principles.pdf", status: "ready" }]);
+    searchMaterials.mockResolvedValue({ hits: [], modeUsed: "lexical" });
+    const result = await run({ query: "madverse", documentName: "principles" });
+    expect(result.note).toBe(
+      'No passage in "principles" mentions "madverse". Other documents were not searched.',
+    );
+  });
 });

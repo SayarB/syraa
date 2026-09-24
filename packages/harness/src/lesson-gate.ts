@@ -228,6 +228,8 @@ export async function gateLesson(opts: {
   threadId: string;
   userMessage: string;
 }): Promise<GatedLesson[]> {
+  // Gate off (documented default): skip the thread read and the per-turn warning.
+  if (!process.env.TYPESAFE_API_KEY?.trim()) return [];
   try {
     const userMessage = stripCodeBlocks(opts.userMessage);
     if (!userMessage) return [];

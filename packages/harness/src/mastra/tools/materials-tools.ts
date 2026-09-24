@@ -65,7 +65,11 @@ export const searchMaterialsTool = createTool({
         exactMatch: hit.matchedBy.includes("lexical"),
       })),
       ...(hits.length === 0
-        ? { note: `No passage in the user's materials mentions "${input.query}".` }
+        ? {
+            note: input.documentName
+              ? `No passage in "${input.documentName}" mentions "${input.query}". Other documents were not searched.`
+              : `No passage in the user's materials mentions "${input.query}".`,
+          }
         : exactMatches === 0
           ? {
               note: `No passage contains "${input.query}" verbatim; these are loose meaning-based matches and may be unrelated.`,
