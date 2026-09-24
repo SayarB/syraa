@@ -52,11 +52,44 @@ function fallbackFromReadMaterialsCache(): { message: string } | null {
   }
 }
 
+type SearchMaterialsOutput = {
+  hits?: Array<{ documentName?: string; section?: string; snippet?: string }>;
+};
+
+/** Latest search_materials call with hits → its top snippets, labelled by document and section. */
+function fallbackFromSearchMaterialsCache(): { message: string } | null {
+  try {
+    const cache = getChatRunContext().toolCallCache;
+    if (!cache) return null;
+
+    let hits: NonNullable<SearchMaterialsOutput["hits"]> = [];
+    for (const [key, value] of cache.entries()) {
+      if (!key.startsWith("search_materials:")) continue;
+      const found = ((value as SearchMaterialsOutput).hits ?? []).filter((hit) =>
+        hit.snippet?.trim(),
+      );
+      if (found.length > 0) hits = found;
+    }
+    if (hits.length === 0) return null;
+
+    const lines = hits.slice(0, 3).map((hit) => {
+      const where = [hit.documentName, hit.section].filter(Boolean).join(" — ");
+      return `- ${where ? `**${where}**: ` : ""}${hit.snippet?.trim()}`;
+    });
+    return { message: `Relevant passages from your materials:\n${lines.join("\n")}` };
+  } catch {
+    return null;
+  }
+}
+
 /** When the agent hits maxSteps without text, recover from tool results if we have them. */
 export function fallbackTurnFromToolCache(): { message: string } {
   try {
     const fromRead = fallbackFromReadMaterialsCache();
     if (fromRead) return fromRead;
+
+    const fromSearch = fallbackFromSearchMaterialsCache();
+    if (fromSearch) return fromSearch;
 
     const cached = getRememberedToolResult("list_materials", {}) as MaterialsListOutput | undefined;
     const materials = cached?.materials ?? [];

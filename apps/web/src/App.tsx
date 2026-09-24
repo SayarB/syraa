@@ -8,6 +8,7 @@ import { TopicTreeModal } from "./components/TopicTreeModal";
 import { UiMessageList } from "./components/UiMessageList";
 import { apiFetch, apiUrl } from "./lib/api";
 import { authClient } from "./lib/auth-client";
+import { patchLastAssistantDisplayMessage } from "./lib/display-message";
 import { formatMemorySavedNotice } from "./lib/memory-notice";
 import type {
   ChatConfig,
@@ -70,40 +71,6 @@ function toUiMessages(messages: ThreadMessage[]): UIMessage[] {
     role: message.role,
     parts: message.parts as UIMessage["parts"],
   }));
-}
-
-/** Replace the streamed text of the last assistant message with the server's final reply. */
-function patchLastAssistantDisplayMessage(
-  messages: UIMessage[],
-  displayMessage: string,
-): UIMessage[] {
-  const next = [...messages];
-  for (let index = next.length - 1; index >= 0; index -= 1) {
-    if (next[index].role !== "assistant") continue;
-    const parts = next[index].parts;
-    const streamedText = parts
-      .flatMap((part) => (part.type === "text" ? [part.text] : []))
-      .join("")
-      .trim();
-    if (streamedText === displayMessage) break;
-
-    // displayMessage is the whole reply: keep it once, in the last text part, so a
-    // text → tool → text turn doesn't show the reply twice.
-    let lastText = -1;
-    parts.forEach((part, partIndex) => {
-      if (part.type === "text") lastText = partIndex;
-    });
-    const finalText = { type: "text" as const, text: displayMessage, state: "done" as const };
-    const patched: UIMessage["parts"] = [];
-    parts.forEach((part, partIndex) => {
-      if (part.type !== "text") patched.push(part);
-      else if (partIndex === lastText) patched.push({ ...part, ...finalText });
-    });
-    if (lastText === -1) patched.push(finalText);
-    next[index] = { ...next[index], parts: patched };
-    break;
-  }
-  return next;
 }
 
 export default function App() {
@@ -174,6 +141,7 @@ export default function App() {
   } = useChat({
     transport,
     onError: (error) => {
+      pendingDisplayMessage.current = null;
       pushSystem(`Chat error: ${error.message}`);
     },
     onData: (part) => {
@@ -483,6 +451,7 @@ export default function App() {
     setInput("");
     setSending(true);
     try {
+      pendingDisplayMessage.current = null;
       await sendMessage({ text: message });
     } catch (err) {
       pushSystem(`Error: ${err instanceof Error ? err.message : String(err)}`);
