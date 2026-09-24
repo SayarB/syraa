@@ -12,6 +12,7 @@ import { lastAssistantMessageText } from "./threads.js";
 const JEV_URL = "https://api.typesafe.ai/v1/systemone";
 const JEV_TIMEOUT_MS = 3000;
 const WRITER_TIMEOUT_MS = 5000;
+const GATED_KINDS: readonly GatedLesson["kind"][] = ["preference", "rule", "method", "decision"];
 const MAX_SCORED_SENTENCES = 12;
 const VERBATIM_MIN = 0.85;
 const MAX_LESSON_CHARS = 240;
@@ -171,7 +172,8 @@ export async function writeLessonText(opts: {
       `Most relevant part: ${opts.focus}`,
     ].join("\n"),
     {
-      modelSettings: { temperature: 0, maxOutputTokens: 80 },
+      // Reasoning models (gpt-oss) spend output tokens thinking first; MAX_LESSON_CHARS caps the text.
+      modelSettings: { temperature: 0, maxOutputTokens: 512 },
       abortSignal: AbortSignal.timeout(WRITER_TIMEOUT_MS),
     },
   );
@@ -194,13 +196,17 @@ async function pickLessonText(opts: {
     // Too long to span-pick cheaply — let the writer summarise the durable part.
     best = { sentence: opts.userMessage, reveals: 1, selfContained: 0 };
   } else if (sentences.length > 1) {
-    const scored = await Promise.all(
+    const settled = await Promise.allSettled(
       sentences.map(async (sentence) => {
         const answers = await askJev(jevState(opts.prevAssistant, sentence), SENTENCE_QUESTIONS);
         return { sentence, reveals: answers.reveals, selfContained: answers.self_contained };
       }),
     );
-    best = scored.sort((a, b) => b.reveals - a.reveals)[0];
+    // A failed sentence call only loses that sentence; if all fail, keep the whole-message pick.
+    const scored = settled.flatMap((result) =>
+      result.status === "fulfilled" ? [result.value] : [],
+    );
+    if (scored.length > 0) best = scored.sort((a, b) => b.reveals - a.reveals)[0];
   }
 
   if (best.selfContained >= VERBATIM_MIN && best.sentence.length <= MAX_LESSON_CHARS) {
@@ -246,7 +252,7 @@ export async function gateLesson(opts: {
     });
     if (!text) return [];
 
-    const kind = answers.kind === "none" ? "preference" : (answers.kind as GatedLesson["kind"]);
+    const kind = GATED_KINDS.find((k) => k === answers.kind) ?? "preference";
     console.info(
       "[lesson-gate]",
       JSON.stringify({ threadId: opts.threadId, band, ...scores, kind: answers.kind }),

@@ -3,10 +3,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { runWithChatContext } from "../src/chat-run-context.js";
 
 const searchMaterials = vi.fn();
-const listMaterialsLayer1 = vi.fn();
+const listResources = vi.fn();
 
 vi.mock("../src/context.js", () => ({
-  getContextStore: async () => ({ store: { searchMaterials, listMaterialsLayer1 } }),
+  getContextStore: async () => ({ store: { searchMaterials, listResources } }),
 }));
 
 const { searchMaterialsTool, syraaTools } = await import("../src/mastra/tools/materials-tools.js");
@@ -36,7 +36,7 @@ async function run(input: { query: string; limit?: number; documentName?: string
 describe("search_materials tool", () => {
   beforeEach(() => {
     searchMaterials.mockReset();
-    listMaterialsLayer1.mockReset();
+    listResources.mockReset();
   });
 
   it("is registered with the expected input schema", () => {
@@ -86,9 +86,10 @@ describe("search_materials tool", () => {
     expect(result.note).toContain("loose");
   });
 
-  it("scopes by documentName and reports unknown documents", async () => {
-    listMaterialsLayer1.mockResolvedValue([
-      { resourceId: "r1", name: "Principles.pdf", status: "ready", sectionTitles: [] },
+  it("scopes by documentName (ready documents only) and reports unknown documents", async () => {
+    listResources.mockResolvedValue([
+      { id: "r1", name: "Principles.pdf", status: "ready" },
+      { id: "r2", name: "Syllabus.pdf", status: "processing" },
     ]);
     searchMaterials.mockResolvedValue({ hits: [], modeUsed: "lexical" });
 
@@ -103,5 +104,6 @@ describe("search_materials tool", () => {
       error: 'No ingested document matching "syllabus".',
       availableDocuments: ["Principles.pdf"],
     });
+    expect(listResources).toHaveBeenCalledWith("u1", 1000);
   });
 });

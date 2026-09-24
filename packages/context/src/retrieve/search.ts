@@ -2,10 +2,10 @@ export type RetrieveMode = "hybrid" | "lexical" | "semantic";
 
 const MAX_TERMS = 12;
 
-/** Split on non-letter/digit, lowercase, drop 1-char tokens, dedupe, cap. */
+/** Split on non-letter/mark/digit (marks keep Indic words whole), lowercase, drop 1-char tokens, dedupe, cap. */
 export function queryTerms(query: string): string[] {
   const terms: string[] = [];
-  for (const raw of query.toLowerCase().split(/[^\p{L}\p{N}]+/u)) {
+  for (const raw of query.toLowerCase().split(/[^\p{L}\p{M}\p{N}]+/u)) {
     if (raw.length < 2 || terms.includes(raw)) continue;
     terms.push(raw);
     if (terms.length >= MAX_TERMS) break;
@@ -13,7 +13,7 @@ export function queryTerms(query: string): string[] {
   return terms;
 }
 
-/** OR query for `to_tsquery` — terms are already `[\p{L}\p{N}]+`, so no tsquery syntax leaks in. */
+/** OR query for `to_tsquery` — terms are already `[\p{L}\p{M}\p{N}]+`, so no tsquery syntax leaks in. */
 export function toOrTsQuery(terms: string[]): string | null {
   return terms.length > 0 ? terms.join(" | ") : null;
 }

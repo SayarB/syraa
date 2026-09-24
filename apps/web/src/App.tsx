@@ -72,21 +72,35 @@ function toUiMessages(messages: ThreadMessage[]): UIMessage[] {
   }));
 }
 
-function patchLastAssistantDisplayMessage(messages: UIMessage[], displayMessage: string): UIMessage[] {
+/** Replace the streamed text of the last assistant message with the server's final reply. */
+function patchLastAssistantDisplayMessage(
+  messages: UIMessage[],
+  displayMessage: string,
+): UIMessage[] {
   const next = [...messages];
   for (let index = next.length - 1; index >= 0; index -= 1) {
     if (next[index].role !== "assistant") continue;
-    const hasText = next[index].parts.some((part) => part.type === "text");
-    next[index] = {
-      ...next[index],
-      parts: hasText
-        ? next[index].parts.map((part) =>
-            part.type === "text"
-              ? { ...part, text: displayMessage, state: "done" as const }
-              : part,
-          )
-        : [...next[index].parts, { type: "text" as const, text: displayMessage, state: "done" as const }],
-    };
+    const parts = next[index].parts;
+    const streamedText = parts
+      .flatMap((part) => (part.type === "text" ? [part.text] : []))
+      .join("")
+      .trim();
+    if (streamedText === displayMessage) break;
+
+    // displayMessage is the whole reply: keep it once, in the last text part, so a
+    // text → tool → text turn doesn't show the reply twice.
+    let lastText = -1;
+    parts.forEach((part, partIndex) => {
+      if (part.type === "text") lastText = partIndex;
+    });
+    const finalText = { type: "text" as const, text: displayMessage, state: "done" as const };
+    const patched: UIMessage["parts"] = [];
+    parts.forEach((part, partIndex) => {
+      if (part.type !== "text") patched.push(part);
+      else if (partIndex === lastText) patched.push({ ...part, ...finalText });
+    });
+    if (lastText === -1) patched.push(finalText);
+    next[index] = { ...next[index], parts: patched };
     break;
   }
   return next;
@@ -123,7 +137,6 @@ export default function App() {
   const [authBusy, setAuthBusy] = useState(false);
   const [authSent, setAuthSent] = useState(false);
   const [googleAuthEnabled, setGoogleAuthEnabled] = useState(false);
-
 
   const transport = useMemo(
     () =>
@@ -171,12 +184,15 @@ export default function App() {
           if (userId) storeThreadId(userId, data.threadId);
         }
         if (typeof data.displayMessage === "string" && data.displayMessage.trim()) {
-          setChatMessages((prev) => patchLastAssistantDisplayMessage(prev, data.displayMessage!.trim()));
+          setChatMessages((prev) =>
+            patchLastAssistantDisplayMessage(prev, data.displayMessage!.trim()),
+          );
         }
         if (data.memoryItems?.length) {
           void (async () => {
             await refreshMemory();
-            const pending = data.memoryItems?.filter((item) => item.status === "pending").length ?? 0;
+            const pending =
+              data.memoryItems?.filter((item) => item.status === "pending").length ?? 0;
             if (pending > 0) setMemoryOpen(true);
           })();
         }
@@ -188,7 +204,9 @@ export default function App() {
   });
 
   const pendingCount = items.filter((item) => item.status === "pending").length;
-  const hasThread = chatMessages.some((message) => message.role === "user" || message.role === "assistant");
+  const hasThread = chatMessages.some(
+    (message) => message.role === "user" || message.role === "assistant",
+  );
   const streaming = chatStatus === "streaming" || chatStatus === "submitted";
 
   async function refreshMemory() {
@@ -585,7 +603,8 @@ export default function App() {
 
             {authSent ? (
               <p className="auth-sent">
-                Check <strong>{authEmail.trim()}</strong> for a sign-in link. It expires in a few minutes.
+                Check <strong>{authEmail.trim()}</strong> for a sign-in link. It expires in a few
+                minutes.
               </p>
             ) : (
               <form className="auth-form" onSubmit={(e) => void submitMagicLink(e)}>

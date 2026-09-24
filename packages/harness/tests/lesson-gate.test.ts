@@ -258,6 +258,54 @@ describe("gateLesson", () => {
     await expect(gateLesson({ ...baseOpts, userMessage: "yes please" })).resolves.toEqual([]);
     expect(generate.mock.calls[0][1].abortSignal).toBeInstanceOf(AbortSignal);
   });
+
+  it("keeps the lesson when one per-sentence Jev call fails", async () => {
+    const message = "Quick one about my report. From now on always answer in Hindi. Thanks!";
+    fetchMock.mockImplementation(async (_url, init) => {
+      const state = JSON.parse(init.body as string).state as string;
+      if (state.includes("Quick one about my report. From now on")) {
+        return okJson(
+          jevTurn({ strict: 0.85, reveals: 0.95, explicitness: "explicit", self_contained: 0.3 }),
+        );
+      }
+      if (state.includes("Hindi")) return okJson(jevSentence(0.95, 0.9));
+      throw new DOMException("timed out", "TimeoutError");
+    });
+
+    const lessons = await gateLesson({ ...baseOpts, userMessage: message });
+
+    expect(lessons.map((lesson) => [lesson.text, lesson.activate])).toEqual([
+      ["From now on always answer in Hindi.", true],
+    ]);
+    expect(generate).not.toHaveBeenCalled();
+  });
+
+  it("maps an unknown Jev kind to preference", async () => {
+    fetchMock.mockResolvedValue(
+      okJson(
+        jevTurn({
+          strict: 0.81,
+          reveals: 0.92,
+          explicitness: "explicit",
+          kind: "Fact",
+          self_contained: 0.9,
+        }),
+      ),
+    );
+    const lessons = await gateLesson({ ...baseOpts, userMessage: "I'm vegetarian." });
+    expect(lessons[0]?.kind).toBe("preference");
+  });
+
+  it("gives the writer room to reason before answering", async () => {
+    fetchMock.mockResolvedValue(
+      okJson(
+        jevTurn({ strict: 0.79, reveals: 0.94, explicitness: "explicit", self_contained: 0.17 }),
+      ),
+    );
+    generate.mockResolvedValue({ text: "User wants answers under 100 words." });
+    await gateLesson({ ...baseOpts, userMessage: "yes please" });
+    expect(generate.mock.calls[0][1].modelSettings.maxOutputTokens).toBeGreaterThanOrEqual(256);
+  });
 });
 
 describe("applyLessons", () => {

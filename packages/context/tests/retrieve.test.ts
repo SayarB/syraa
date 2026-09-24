@@ -14,6 +14,10 @@ describe("queryTerms", () => {
     expect(queryTerms("Chroma-DB & chroma: a vector DB!")).toEqual(["chroma", "db", "vector"]);
   });
 
+  it("keeps words with combining marks (Indic scripts) whole", () => {
+    expect(queryTerms("हिन्दी व्याकरण")).toEqual(["हिन्दी", "व्याकरण"]);
+  });
+
   it("keeps unicode letters and caps term count", () => {
     expect(queryTerms("Café über")).toEqual(["café", "über"]);
     expect(queryTerms(Array.from({ length: 20 }, (_, i) => `t${i}`).join(" "))).toHaveLength(12);

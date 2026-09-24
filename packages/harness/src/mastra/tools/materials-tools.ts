@@ -33,12 +33,15 @@ export const searchMaterialsTool = createTool({
 
     let resourceIds: string[] | undefined;
     if (input.documentName) {
-      const materials = await store.listMaterialsLayer1(userId);
+      // Name lookup only — not capped at the 50 newest like the materials outline.
+      const materials = (await store.listResources(userId, 1000))
+        .filter((resource) => resource.status === "ready")
+        .map((resource) => ({ resourceId: resource.id, name: resource.name }));
       const resourceId = resolveResourceIdByName(materials, input.documentName);
       if (!resourceId) {
         const result = {
           error: `No ingested document matching "${input.documentName}".`,
-          availableDocuments: materials.map((material) => material.name),
+          availableDocuments: materials.slice(0, 50).map((material) => material.name),
         };
         rememberToolResult("search_materials", input, result);
         return result;

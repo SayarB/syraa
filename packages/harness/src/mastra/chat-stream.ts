@@ -7,6 +7,7 @@ import { getSyraaAgent } from "./index.js";
 import { buildTurnInstructions } from "../turn-instructions.js";
 import {
   resolveTurnFromStreamOutput,
+  stripRuntimeFooters,
   type SyraaTurnMeta,
 } from "./resolve-turn.js";
 
@@ -57,7 +58,8 @@ export async function createSyraaUIMessageStream(opts: {
             await writer.write(part);
           }
 
-          const agentText = (await result.text)?.trim() ?? "";
+          // Nothing visible was streamed (or only a footer): stream the resolved fallback.
+          const agentText = stripRuntimeFooters((await result.text) ?? "");
           const turn = await resolveTurnFromStreamOutput(result);
           const message = turn.message.trim();
 
