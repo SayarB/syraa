@@ -4,10 +4,11 @@ import { type FormEvent, useEffect, useId, useMemo, useRef, useState } from "rea
 import { BrainButton } from "./components/BrainButton";
 import { MemoryDropdown } from "./components/MemoryDropdown";
 import { MessageList } from "./components/MessageList";
-import { UiMessageList } from "./components/UiMessageList";
 import { TopicTreeModal } from "./components/TopicTreeModal";
+import { UiMessageList } from "./components/UiMessageList";
 import { apiFetch, apiUrl } from "./lib/api";
 import { authClient } from "./lib/auth-client";
+import { patchAssistantDisplayMessage } from "./lib/display-message";
 import { formatMemorySavedNotice } from "./lib/memory-notice";
 import type {
   ChatConfig,
@@ -72,26 +73,6 @@ function toUiMessages(messages: ThreadMessage[]): UIMessage[] {
   }));
 }
 
-function patchLastAssistantDisplayMessage(messages: UIMessage[], displayMessage: string): UIMessage[] {
-  const next = [...messages];
-  for (let index = next.length - 1; index >= 0; index -= 1) {
-    if (next[index].role !== "assistant") continue;
-    const hasText = next[index].parts.some((part) => part.type === "text");
-    next[index] = {
-      ...next[index],
-      parts: hasText
-        ? next[index].parts.map((part) =>
-            part.type === "text"
-              ? { ...part, text: displayMessage, state: "done" as const }
-              : part,
-          )
-        : [...next[index].parts, { type: "text" as const, text: displayMessage, state: "done" as const }],
-    };
-    break;
-  }
-  return next;
-}
-
 export default function App() {
   const [authStatus, setAuthStatus] = useState<"loading" | "signed_out" | "signed_in">("loading");
   const [userId, setUserId] = useState<string | null>(null);
@@ -124,7 +105,6 @@ export default function App() {
   const [authSent, setAuthSent] = useState(false);
   const [googleAuthEnabled, setGoogleAuthEnabled] = useState(false);
 
-
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
@@ -149,6 +129,10 @@ export default function App() {
     [threadId],
   );
 
+  // Final reply from data-syraa-turn. Applied in onFinish: useChat re-writes its own copy of the
+  // streamed message right after onData, so a patch made there would be overwritten.
+  const pendingDisplayMessage = useRef<string | null>(null);
+
   const {
     messages: chatMessages,
     setMessages: setChatMessages,
@@ -157,6 +141,7 @@ export default function App() {
   } = useChat({
     transport,
     onError: (error) => {
+      pendingDisplayMessage.current = null;
       pushSystem(`Chat error: ${error.message}`);
     },
     onData: (part) => {
@@ -171,24 +156,32 @@ export default function App() {
           if (userId) storeThreadId(userId, data.threadId);
         }
         if (typeof data.displayMessage === "string" && data.displayMessage.trim()) {
-          setChatMessages((prev) => patchLastAssistantDisplayMessage(prev, data.displayMessage!.trim()));
+          pendingDisplayMessage.current = data.displayMessage.trim();
         }
         if (data.memoryItems?.length) {
           void (async () => {
             await refreshMemory();
-            const pending = data.memoryItems?.filter((item) => item.status === "pending").length ?? 0;
+            const pending =
+              data.memoryItems?.filter((item) => item.status === "pending").length ?? 0;
             if (pending > 0) setMemoryOpen(true);
           })();
         }
       }
     },
-    onFinish: () => {
+    onFinish: ({ message }) => {
+      const displayMessage = pendingDisplayMessage.current;
+      pendingDisplayMessage.current = null;
+      if (displayMessage) {
+        setChatMessages((prev) => patchAssistantDisplayMessage(prev, message.id, displayMessage));
+      }
       void refreshThreads();
     },
   });
 
   const pendingCount = items.filter((item) => item.status === "pending").length;
-  const hasThread = chatMessages.some((message) => message.role === "user" || message.role === "assistant");
+  const hasThread = chatMessages.some(
+    (message) => message.role === "user" || message.role === "assistant",
+  );
   const streaming = chatStatus === "streaming" || chatStatus === "submitted";
 
   async function refreshMemory() {
@@ -458,6 +451,7 @@ export default function App() {
     setInput("");
     setSending(true);
     try {
+      pendingDisplayMessage.current = null;
       await sendMessage({ text: message });
     } catch (err) {
       pushSystem(`Error: ${err instanceof Error ? err.message : String(err)}`);
@@ -585,7 +579,8 @@ export default function App() {
 
             {authSent ? (
               <p className="auth-sent">
-                Check <strong>{authEmail.trim()}</strong> for a sign-in link. It expires in a few minutes.
+                Check <strong>{authEmail.trim()}</strong> for a sign-in link. It expires in a few
+                minutes.
               </p>
             ) : (
               <form className="auth-form" onSubmit={(e) => void submitMagicLink(e)}>

@@ -22,11 +22,27 @@ export type {
   TopicStatus,
 } from "./models.js";
 export { isResourceStatus, RESOURCE_STATUSES, utcNow } from "./models.js";
+export type { EmbeddingConfig, QueryEmbedder, RemoteEmbeddingConfig } from "./retrieve/embed.js";
+export { createQueryEmbedder, resolveEmbeddingConfig } from "./retrieve/embed.js";
+export type { RetrieveMode } from "./retrieve/search.js";
+export {
+  cosineSimilarity,
+  makeSnippet,
+  queryTerms,
+  reciprocalRankFusion,
+  toLikePatterns,
+  toOrTsQuery,
+} from "./retrieve/search.js";
 export type {
   ContextStore,
+  ContextStoreOptions,
   CreateResourceInput,
   MaterialsLayer1Outline,
   ResourceTopicTree,
+  RetrieveHit,
+  SearchMaterialsInput,
+  SearchMaterialsResult,
+  SemanticSkippedReason,
   TopicTreeNode,
 } from "./store.js";
 export { createContextStore } from "./store.js";

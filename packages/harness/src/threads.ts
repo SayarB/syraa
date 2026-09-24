@@ -1,6 +1,9 @@
 import type { MastraDBMessage } from "@mastra/core/agent";
 import { getSyraaMemory } from "./mastra/memory.js";
-import { seedMaterialsWorkingMemory, refreshMaterialsWorkingMemory } from "./materials-working-memory.js";
+import {
+  refreshMaterialsWorkingMemory,
+  seedMaterialsWorkingMemory,
+} from "./materials-working-memory.js";
 import { ValidationError } from "./schemas.js";
 import { mastraThreadToUiMessages, type ThreadUiMessageDto } from "./thread-ui-messages.js";
 
@@ -179,6 +182,30 @@ async function firstUserMessageTitle(threadId: string, resourceId: string): Prom
   return null;
 }
 
+/** Newest assistant reply in the thread (for the lesson gate): its last 2,000 chars, where offers like "want me to always…?" sit. */
+export async function lastAssistantMessageText(opts: {
+  userId: string;
+  threadId: string;
+}): Promise<string | null> {
+  const memory = getSyraaMemory();
+  const recalled = await memory.recall({
+    threadId: opts.threadId,
+    resourceId: opts.userId,
+    perPage: 6,
+    orderBy: { field: "createdAt", direction: "DESC" },
+  });
+
+  // Sort here too — recall may return the page in chronological order.
+  const newestFirst = recalled.messages
+    .filter((message) => message.role === "assistant")
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  for (const message of newestFirst) {
+    const text = extractDisplayText(message);
+    if (text) return text.slice(-2000);
+  }
+  return null;
+}
+
 export async function listChatThreads(opts: {
   userId: string;
   projectId?: string | null;
@@ -271,14 +298,21 @@ function extractDisplayText(message: MastraDBMessage): string | null {
     }
   }
 
-  let raw =
+  const raw =
     texts.join("\n").trim() ||
     (typeof message.content?.content === "string" ? message.content.content.trim() : "");
   if (!raw) return null;
 
   try {
-    const parsed = JSON.parse(raw) as { message?: unknown };
-    if (typeof parsed.message === "string" && parsed.message.trim()) {
+    // Legacy `{ message, lessons }` turn JSON only — a reply that is itself JSON stays as is.
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      typeof parsed.message === "string" &&
+      parsed.message.trim() &&
+      Object.keys(parsed).every((key) => key === "message" || key === "lessons")
+    ) {
       return parsed.message.trim();
     }
   } catch {

@@ -3,14 +3,51 @@ import { runWithChatContext } from "../src/chat-run-context.js";
 import { fallbackTurnFromToolCache, rememberToolResult } from "../src/tool-call-dedupe.js";
 
 describe("tool call cache", () => {
+  it("recovers search_materials snippets when turn resolution fails", async () => {
+    await runWithChatContext({ userId: "u1", threadId: "t1" }, async () => {
+      rememberToolResult("search_materials", { query: "nothing" }, { query: "nothing", hits: [] });
+      rememberToolResult(
+        "search_materials",
+        { query: "chroma" },
+        {
+          query: "chroma",
+          hits: [
+            {
+              documentName: "Principles.pdf",
+              section: "Tools",
+              snippet: "We store embeddings in Chroma.",
+            },
+          ],
+        },
+      );
+      expect(fallbackTurnFromToolCache()).toEqual({
+        message:
+          "Relevant passages from your materials:\n- **Principles.pdf — Tools**: We store embeddings in Chroma.",
+      });
+    });
+  });
+
+  it("uses the most recent search when a query repeats", async () => {
+    await runWithChatContext({ userId: "u1", threadId: "t1" }, async () => {
+      const hits = (snippet: string) => ({ hits: [{ documentName: "a.pdf", snippet }] });
+      rememberToolResult("search_materials", { query: "foo" }, hits("old foo"));
+      rememberToolResult("search_materials", { query: "bar" }, hits("bar"));
+      rememberToolResult("search_materials", { query: "foo" }, hits("new foo"));
+      expect(fallbackTurnFromToolCache().message).toContain("new foo");
+    });
+  });
+
   it("recovers a doc list when turn resolution fails", async () => {
     await runWithChatContext({ userId: "u1", threadId: "t1" }, async () => {
-      rememberToolResult("list_materials", {}, {
-        materials: [{ documentName: "THE_BREAKUP.pdf" }, { documentName: "Principles.pdf" }],
-      });
+      rememberToolResult(
+        "list_materials",
+        {},
+        {
+          materials: [{ documentName: "THE_BREAKUP.pdf" }, { documentName: "Principles.pdf" }],
+        },
+      );
       expect(fallbackTurnFromToolCache()).toEqual({
         message: "Available documents:\n- THE_BREAKUP.pdf\n- Principles.pdf",
-        lessons: [],
       });
     });
   });
@@ -27,8 +64,8 @@ describe("tool call cache", () => {
         },
       );
       expect(fallbackTurnFromToolCache()).toEqual({
-        message: "From **Principles.pdf** (Chroma):\n\nChromaDB is a vector database used for embeddings.",
-        lessons: [],
+        message:
+          "From **Principles.pdf** (Chroma):\n\nChromaDB is a vector database used for embeddings.",
       });
     });
   });

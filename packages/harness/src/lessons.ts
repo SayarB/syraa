@@ -1,5 +1,6 @@
 import type { ItemType, MemoryItem, MemoryService } from "@syraa/memory";
-import type { Lesson, LessonKind } from "./schemas.js";
+import type { GatedLesson } from "./lesson-gate.js";
+import type { LessonKind } from "./schemas.js";
 
 const LESSON_KIND_TO_TYPE: Record<LessonKind, ItemType> = {
   preference: "preference",
@@ -9,33 +10,8 @@ const LESSON_KIND_TO_TYPE: Record<LessonKind, ItemType> = {
   suggestion: "method",
 };
 
-const EXPLICIT_MARKERS =
-  /\b(always|never|every time|from now on|remember that|remember to|don't ever|do not ever)\b/i;
-
-/** User is explicitly teaching durable memory, not asking a one-off question. */
-const EXPLICIT_MEMORY_INTENT =
-  /\b(remember that|remember to|from now on|save (?:this|that|as)|add (?:this|that) to memory)\b/i;
-
-/** Task/research turns — topic interest must not become memory. */
-const ONE_OFF_TASK_QUERY =
-  /\b(research|recommend(?:ation)?s?|what should i (?:buy|get)|help me (?:choose|pick|find|decide)|compare|options for|best .+ (?:for|under)|under \d+\s*(?:l|lac|lakh|k|cr))\b/i;
-
-export function filterLessonsForTurn(userMessage: string, lessons: Lesson[]): Lesson[] {
-  if (lessons.length === 0) return lessons;
-  if (EXPLICIT_MEMORY_INTENT.test(userMessage) || EXPLICIT_MARKERS.test(userMessage)) {
-    return lessons;
-  }
-  if (ONE_OFF_TASK_QUERY.test(userMessage)) return [];
-  return lessons;
-}
-
 export function lessonToItemType(kind: LessonKind): ItemType {
   return LESSON_KIND_TO_TYPE[kind];
-}
-
-export function shouldAutoActivate(lesson: Lesson, userMessage: string): boolean {
-  if (lesson.kind === "rule") return true;
-  return EXPLICIT_MARKERS.test(userMessage) || EXPLICIT_MARKERS.test(lesson.text);
 }
 
 /** Normalize lesson text for duplicate checks. */
@@ -99,47 +75,36 @@ export async function applyLessons(
   opts: {
     userId: string;
     memoryId: string;
-    lessons: Lesson[];
-    userMessage: string;
+    /** Already gated (see `gateLesson`) — activation comes from the gate, not from here. */
+    lessons: GatedLesson[];
     messageId?: string;
     existingItems: MemoryItem[];
   },
 ): Promise<MemoryItem[]> {
   const created: MemoryItem[] = [];
-  const capped = filterLessonsForTurn(opts.userMessage, opts.lessons).slice(0, 3);
 
-  for (const lesson of capped) {
+  for (const lesson of opts.lessons.slice(0, 3)) {
     const text = lesson.text.trim();
     if (!text) continue;
     if (isDuplicate(opts.existingItems, text)) continue;
     if (isDuplicate(created, text)) continue;
 
-    const autoActivate = shouldAutoActivate(lesson, opts.userMessage);
     const item = await service.createItem({
       userId: opts.userId,
       memoryId: opts.memoryId,
       type: lessonToItemType(lesson.kind),
       text,
-      source: autoActivate ? "explicit" : "distilled",
-      confidence: lesson.confidence ?? "medium",
-      needsConfirm: !autoActivate,
-      status: autoActivate ? "active" : "pending",
-      why: lesson.why ?? null,
+      source: lesson.activate ? "explicit" : "distilled",
+      confidence: lesson.confidence,
+      needsConfirm: !lesson.activate,
+      status: lesson.activate ? "active" : "pending",
+      why: null,
       evidenceMessageIds: opts.messageId ? [opts.messageId] : [],
       createdBy: "system",
     });
 
     created.push(item);
     opts.existingItems.push(item);
-
-    if (lesson.open_loop?.trim()) {
-      const memory = await service.getMemory({ memoryId: opts.memoryId });
-      const loops = memory?.openLoops ?? [];
-      const loop = lesson.open_loop.trim();
-      if (!loops.includes(loop)) {
-        await service.updateOpenLoops(opts.userId, [...loops, loop], { memoryId: opts.memoryId });
-      }
-    }
   }
 
   return created;

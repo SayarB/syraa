@@ -1,0 +1,1492 @@
+[
+  {
+    "id": "A1",
+    "round": 1,
+    "group": "explicit",
+    "user": "From now on, answer in bullet points.",
+    "expect": "auto",
+    "accept": []
+  },
+  {
+    "id": "A2",
+    "round": 1,
+    "group": "explicit",
+    "user": "Remember that I'm vegetarian.",
+    "expect": "auto",
+    "accept": []
+  },
+  {
+    "id": "A3",
+    "round": 1,
+    "group": "explicit",
+    "user": "Never use emojis in your replies to me.",
+    "expect": "auto",
+    "accept": []
+  },
+  {
+    "id": "A4",
+    "round": 1,
+    "group": "explicit",
+    "user": "When I say 'tldr', give me exactly 3 bullets and nothing else.",
+    "expect": "auto",
+    "accept": []
+  },
+  {
+    "id": "B1",
+    "round": 1,
+    "group": "implicit",
+    "user": "I prefer dark mode screenshots in any docs you draft.",
+    "expect": "pending",
+    "accept": ["auto"]
+  },
+  {
+    "id": "B2",
+    "round": 1,
+    "group": "implicit",
+    "user": "fyi I'm on a Mac, so skip the Windows instructions.",
+    "expect": "pending",
+    "accept": ["auto"]
+  },
+  {
+    "id": "B3",
+    "round": 1,
+    "group": "implicit",
+    "user": "I really can't stand long intros. Get to the point.",
+    "expect": "pending",
+    "accept": ["auto"]
+  },
+  {
+    "id": "B4",
+    "round": 1,
+    "group": "implicit",
+    "user": "We decided to go with Postgres over Mongo for Syraa's storage.",
+    "expect": "pending",
+    "accept": ["auto"]
+  },
+  {
+    "id": "B5",
+    "round": 1,
+    "group": "implicit",
+    "user": "When we debug together, check the logs first before proposing code changes.",
+    "expect": "pending",
+    "accept": ["auto"]
+  },
+  {
+    "id": "C1",
+    "round": 1,
+    "group": "marker-trap",
+    "user": "Which airline always has the cheapest Delhi–Goa flights?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "C2",
+    "round": 1,
+    "group": "marker-trap",
+    "user": "Find me laptops under 80k that never overheat.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "C3",
+    "round": 1,
+    "group": "marker-trap",
+    "user": "Remember that movie with the spinning top at the end? What was it called?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "C4",
+    "round": 1,
+    "group": "marker-trap",
+    "user": "Write a short poem that starts with 'From now on I will always love you'.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "C5",
+    "round": 1,
+    "group": "marker-trap",
+    "user": "What does 'from now on' mean legally in a contract clause?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "C6",
+    "round": 1,
+    "group": "marker-trap",
+    "user": "Fix this bug:\n```ts\n// always validate input\nfunction add(a, b) { return a - b }\n```",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "D1",
+    "round": 1,
+    "group": "research",
+    "user": "Compare the best EVs under 20 lakh for city driving.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "D2",
+    "round": 1,
+    "group": "research",
+    "user": "Help me pick running shoes for flat feet.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "D3",
+    "round": 1,
+    "group": "research",
+    "user": "I'm really into Japanese woodworking lately — what are good beginner chisels?",
+    "expect": "drop",
+    "accept": ["pending"]
+  },
+  {
+    "id": "E1",
+    "round": 1,
+    "group": "referential",
+    "prev": "Want me to keep answers under 100 words going forward?",
+    "user": "yes please",
+    "expect": "auto",
+    "accept": ["pending"]
+  },
+  {
+    "id": "E2",
+    "round": 1,
+    "group": "referential",
+    "prev": "Should I format this comparison as a table?",
+    "user": "yes",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "E3",
+    "round": 1,
+    "group": "referential",
+    "prev": "Here's the summary in Hindi as you asked. Should I keep replying in Hindi?",
+    "user": "haan, hamesha",
+    "expect": "auto",
+    "accept": ["pending"]
+  },
+  {
+    "id": "E4",
+    "round": 1,
+    "group": "referential",
+    "prev": "I wrote the tests with Jest. Want me to switch to Vitest?",
+    "user": "yeah, and do that for every repo of mine",
+    "expect": "auto",
+    "accept": ["pending"]
+  },
+  {
+    "id": "F1",
+    "round": 1,
+    "group": "mixed",
+    "user": "Remember I'm vegetarian — also find me a place for dinner tonight in Indiranagar.",
+    "expect": "auto",
+    "accept": ["pending"]
+  },
+  {
+    "id": "F2",
+    "round": 1,
+    "group": "mixed",
+    "user": "Book-wise I'm done with thrillers, never recommend them again. Anyway, what's the capital of Peru?",
+    "expect": "auto",
+    "accept": ["pending"]
+  },
+  {
+    "id": "G1",
+    "round": 1,
+    "group": "temporary",
+    "user": "For this conversation only, reply in Spanish.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "G2",
+    "round": 1,
+    "group": "temporary",
+    "user": "Today I'm working from Pune, so use IST for the meeting times.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "G3",
+    "round": 1,
+    "group": "temporary",
+    "user": "Just this once, give me the long version.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "H1",
+    "round": 1,
+    "group": "meta",
+    "user": "Forget what I said about bullet points.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "H2",
+    "round": 1,
+    "group": "meta",
+    "user": "Don't remember this, but I'm really stressed today.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "H3",
+    "round": 1,
+    "group": "meta",
+    "user": "What do you remember about me?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "H4",
+    "round": 1,
+    "group": "meta",
+    "user": "If I told you 'always use tabs', would you actually remember it?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "I1",
+    "round": 1,
+    "group": "third-party",
+    "user": "My boss always wants reports as PDFs, can you convert this one?",
+    "expect": "pending",
+    "accept": ["drop"]
+  },
+  {
+    "id": "I2",
+    "round": 1,
+    "group": "third-party",
+    "user": "My friend never eats pork. Suggest a menu for her birthday dinner.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "J1",
+    "round": 1,
+    "group": "noisy",
+    "user": "pls dnt use emojis evr again",
+    "expect": "auto",
+    "accept": ["pending"]
+  },
+  {
+    "id": "J2",
+    "round": 1,
+    "group": "noisy",
+    "user": "yaar hamesha hindi me reply karna",
+    "expect": "auto",
+    "accept": ["pending"]
+  },
+  {
+    "id": "J3",
+    "round": 1,
+    "group": "noisy",
+    "prev": "(a 1,800-word answer)",
+    "user": "oh great, another essay. love that for me.",
+    "expect": "pending",
+    "accept": ["drop"]
+  },
+  {
+    "id": "J4",
+    "round": 1,
+    "group": "noisy",
+    "user": "ok so I need to plan the offsite for 40 people in Nov, budget is around 6L, somewhere 3-4h from Bangalore, and btw going forward always give me costs in INR not USD, and make sure there's a vegetarian-friendly venue option.",
+    "expect": "auto",
+    "accept": ["pending"]
+  },
+  {
+    "id": "S1",
+    "round": 2,
+    "group": "aside",
+    "user": "Planning a long weekend in late October, probably Thursday to Sunday. Budget is flexible but I don't want to spend more than half a day travelling each way. I usually end up in the hills anyway, beaches just aren't my thing. Can you suggest three options from Bangalore with a rough plan for each?",
+    "expect": "pending",
+    "accept": ["auto"]
+  },
+  {
+    "id": "S2",
+    "round": 2,
+    "group": "aside",
+    "user": "Can you draft a one-page summary of the Q3 infra costs from the notes I pasted earlier? Keep the tables narrow, I read everything on my phone during the commute. Highlight anything that went up more than 20% month on month.",
+    "expect": "pending",
+    "accept": ["auto"]
+  },
+  {
+    "id": "S3",
+    "round": 2,
+    "group": "aside",
+    "user": "Need a quick dinner idea for tonight, something under 30 minutes. I've got chicken thighs, spinach, some rice and the usual spices. I'm lactose intolerant so the creamy stuff is out. Nothing too fancy.",
+    "expect": "pending",
+    "accept": ["auto"]
+  },
+  {
+    "id": "S4",
+    "round": 2,
+    "group": "aside",
+    "user": "I'm trying to understand how rate limiting with a token bucket actually works under concurrency. Could you walk me through it with a small example? I think in TypeScript, Python examples take me twice as long to follow. Also mention what breaks when you run multiple instances.",
+    "expect": "pending",
+    "accept": ["auto"]
+  },
+  {
+    "id": "S5",
+    "round": 2,
+    "group": "aside",
+    "user": "Help me restructure my week. I have about 12 hours of deep work to fit in around standups at 10 and a lot of meetings on Tuesday and Thursday. I'm a morning person, my brain is mush after 4pm. Give me a simple block schedule.",
+    "expect": "pending",
+    "accept": ["auto"]
+  },
+  {
+    "id": "S6",
+    "round": 2,
+    "group": "aside",
+    "user": "The CI job for the web app is taking almost 9 minutes and I want it under 4. It installs deps, typechecks, runs unit tests and builds. Since we moved everything to Bun last month the install step is fast, so it's mostly the tests and the build. What would you cut or parallelise first?",
+    "expect": "pending",
+    "accept": ["auto"]
+  },
+  {
+    "id": "S7",
+    "round": 2,
+    "group": "aside",
+    "user": "Can you look at this flight search and tell me whether the 6am or the 11pm option makes more sense for a Delhi meeting at 2pm? I'm based in Kolkata so either way it's a short hop. I don't mind early starts but I hate red-eyes.",
+    "expect": "pending",
+    "accept": ["auto"]
+  },
+  {
+    "id": "S8",
+    "round": 2,
+    "group": "aside",
+    "user": "I just finished the second season of Severance and loved it. What should I watch next that has a similar slow-burn mystery vibe? Please keep the descriptions vague, spoilers ruin it for me even small ones.",
+    "expect": "pending",
+    "accept": ["auto"]
+  },
+  {
+    "id": "S9",
+    "round": 2,
+    "group": "aside",
+    "user": "The date parser returns the wrong day for timestamps near midnight in IST. Before you jump to a fix, I like seeing the failing test first, then the change. Here's the function and two example inputs that break it.",
+    "expect": "pending",
+    "accept": ["auto"]
+  },
+  {
+    "id": "S10",
+    "round": 2,
+    "group": "aside",
+    "user": "Thinking about which credit card to get for travel. I spend maybe 2 lakh a year on flights and hotels, mostly domestic. I go to Goa every December with the same group of friends, so hotel points would actually get used. Which cards should I look at?",
+    "expect": "pending",
+    "accept": ["auto"]
+  },
+  {
+    "id": "S11",
+    "round": 2,
+    "group": "aside",
+    "user": "Can you pick a colour palette for the dashboard charts? Five categories, needs to work on a dark background. Worth knowing I'm colour-blind, red-green specifically, so I've been burned by default palettes before.",
+    "expect": "pending",
+    "accept": ["auto"]
+  },
+  {
+    "id": "S12",
+    "round": 2,
+    "group": "aside",
+    "user": "My grandmother sent a voice note that I transcribed below and I can only half understand it. Can you translate it to English and explain any idioms? Honestly my Hindi is much better than my Bengali these days, which is a bit embarrassing.",
+    "expect": "pending",
+    "accept": ["auto"]
+  },
+  {
+    "id": "R1",
+    "round": 2,
+    "group": "inferred-rule",
+    "user": "Thanks, that works. Had to strip out all the emojis again before pasting it into the client email though. Can you now do the same summary for the October report?",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "R2",
+    "round": 2,
+    "group": "inferred-rule",
+    "prev": "(a detailed answer that opens with a 4-paragraph background section)",
+    "user": "This is the third time I've had to scroll past a history lesson to get to the answer. Anyway, what's the actual command to rotate the key?",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "R3",
+    "round": 2,
+    "group": "inferred-rule",
+    "prev": "Here's the snippet using Python's requests library: ...",
+    "user": "I keep converting these back to fetch myself. The rest of the codebase is TypeScript. Can you redo it?",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "R4",
+    "round": 2,
+    "group": "inferred-rule",
+    "prev": "The plan costs about $49/month, or roughly $490/year billed annually.",
+    "user": "ok and in rupees? I had to convert the last three quotes too",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "R5",
+    "round": 2,
+    "group": "inferred-rule",
+    "prev": "Done — I've renamed the files and pushed the commit to main.",
+    "user": "Please don't do that without asking me. I review everything before it goes to main. Can you revert the push?",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "R6",
+    "round": 2,
+    "group": "inferred-rule",
+    "prev": "(a 1,500-word answer)",
+    "user": "shorter",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "N1",
+    "round": 2,
+    "group": "control",
+    "user": "I'm at the airport right now and my flight got delayed by three hours, which is annoying because I had a dinner planned. Can you find me a decent place to eat in Terminal 2 that's open late and not a food court?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "N2",
+    "round": 2,
+    "group": "control",
+    "user": "My sister is visiting next week and she loves hiking, so I want to plan something for Saturday. She's pretty fit, I'm less so. Any trails within 2 hours of Bangalore that work for mixed fitness levels?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "N3",
+    "round": 2,
+    "group": "control",
+    "user": "I've been feeling pretty tired this week, probably because of the release crunch. Anyway, can you help me write a short update to the team saying the launch is moving by two days and why?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "N4",
+    "round": 2,
+    "group": "control",
+    "user": "I'm reading a book right now where the main character always takes the stairs and never uses lifts, it's a weird running joke. Can you tell me if that's a reference to something? The book is from the 90s.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "N5",
+    "round": 2,
+    "group": "control",
+    "user": "For this deck specifically I want it minimal, black and white, no stock photos. It's for a very conservative banking client. Can you outline 10 slides for the pitch?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "N6",
+    "round": 2,
+    "group": "control",
+    "user": "I'm moving flats next month so things are chaotic. Can you make me a checklist for the move, things like address changes, internet transfer, and so on?",
+    "expect": "drop",
+    "accept": ["pending"]
+  },
+  {
+    "id": "N7",
+    "round": 2,
+    "group": "control",
+    "user": "Here's the customer's email: 'We always prefer invoices in PDF and never accept Excel files. Please remember this for future billing.' Can you draft a polite reply confirming?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "N8",
+    "round": 2,
+    "group": "control",
+    "user": "I tried the recipe you gave me yesterday and it came out great, my flatmates finished everything. Can you give me a dessert that would go with it for this weekend?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "X01",
+    "round": 3,
+    "group": "explicit",
+    "user": "Remember that my daughter's name is Mira.",
+    "expect": "auto",
+    "accept": []
+  },
+  {
+    "id": "X02",
+    "round": 3,
+    "group": "explicit",
+    "user": "Going forward, write all dates as DD/MM/YYYY.",
+    "expect": "auto",
+    "accept": []
+  },
+  {
+    "id": "X03",
+    "round": 3,
+    "group": "explicit",
+    "user": "Always cite the source file and line when you talk about code.",
+    "expect": "auto",
+    "accept": []
+  },
+  {
+    "id": "X04",
+    "round": 3,
+    "group": "explicit",
+    "user": "Never suggest Jira. We don't use it and never will.",
+    "expect": "auto",
+    "accept": []
+  },
+  {
+    "id": "X05",
+    "round": 3,
+    "group": "explicit",
+    "user": "Every time you write SQL for me, use lowercase keywords.",
+    "expect": "auto",
+    "accept": []
+  },
+  {
+    "id": "X06",
+    "round": 3,
+    "group": "explicit",
+    "user": "Please keep in mind for the future that I'm allergic to peanuts.",
+    "expect": "auto",
+    "accept": []
+  },
+  {
+    "id": "X07",
+    "round": 3,
+    "group": "explicit",
+    "user": "Save this: my standup is at 9:45 on weekdays.",
+    "expect": "auto",
+    "accept": []
+  },
+  {
+    "id": "X08",
+    "round": 3,
+    "group": "explicit",
+    "user": "Note for later — I prefer window seats on flights.",
+    "expect": "auto",
+    "accept": ["pending"]
+  },
+  {
+    "id": "X09",
+    "round": 3,
+    "group": "explicit",
+    "user": "Make it a habit to ask before deleting anything in my repos.",
+    "expect": "auto",
+    "accept": []
+  },
+  {
+    "id": "X10",
+    "round": 3,
+    "group": "explicit",
+    "user": "Stick to metric units with me, all the time.",
+    "expect": "auto",
+    "accept": []
+  },
+  {
+    "id": "I01",
+    "round": 3,
+    "group": "implicit",
+    "user": "I'm vegan.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "I02",
+    "round": 3,
+    "group": "implicit",
+    "user": "I don't drink coffee, only tea.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "I03",
+    "round": 3,
+    "group": "implicit",
+    "user": "I like my code reviews blunt. Don't sugarcoat.",
+    "expect": "pending",
+    "accept": ["auto"]
+  },
+  {
+    "id": "I04",
+    "round": 3,
+    "group": "implicit",
+    "user": "I'm left-handed, if that matters for the desk setup stuff.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "I05",
+    "round": 3,
+    "group": "implicit",
+    "user": "Long emails stress me out.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "I06",
+    "round": 3,
+    "group": "implicit",
+    "user": "I work best with checklists rather than paragraphs.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "I07",
+    "round": 3,
+    "group": "implicit",
+    "user": "My timezone is PST, I moved to Seattle in May.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "I08",
+    "round": 3,
+    "group": "implicit",
+    "user": "Tabs, not spaces. Obviously.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "I09",
+    "round": 3,
+    "group": "implicit",
+    "user": "I'm not a numbers person, so charts help more than tables.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "I10",
+    "round": 3,
+    "group": "implicit",
+    "user": "Dark roast, no sugar — that's me.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "A01",
+    "round": 3,
+    "group": "aside",
+    "user": "Can you help me plan a birthday dinner for 8 people next Saturday? I don't eat seafood so let's skip anything coastal. Something in Koramangala, around 1500 per head.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "A02",
+    "round": 3,
+    "group": "aside",
+    "user": "Write a short cover letter for a senior backend role at a fintech. I've been doing Go for six years, mostly payments systems. Keep it under 250 words.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "A03",
+    "round": 3,
+    "group": "aside",
+    "user": "Explain how CRDTs work at a high level. I have a physics background so feel free to use analogies from there. Then give me a tiny example.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "A04",
+    "round": 3,
+    "group": "aside",
+    "user": "Summarise this PDF on the new tax rules. I file as a freelancer, so focus on what changes for me. Bullet points are fine.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "A05",
+    "round": 3,
+    "group": "aside",
+    "user": "Need a gift idea for my manager's farewell, budget around 3k. She's into pottery I think. Since I work remotely I'll need something that ships well.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "A06",
+    "round": 3,
+    "group": "aside",
+    "user": "Help me debug why the websocket drops after exactly 60 seconds in production but not locally. We're on Fly.io and I always forget how their proxy timeouts work. Here's the server config.",
+    "expect": "pending",
+    "accept": ["drop"]
+  },
+  {
+    "id": "A07",
+    "round": 3,
+    "group": "aside",
+    "user": "Can you make a weekly grocery list for two? My partner and I cook most nights, mostly South Indian food, and we shop on Sundays.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "A08",
+    "round": 3,
+    "group": "aside",
+    "user": "Draft a message to the landlord about the leaking tap. Keep it polite but firm. English isn't his first language so simple words please.",
+    "expect": "drop",
+    "accept": ["pending"]
+  },
+  {
+    "id": "A09",
+    "round": 3,
+    "group": "aside",
+    "user": "I want to learn Rust over the next three months. I have about 5 hours a week, mostly weekends because weekdays are packed with calls. Build me a study plan.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "A10",
+    "round": 3,
+    "group": "aside",
+    "user": "Compare these three phone plans for me. I barely make calls, it's all data and WhatsApp, and I travel to Singapore a couple of times a year.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "F01",
+    "round": 3,
+    "group": "inferred-rule",
+    "prev": "I'm not a lawyer, but here is a general overview. Please consult a legal professional...",
+    "user": "Again with the disclaimers. I know you're not a lawyer. Just tell me what the clause means.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "F02",
+    "round": 3,
+    "group": "inferred-rule",
+    "prev": "Here's the revised colour configuration and the optimised behaviour notes...",
+    "user": "Why is this in British spelling? Our docs are all US English.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "F03",
+    "round": 3,
+    "group": "inferred-rule",
+    "prev": "const a = 1;\nconst b = 2;",
+    "user": "You used semicolons everywhere again, our lint config forbids them.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "F04",
+    "round": 3,
+    "group": "inferred-rule",
+    "prev": "(answer)... In summary, we covered three approaches...",
+    "user": "I didn't ask for a summary at the end.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "F05",
+    "round": 3,
+    "group": "inferred-rule",
+    "prev": "1. First...\n2. Second...\n3. Third...",
+    "user": "Ugh, not another numbered list.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "F06",
+    "round": 3,
+    "group": "inferred-rule",
+    "user": "I had to reformat all the times to 24h before sending that out.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "F07",
+    "round": 3,
+    "group": "inferred-rule",
+    "prev": "Great question! Here's how...",
+    "user": "Could you not open every reply with 'Great question'?",
+    "expect": "pending",
+    "accept": ["auto"]
+  },
+  {
+    "id": "F08",
+    "round": 3,
+    "group": "inferred-rule",
+    "prev": "(a 1,200-word explanation of a one-line fix)",
+    "user": "That's way more than I needed.",
+    "expect": "pending",
+    "accept": ["drop"]
+  },
+  {
+    "id": "F09",
+    "round": 3,
+    "group": "inferred-rule",
+    "prev": "Open PowerShell and run...",
+    "user": "You keep assuming I'm on Windows.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "F10",
+    "round": 3,
+    "group": "inferred-rule",
+    "user": "The last three plans you made had me working past 8pm. That's not happening.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "P01",
+    "round": 3,
+    "group": "referential",
+    "prev": "Want me to add type annotations to Python snippets by default?",
+    "user": "yes, do that every time",
+    "expect": "auto",
+    "accept": []
+  },
+  {
+    "id": "P02",
+    "round": 3,
+    "group": "referential",
+    "prev": "Want me to also generate a test for this function?",
+    "user": "sure",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "P03",
+    "round": 3,
+    "group": "referential",
+    "prev": "Noted that you're flying out on the 14th and back on the 20th.",
+    "user": "please remember that",
+    "expect": "auto",
+    "accept": ["pending"]
+  },
+  {
+    "id": "P04",
+    "round": 3,
+    "group": "referential",
+    "prev": "So a flat white with oat milk?",
+    "user": "yep, that's my usual",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "P05",
+    "round": 3,
+    "group": "referential",
+    "prev": "Did you mean the staging database or production?",
+    "user": "no, the other one",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "P06",
+    "round": 3,
+    "group": "referential",
+    "prev": "Short answer: no. The migration will lock the table. Run it at night.",
+    "user": "perfect, that's exactly the tone I want from you",
+    "expect": "pending",
+    "accept": ["auto"]
+  },
+  {
+    "id": "P07",
+    "round": 3,
+    "group": "referential",
+    "prev": "Should I keep using the mock API until the real one is ready?",
+    "user": "ok for now",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "P08",
+    "round": 3,
+    "group": "referential",
+    "prev": "Just to confirm, you deploy only from the release branch, not main?",
+    "user": "correct, and that won't change",
+    "expect": "pending",
+    "accept": ["auto"]
+  },
+  {
+    "id": "D01",
+    "round": 3,
+    "group": "decision",
+    "user": "We've standardised on pnpm across all repos.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "D02",
+    "round": 3,
+    "group": "decision",
+    "user": "The team agreed: no more feature flags in the mobile app, we ship behind remote config.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "D03",
+    "round": 3,
+    "group": "decision",
+    "user": "I've decided to stop freelancing on weekends.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "D04",
+    "round": 3,
+    "group": "decision",
+    "user": "After the outage we moved all cron jobs to Temporal. Can you rewrite this job for it?",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "D05",
+    "round": 3,
+    "group": "decision",
+    "user": "Going with Tailwind for the new site, the designer gave up fighting it.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "D06",
+    "round": 3,
+    "group": "decision",
+    "user": "Postgres it is. Can you draft the schema for the orders table?",
+    "expect": "pending",
+    "accept": ["drop"]
+  },
+  {
+    "id": "M01",
+    "round": 3,
+    "group": "marker-trap",
+    "user": "Is it true that goldfish never forget anything?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "M02",
+    "round": 3,
+    "group": "marker-trap",
+    "user": "Translate 'I will always remember you' into Japanese.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "M03",
+    "round": 3,
+    "group": "marker-trap",
+    "user": "Why does my React effect always run twice in dev?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "M04",
+    "round": 3,
+    "group": "marker-trap",
+    "user": "Write a regex that never matches empty strings.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "M05",
+    "round": 3,
+    "group": "marker-trap",
+    "user": "Remember to check the last paragraph of the doc I sent — does it contradict the intro?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "M06",
+    "round": 3,
+    "group": "marker-trap",
+    "user": "From now on in the story, the dragon should be friendly. Continue the chapter.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "M07",
+    "round": 3,
+    "group": "marker-trap",
+    "user": "My tests pass locally but always fail in CI with a timeout. Here's the log.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "M08",
+    "round": 3,
+    "group": "marker-trap",
+    "user": "Draft a company policy that says employees must always lock their screens.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "M09",
+    "round": 3,
+    "group": "marker-trap",
+    "user": "What's a good way to remember the order of the planets?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "M10",
+    "round": 3,
+    "group": "marker-trap",
+    "user": "Keep in mind the doc has two appendices when you summarise it.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "R01",
+    "round": 3,
+    "group": "research",
+    "user": "What are the pros and cons of solar panels for an apartment?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "R02",
+    "round": 3,
+    "group": "research",
+    "user": "Best mechanical keyboards under 10k?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "R03",
+    "round": 3,
+    "group": "research",
+    "user": "I've been reading a lot about stoicism lately. Which book should I start with?",
+    "expect": "drop",
+    "accept": ["pending"]
+  },
+  {
+    "id": "R04",
+    "round": 3,
+    "group": "research",
+    "user": "Explain the difference between an ETF and a mutual fund.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "R05",
+    "round": 3,
+    "group": "research",
+    "user": "What's the history of the Kolkata tram system?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "R06",
+    "round": 3,
+    "group": "research",
+    "user": "Compare Supabase and Firebase for a small side project.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "R07",
+    "round": 3,
+    "group": "research",
+    "user": "I'm curious about bouldering, is it bad for your fingers long term?",
+    "expect": "drop",
+    "accept": ["pending"]
+  },
+  {
+    "id": "R08",
+    "round": 3,
+    "group": "research",
+    "user": "Find me 5 papers on retrieval-augmented generation from 2025.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "T01",
+    "round": 3,
+    "group": "temporary",
+    "user": "For this chat, pretend you're a pirate.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "T02",
+    "round": 3,
+    "group": "temporary",
+    "user": "I'm in a meeting, answer in one line for now.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "T03",
+    "round": 3,
+    "group": "temporary",
+    "user": "This week I'm on call, so keep reminders about the incident channel handy.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "T04",
+    "round": 3,
+    "group": "temporary",
+    "user": "I have a cold today, suggest something easy for lunch.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "T05",
+    "round": 3,
+    "group": "temporary",
+    "user": "Until the demo on Friday, prioritise the checkout flow over everything.",
+    "expect": "drop",
+    "accept": ["pending"]
+  },
+  {
+    "id": "T06",
+    "round": 3,
+    "group": "temporary",
+    "user": "I'm using my work laptop today, so no personal account links please.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "T07",
+    "round": 3,
+    "group": "temporary",
+    "user": "Right now I only care about the numbers, skip the explanation.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "T08",
+    "round": 3,
+    "group": "temporary",
+    "user": "Just for this answer, use Python instead of TypeScript.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "Q01",
+    "round": 3,
+    "group": "quoted",
+    "user": "My colleague always writes 'per my last email'. Is that passive aggressive?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "Q02",
+    "round": 3,
+    "group": "quoted",
+    "user": "Rewrite this support macro: 'We always respond within 24 hours and never share your data.'",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "Q03",
+    "round": 3,
+    "group": "quoted",
+    "user": "My mom prefers phone calls to texts. Help me write her a voicemail script for her birthday.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "Q04",
+    "round": 3,
+    "group": "quoted",
+    "user": "Here's our style guide excerpt: 'Always use sentence case for headings. Never use exclamation marks.' Does my draft follow it?",
+    "expect": "drop",
+    "accept": ["pending"]
+  },
+  {
+    "id": "Q05",
+    "round": 3,
+    "group": "quoted",
+    "user": "If I were vegetarian, what protein sources would you suggest?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "Q06",
+    "round": 3,
+    "group": "quoted",
+    "user": "The client said: 'please remember we never work on Fridays'. Draft a reply acknowledging it.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "Q07",
+    "round": 3,
+    "group": "quoted",
+    "user": "Hypothetically, if I told you to always answer in French, how would that work?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "Q08",
+    "round": 3,
+    "group": "quoted",
+    "user": "My boss hates bullet points. Can you turn this list into a paragraph for him?",
+    "expect": "drop",
+    "accept": ["pending"]
+  },
+  {
+    "id": "Q09",
+    "round": 3,
+    "group": "quoted",
+    "user": "A user on our forum wrote 'I always get logged out after 5 minutes'. What could cause that?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "Q10",
+    "round": 3,
+    "group": "quoted",
+    "user": "Pretend I'm a customer who never reads emails. How would you get my attention?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "E01",
+    "round": 3,
+    "group": "meta",
+    "user": "What do you know about me so far?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "E02",
+    "round": 3,
+    "group": "meta",
+    "user": "Delete the thing you saved about my coffee.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "E03",
+    "round": 3,
+    "group": "meta",
+    "user": "Do you actually remember past conversations?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "E04",
+    "round": 3,
+    "group": "meta",
+    "user": "You can stop assuming I'm vegan, that was a month-long experiment.",
+    "expect": "drop",
+    "accept": ["pending"]
+  },
+  {
+    "id": "N01",
+    "round": 3,
+    "group": "noisy",
+    "user": "bro stop giving me 10 options, 2-3 max ok",
+    "expect": "pending",
+    "accept": ["auto"]
+  },
+  {
+    "id": "N02",
+    "round": 3,
+    "group": "noisy",
+    "user": "mujhe spicy khana pasand nahi, kuch mild batao dinner ke liye",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "N03",
+    "round": 3,
+    "group": "noisy",
+    "user": "rmbr i use vim keybinds everywhere so dont tell me to click stuff",
+    "expect": "auto",
+    "accept": ["pending"]
+  },
+  {
+    "id": "N04",
+    "round": 3,
+    "group": "noisy",
+    "user": "```\n# TODO: always use UTC here\nts = datetime.now()\n```\nwhy is this off by 5.5 hours",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "N05",
+    "round": 3,
+    "group": "noisy",
+    "user": "ok so long story but basically the vendor changed their API again, which is the third time this quarter, and our integration broke over the weekend, I spent all Sunday on it and I'm exhausted, anyway can you look at this error and tell me what changed in their response format",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "N06",
+    "round": 3,
+    "group": "noisy",
+    "user": "thx. btw im always on mobile so short answrs pls",
+    "expect": "pending",
+    "accept": ["auto"]
+  },
+  {
+    "id": "L01",
+    "round": 4,
+    "group": "long-aside",
+    "user": "Okay so here's the situation with the offsite. We're about 25 people, mix of engineering and design, and the budget got approved last week at roughly 8 lakh all-in. HR wants it to be a two-night thing in the first half of December, ideally leaving Thursday evening and coming back Saturday afternoon so nobody loses a full weekend. Last year we did a beach resort in Gokarna and honestly the feedback was mixed — people liked the vibe but the travel was brutal and half the team got sunburnt on day one. Personally I'm always happier somewhere up in the hills with a bit of a chill in the air, I just feel more awake there. We need a decent meeting room for at least one half-day session, reliable wifi, and some kind of team activity that isn't forced fun. Vegetarian options are a must since a third of the team is veg. Can you shortlist four places within about six hours of Bangalore and give me a rough cost breakdown for each?",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "L02",
+    "round": 4,
+    "group": "long-aside",
+    "user": "I need help restructuring the onboarding doc for new backend engineers. Right now it's a 40-page Notion page that grew organically over three years and nobody reads past page five. It covers local setup, our service map, the deploy process, on-call expectations, coding conventions, and a long list of links to ADRs. New hires keep asking the same questions in Slack in their first two weeks, mostly about how to get the local stack running and who owns what. I'd like to split it into a \"day one\" doc, a \"first week\" doc, and a reference section. For what it's worth, I absorb stuff way better from diagrams than from walls of text, so wherever a picture would do, lean on that. Keep the tone friendly but not cutesy. Also flag anything that looks outdated — I suspect the deploy section still mentions Jenkins even though we moved off it ages ago. Can you propose the new structure and a table of contents for each part?",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "L03",
+    "round": 4,
+    "group": "long-aside",
+    "user": "My parents are visiting for three weeks in January and I'm trying to plan a few weekend trips that work for them. Dad has a bad knee so anything with a lot of stairs or steep walking is out, and Mom gets carsick on winding roads, which rules out a lot of hill stations annoyingly. They love temples, old architecture, and good local food. I was thinking Hampi, Mysore, maybe Pondicherry. I'll be driving since I don't really trust the trains for them with the luggage. Budget isn't a big concern but I don't want anything too luxurious either, they get uncomfortable in fancy hotels. Can you put together three weekend itineraries with a rough driving time, where to stay, and two or three things to do each day that are gentle on the knees?",
+    "expect": "drop",
+    "accept": ["pending"]
+  },
+  {
+    "id": "L04",
+    "round": 4,
+    "group": "long-aside",
+    "user": "We're getting a lot of flaky tests in the payments service and I want to finally clean it up. The suite has about 1,400 tests, runs in roughly 11 minutes on CI, and something like 2–3% of runs fail on tests that pass on retry. Most of the flakiness seems to be around time-dependent logic and a couple of integration tests that hit a local Postgres container. I've tried bumping timeouts but that just hides the problem. Our convention on this team is that every bug fix ships with a regression test first, no exceptions, so whatever we do needs to fit that. I'd like a plan: how to find the flakiest tests systematically, how to quarantine them without losing coverage, and what patterns to use for time-dependent code. We use Vitest and Testcontainers. Can you outline the approach and give me a small example of a deterministic clock setup?",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "L05",
+    "round": 4,
+    "group": "long-aside",
+    "user": "Can you help me write a toast for my best friend's wedding next month? We've known each other since we were eleven, grew up two streets apart in Salt Lake, and went to the same college before she moved to Pune for work. There are a few stories I want to include: the time we got lost in Darjeeling on a school trip, the terrible band we started in college, and how she met her husband at a trivia night where he got every sports question wrong. Speeches make me incredibly nervous, so I'd rather keep it short — three minutes, tops — and something I can mostly read without sounding like I'm reading. The crowd will be a mix of Bengali and Marathi families, plenty of older relatives, so nothing too risqué. Could you draft it and mark where I can pause for laughs?",
+    "expect": "pending",
+    "accept": ["drop"]
+  },
+  {
+    "id": "L06",
+    "round": 4,
+    "group": "long-aside",
+    "user": "I'm evaluating whether to migrate our analytics pipeline from nightly batch jobs to something closer to real time. Right now we dump Postgres to S3 every night, run a few dbt models in Snowflake, and the dashboards are basically 24 hours stale. Product keeps asking for same-day numbers, especially for the growth team during campaigns. I've looked at Debezium plus Kafka, Fivetran's CDC, and just running dbt more often. Our data team is two people, so anything that needs a dedicated platform engineer is a non-starter. As a rule I'd rather pay for a managed service than run infrastructure ourselves — we got burned running our own Kafka at my last company. Can you compare the three options on cost, freshness, operational load, and how painful the migration would be?",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "L07",
+    "round": 4,
+    "group": "long-aside",
+    "user": "Help me plan meals for next week. It's me and my flatmate, we both work from home three days and go into the office two days, so lunches on office days need to be packable. We have a decent kitchen, an air fryer, a pressure cooker, and not much patience on weeknights — anything over 40 minutes won't happen. I've cut out red meat completely for about a year now and don't miss it, chicken and fish are fine. My flatmate is trying to eat more protein because she's started lifting. We usually shop on Saturday mornings at the local market and top up with online groceries midweek. Can you give me a seven-day plan with a shopping list grouped by section?",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "L08",
+    "round": 4,
+    "group": "long-aside",
+    "user": "Our design review process has gotten really slow and I want to fix it before the next quarter. Right now every feature goes through a weekly design crit where 8–10 people give feedback, then a second review with the PM, then engineering feasibility. Features routinely sit for two weeks before anyone writes code. The designers feel like they're getting contradictory feedback, and engineers feel left out until it's too late. I've read a bit about async reviews with Loom and about smaller \"design pairs.\" When I plan anything like this I like having two options to choose between rather than one recommendation, it helps me think. We're about 30 people in product and engineering. Can you propose a leaner process, what to cut, and how to roll it out without upsetting the design team?",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "L09",
+    "round": 4,
+    "group": "long-aside",
+    "user": "I'm writing a short story for a local anthology — about 3,000 words, the theme is \"thresholds.\" My idea is an old woman who runs a tea stall at a railway crossing in a small town in Bengal and watches the same trains every day for forty years, and the story is the one day a train actually stops. I want it quiet, a bit melancholic, lots of sensory detail — the smell of the kerosene stove, the sound of the signal bell. I always write first drafts in present tense; it keeps me close to the character. Could you help me outline the scenes and suggest a structure? I don't want you to write the story itself, just help me think through the shape of it and where the emotional turn should land.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "L10",
+    "round": 4,
+    "group": "long-aside",
+    "user": "Can you review this pull request description and the diff summary I've pasted below? It's a refactor of the notification service to move from polling to webhooks. The main changes are a new webhook receiver, signature verification, a retry queue for failed deliveries, and removing the old cron poller. I've tried to keep the PR small but it's still about 900 lines. I'm specifically worried about idempotency — providers sometimes send the same event twice — and whether the retry backoff is sensible. Heads up, I'm pretty new to Go (came from years of Java), so if something looks un-idiomatic, call it out and explain why instead of just rewriting it. Tests are in the second half of the diff. Tell me what you'd block on versus what's a nit.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "L11",
+    "round": 4,
+    "group": "long-inferred",
+    "user": "Thanks for the migration plan. I went through it with the team this morning and it's mostly right, but I ended up rewriting the whole rollout section before I could share it — it assumed we'd do a big-bang cutover over a weekend, and we just don't do that here; everything goes out behind a gradual percentage rollout with a kill switch, which is the third time I've had to fix that in something you've drafted. Anyway, the schema changes look good. Two questions: should the new column be nullable during the backfill, and how would you size the backfill batches for a table with about 400 million rows so we don't hammer the primary? We're on Postgres 16 with one read replica.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "L12",
+    "round": 4,
+    "group": "long-inferred",
+    "user": "Got the summary, thanks. It was useful but I had to cut it down a lot before sending to the leadership group — they're not going to read eleven bullet points with sub-bullets, and honestly neither am I most days. The actual content was right though. Next thing: can you look at the Q3 support ticket export I pasted and tell me the top five themes, how each changed versus Q2, and anything that looks like a new issue rather than a recurring one? The export has ticket title, tags, created date, and resolution time. Some tags are inconsistent (billing vs payments vs invoices) so group those sensibly.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "L13",
+    "round": 4,
+    "group": "long-inferred",
+    "user": "This is close. Couple of things before I use it. You wrote the examples in Java again — I've mentioned our stack is Kotlin and it's a bit annoying translating every snippet in my head, especially the null-handling bits which don't map one to one. Also the section on coroutines is great, keep that. What I actually need next is a checklist for reviewing PRs that touch our payment flows: what to look for in terms of idempotency, currency handling, rounding, and logging PII. Make the checklist practical, something a mid-level engineer could run through in ten minutes.",
+    "expect": "pending",
+    "accept": []
+  },
+  {
+    "id": "L14",
+    "round": 4,
+    "group": "long-control",
+    "user": "So this week has been a lot. The release slipped twice, our biggest customer escalated a bug that turned out to be their own misconfiguration, and I spent most of Wednesday in back-to-back calls. I'm not complaining exactly, it's just been one of those weeks where nothing moves forward. My manager asked me to write a short retro for the release that's honest without throwing anyone under the bus. The main issues were: requirements changed late, QA had one person out sick, and the staging environment was broken for two days because of an expired certificate. Can you draft a half-page retro with what went wrong, what went right, and three concrete actions for next time?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "L15",
+    "round": 4,
+    "group": "long-control",
+    "user": "I'm helping my younger cousin choose between two colleges for computer science. One is a newer private university in Bangalore with great facilities and a strong placement record in the last two years, the other is an older state college in Kolkata with a solid reputation but older infrastructure. She's really into robotics and wants to do research eventually, maybe a master's abroad. Fees are about 3x at the private one. Her parents are leaning toward the state college for cost reasons but she's worried about the labs. Can you lay out the tradeoffs and what questions she should ask each college before deciding?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "L16",
+    "round": 4,
+    "group": "long-control",
+    "user": "The quarterly business review is on Thursday and I need slides. Last quarter's numbers: revenue up 18% QoQ, churn down from 3.1% to 2.4%, NPS flat at 41. The big wins were the enterprise SSO launch and closing two logos in healthcare. The misses were the mobile app redesign slipping to next quarter and support backlog growing 30%. The audience is the exec team and two board observers, so it needs to be crisp. For this deck in particular they want everything on a dark template with the new brand colours, which I'll apply myself. Can you outline 8–10 slides with the key message for each?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "L17",
+    "round": 4,
+    "group": "long-control",
+    "user": "Can you help me write a reply to this email from a vendor? They're saying we're 60 days overdue on an invoice for 4.2 lakh, but I'm pretty sure we paid it in August — I can see a bank transfer that matches the amount, though the reference number is different from what's on their invoice. The email is fairly aggressive and threatens to pause our service. I want to be firm but not escalate, attach proof of payment, and ask them to reconcile on their side. The vendor contact always signs off with \"Regards, Team Accounts\" so I don't even have a name. Draft something short.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "L18",
+    "round": 4,
+    "group": "long-control",
+    "user": "I'm reading about the history of the Grand Trunk Road for a podcast episode. I know it goes back to the Mauryan era in some form, was rebuilt by Sher Shah Suri, and then the British used it heavily. I'd like to understand how the route changed over time, which cities it connected in each era, and a couple of good stories or anecdotes I could tell on air — ideally ones that are well sourced rather than the usual internet myths. Also any recommendations for books or papers I could cite. The episode is about 40 minutes so I need enough material for three segments.",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "L19",
+    "round": 4,
+    "group": "long-control",
+    "user": "My laptop has been running hot and the fan is loud even when I'm just in a browser. It's a 2021 MacBook Pro, 16GB, and it started maybe two weeks ago after a system update. Activity Monitor shows something called \"mds_stores\" spiking now and then, and Chrome helper processes using a lot of CPU. I've restarted, closed most tabs, and it's still noticeably warmer than it used to be. I don't want to reinstall the OS if I can avoid it. Can you walk me through what to check, in order, and what each thing would tell me?",
+    "expect": "drop",
+    "accept": ["pending"]
+  },
+  {
+    "id": "L20",
+    "round": 4,
+    "group": "long-control",
+    "user": "Help me prep for a job interview on Monday. It's for a staff engineer role at a logistics company, the loop is one system design, one coding, one behavioural, and a chat with the VP. The system design prompt they hinted at is something like \"design a real-time package tracking system.\" I've done similar work but not at their scale. For the behavioural round they apparently like STAR format answers and care a lot about cross-team influence. Can you give me a prep plan for the weekend, a sample system design outline, and three behavioural stories I should prepare, with prompts to help me pick examples from my own experience?",
+    "expect": "drop",
+    "accept": []
+  }
+]

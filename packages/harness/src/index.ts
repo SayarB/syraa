@@ -9,7 +9,8 @@ export {
   getIngestQueue,
 } from "./context.js";
 export { formatHarnessError } from "./errors.js";
-export { applyLessons, filterLessonsForTurn, isDuplicateLesson, lessonDedupKey, lessonToItemType, normalizeLessonText, shouldAutoActivate } from "./lessons.js";
+export type { GatedLesson } from "./lesson-gate.js";
+export { applyLessons, isDuplicateLesson, lessonDedupKey, lessonToItemType, normalizeLessonText } from "./lessons.js";
 export type { ChatConfig, ChatMessage, ChatProvider } from "./llm.js";
 export { getChatConfig, resolveChatProvider, runChatTurn } from "./llm.js";
 export type { MemoryHandle, SaveCommand } from "./memory.js";
@@ -21,23 +22,16 @@ export {
 } from "./memory.js";
 export type {
   ChatRequestInput,
-  Lesson,
   LessonKind,
-  TurnResult,
 } from "./schemas.js";
 export {
   chatMessageSchema,
   chatProviderSchema,
   chatRequestSchema,
   createThreadRequestSchema,
-  confidenceSchema,
   lessonKindSchema,
-  lessonSchema,
   memoryItemPatchSchema,
   parseJsonBody,
-  parseTurnJson,
-  turnResultJsonSchema,
-  turnResultSchema,
   ValidationError,
 } from "./schemas.js";
 export type { HarnessServerOptions } from "./server.js";

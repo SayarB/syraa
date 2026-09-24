@@ -1,7 +1,7 @@
 import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
-import { getContextStore } from "../../context.js";
 import { getChatRunContext } from "../../chat-run-context.js";
+import { getContextStore } from "../../context.js";
 import {
   findAllDocumentText,
   findSectionContent,
@@ -11,6 +11,75 @@ import {
 import { rememberToolResult } from "../../tool-call-dedupe.js";
 
 const MAX_CHARS = 24_000;
+
+export const searchMaterialsTool = createTool({
+  id: "search_materials",
+  description:
+    "Search all ingested documents for passages matching a name, topic, or phrase. Use for 'what do you know about X', 'find mentions of X', and cross-document questions. Prefer this over list_materials + read_materials_section when the target document is unknown. Pass the name or topic itself as the query (e.g. 'madverse', not the whole question). Empty hits means the materials do not mention it.",
+  inputSchema: z.object({
+    query: z.string().min(1).max(300),
+    limit: z.number().int().min(1).max(20).optional(),
+    documentName: z.string().min(1).optional(),
+  }),
+  mcp: {
+    annotations: {
+      readOnlyHint: true,
+      idempotentHint: true,
+    },
+  },
+  execute: async (input) => {
+    const { userId } = getChatRunContext();
+    const { store } = await getContextStore();
+
+    let resourceIds: string[] | undefined;
+    if (input.documentName) {
+      // Name lookup only — not capped at the 50 newest like the materials outline.
+      const materials = (await store.listResources(userId, 1000))
+        .filter((resource) => resource.status === "ready")
+        .map((resource) => ({ resourceId: resource.id, name: resource.name }));
+      const resourceId = resolveResourceIdByName(materials, input.documentName);
+      if (!resourceId) {
+        const result = {
+          error: `No ingested document matching "${input.documentName}".`,
+          availableDocuments: materials.slice(0, 50).map((material) => material.name),
+        };
+        rememberToolResult("search_materials", input, result);
+        return result;
+      }
+      resourceIds = [resourceId];
+    }
+
+    const { hits } = await store.searchMaterials(userId, {
+      query: input.query,
+      limit: input.limit,
+      resourceIds,
+    });
+    const exactMatches = hits.filter((hit) => hit.matchedBy.includes("lexical")).length;
+    const result = {
+      query: input.query,
+      hits: hits.map((hit) => ({
+        documentName: hit.documentName,
+        section: hit.sectionTitle,
+        snippet: hit.snippet,
+        score: Number(hit.score.toFixed(4)),
+        exactMatch: hit.matchedBy.includes("lexical"),
+      })),
+      ...(hits.length === 0
+        ? {
+            note: input.documentName
+              ? `No passage in "${input.documentName}" mentions "${input.query}". Other documents were not searched.`
+              : `No passage in the user's materials mentions "${input.query}".`,
+          }
+        : exactMatches === 0
+          ? {
+              note: `No passage contains "${input.query}" verbatim; these are loose meaning-based matches and may be unrelated.`,
+            }
+          : {}),
+    };
+    rememberToolResult("search_materials", input, result);
+    return result;
+  },
+});
 
 export const listMaterialsTool = createTool({
   id: "list_materials",
@@ -112,6 +181,7 @@ export const readMaterialsSectionTool = createTool({
 });
 
 export const syraaTools = {
+  search_materials: searchMaterialsTool,
   list_materials: listMaterialsTool,
   read_materials_section: readMaterialsSectionTool,
 };

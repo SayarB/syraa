@@ -1,37 +1,24 @@
-/** Agent turns may stream `{ message, lessons }` JSON — surface only `message` in the UI. */
+/**
+ * Older threads stored the reply as `{ message, lessons }` JSON: surface only `message` for those.
+ * Any other text (including a reply that is itself JSON) is shown as is.
+ */
 export function extractTurnMessage(text: string): string {
   const trimmed = text.trim();
-  if (!trimmed) return "";
   if (!trimmed.startsWith("{")) return trimmed;
-
   try {
-    const parsed = JSON.parse(trimmed) as { message?: unknown };
-    if (typeof parsed.message === "string") return parsed.message.trim();
+    const parsed = JSON.parse(trimmed) as Record<string, unknown>;
+    if (isLegacyTurn(parsed)) return parsed.message.trim();
   } catch {
-    // partial JSON while streaming
+    // not JSON (or a partial reply while streaming): plain text
   }
+  return trimmed;
+}
 
-  const keyMatch = /"message"\s*:\s*"/.exec(trimmed);
-  if (!keyMatch) return "";
-
-  let index = keyMatch.index + keyMatch[0].length;
-  let output = "";
-  while (index < trimmed.length) {
-    const char = trimmed[index];
-    if (char === "\\") {
-      const next = trimmed[index + 1];
-      if (next === "n") output += "\n";
-      else if (next === "t") output += "\t";
-      else if (next === '"') output += '"';
-      else if (next === "\\") output += "\\";
-      else if (next) output += next;
-      index += 2;
-      continue;
-    }
-    if (char === '"') break;
-    output += char;
-    index += 1;
-  }
-
-  return output.trim();
+function isLegacyTurn(value: unknown): value is { message: string } {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.message === "string" &&
+    Object.keys(record).every((key) => key === "message" || key === "lessons")
+  );
 }

@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import type { ServerResponse } from "node:http";
+import type { MemoryItem } from "@syraa/memory";
 import { pipeUIMessageStreamToResponse } from "ai";
+import { type GatedLesson, gateLesson } from "./lesson-gate.js";
 import { applyLessons } from "./lessons.js";
 import { runChatTurn } from "./llm.js";
 import { getMemory, listMemoryForUser, parseSaveCommand, saveMemoryItem } from "./memory.js";
@@ -26,7 +28,7 @@ export type ChatResponse = {
   model?: string;
   provider?: string;
   memoryItems?: Awaited<ReturnType<typeof applyLessons>>;
-  lessons?: Awaited<ReturnType<typeof runChatTurn>>["lessons"];
+  lessons?: GatedLesson[];
 };
 
 export async function handleChat(request: ChatRequest): Promise<ChatResponse> {
@@ -48,20 +50,7 @@ export async function handleChat(request: ChatRequest): Promise<ChatResponse> {
     memoryItems: prepared.activeItems,
   });
 
-  await maybeSetThreadTitle({
-    userId: request.userId,
-    threadId: prepared.threadId,
-    title: prepared.message,
-  });
-
-  const memoryItems = await applyLessons(prepared.service, {
-    userId: request.userId,
-    memoryId: prepared.memoryId,
-    lessons: turn.lessons,
-    userMessage: prepared.message,
-    messageId: request.messageId,
-    existingItems: prepared.dedupItems,
-  });
+  const { memoryItems, lessons } = await finishTurn(request, prepared);
 
   return {
     role: "assistant",
@@ -70,8 +59,42 @@ export async function handleChat(request: ChatRequest): Promise<ChatResponse> {
     model: turn.model,
     provider: turn.provider,
     memoryItems,
-    lessons: turn.lessons,
+    lessons,
   };
+}
+
+/**
+ * Post-reply bookkeeping (thread title, lessons). Best effort: the reply is already produced, so a
+ * failure here is logged and the turn still completes with no new memory items.
+ */
+async function finishTurn(
+  request: ChatRequest,
+  prepared: Extract<Awaited<ReturnType<typeof prepareChatTurn>>, { kind: "turn" }>,
+): Promise<{ memoryItems: MemoryItem[]; lessons: GatedLesson[] }> {
+  try {
+    await maybeSetThreadTitle({
+      userId: request.userId,
+      threadId: prepared.threadId,
+      title: prepared.message,
+    });
+  } catch (error) {
+    console.warn("[chat] thread title not set:", error instanceof Error ? error.message : error);
+  }
+
+  const lessons = await prepared.lessonGate;
+  try {
+    const memoryItems = await applyLessons(prepared.service, {
+      userId: request.userId,
+      memoryId: prepared.memoryId,
+      lessons,
+      messageId: request.messageId,
+      existingItems: prepared.dedupItems,
+    });
+    return { memoryItems, lessons };
+  } catch (error) {
+    console.warn("[chat] lessons not saved:", error instanceof Error ? error.message : error);
+    return { memoryItems: [], lessons };
+  }
 }
 
 async function prepareChatTurn(request: ChatRequest) {
@@ -112,6 +135,9 @@ async function prepareChatTurn(request: ChatRequest) {
     };
   }
 
+  // Started now, awaited after the reply — runs in parallel with the chat model. Never rejects.
+  const lessonGate = gateLesson({ userId: request.userId, threadId, userMessage: message });
+
   const { memory, items, dedupItems } = await listMemoryForUser(service, request.userId);
   const activeItems = items.filter((item) => item.status === "active");
 
@@ -124,6 +150,7 @@ async function prepareChatTurn(request: ChatRequest) {
     activeItems,
     items,
     dedupItems,
+    lessonGate,
   };
 }
 
@@ -142,25 +169,12 @@ export async function pipeChatStream(request: ChatRequest, res: ServerResponse):
     userMessage: prepared.message,
     memoryItems: prepared.activeItems,
     onTurnComplete: async (turn) => {
-      await maybeSetThreadTitle({
-        userId: request.userId,
-        threadId: prepared.threadId,
-        title: prepared.message,
-      });
-
-      const memoryItems = await applyLessons(prepared.service, {
-        userId: request.userId,
-        memoryId: prepared.memoryId,
-        lessons: turn.lessons,
-        userMessage: prepared.message,
-        messageId: request.messageId,
-        existingItems: prepared.dedupItems,
-      });
+      const { memoryItems, lessons } = await finishTurn(request, prepared);
 
       return {
         threadId: prepared.threadId,
         memoryItems,
-        lessons: turn.lessons,
+        lessons,
         displayMessage: turn.message,
       };
     },

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { filterLessonsForTurn, isDuplicateLesson, shouldAutoActivate } from "../src/lessons.js";
+import { isDuplicateLesson } from "../src/lessons.js";
 import { resolveChatProvider } from "../src/llm.js";
 import { formatMaterialsOutline } from "../src/mastra/prompt.js";
 import { buildMaterialsWorkingMemoryContent } from "../src/materials-working-memory.js";
@@ -172,30 +172,6 @@ describe("createThreadRequestSchema", () => {
   });
 });
 
-describe("shouldAutoActivate", () => {
-  it("activates explicit rules", () => {
-    expect(shouldAutoActivate({ text: "Never invent citations", kind: "rule" }, "ok")).toBe(true);
-  });
-
-  it("activates when user says always", () => {
-    expect(
-      shouldAutoActivate(
-        { text: "Prefers concise answers", kind: "preference" },
-        "Always keep replies short",
-      ),
-    ).toBe(true);
-  });
-
-  it("keeps inferred preferences pending", () => {
-    expect(
-      shouldAutoActivate(
-        { text: "Might prefer bullet lists", kind: "suggestion" },
-        "I sometimes like bullets",
-      ),
-    ).toBe(false);
-  });
-});
-
 describe("lesson deduplication", () => {
   it("treats paraphrased preferences as duplicates", () => {
     const existing = [{ text: "User prefers concise answers", status: "active" }] as const;
@@ -226,29 +202,5 @@ describe("lesson deduplication", () => {
         "When providing prices, always convert to INR using same-day rates.",
       ),
     ).toBe(false);
-  });
-});
-
-describe("filterLessonsForTurn", () => {
-  const bikeLesson = [
-    {
-      text: "User is interested in motorcycle recommendations",
-      kind: "preference" as const,
-    },
-  ];
-
-  it("drops lessons for research / recommendation questions", () => {
-    expect(
-      filterLessonsForTurn("do a research on bikes that I should buy with 12L budget", bikeLesson),
-    ).toEqual([]);
-    expect(
-      filterLessonsForTurn("what cars should I buy under 12 lac", bikeLesson),
-    ).toEqual([]);
-  });
-
-  it("keeps lessons when user explicitly asks to remember", () => {
-    expect(
-      filterLessonsForTurn("Remember that I prefer concise answers.", bikeLesson),
-    ).toEqual(bikeLesson);
   });
 });

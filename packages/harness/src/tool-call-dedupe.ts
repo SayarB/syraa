@@ -8,7 +8,10 @@ export function toolCallCacheKey(toolId: string, input: unknown): string {
 export function rememberToolResult(toolId: string, input: unknown, result: unknown): void {
   const ctx = getChatRunContext();
   if (!ctx.toolCallCache) ctx.toolCallCache = new Map();
-  ctx.toolCallCache.set(toolCallCacheKey(toolId, input), result);
+  // Delete first so a repeated call moves to the end: fallbacks read insertion order as recency.
+  const key = toolCallCacheKey(toolId, input);
+  ctx.toolCallCache.delete(key);
+  ctx.toolCallCache.set(key, result);
 }
 
 export function getRememberedToolResult(toolId: string, input: unknown): unknown | undefined {
@@ -26,7 +29,7 @@ type ReadMaterialsOutput = {
   error?: string;
 };
 
-function fallbackFromReadMaterialsCache(): { message: string; lessons: [] } | null {
+function fallbackFromReadMaterialsCache(): { message: string } | null {
   try {
     const cache = getChatRunContext().toolCallCache;
     if (!cache) return null;
@@ -46,18 +49,50 @@ function fallbackFromReadMaterialsCache(): { message: string; lessons: [] } | nu
       : "";
     return {
       message: `${header}${best.text.trim().slice(0, 4000)}`,
-      lessons: [],
     };
   } catch {
     return null;
   }
 }
 
+type SearchMaterialsOutput = {
+  hits?: Array<{ documentName?: string; section?: string; snippet?: string }>;
+};
+
+/** Latest search_materials call with hits → its top snippets, labelled by document and section. */
+function fallbackFromSearchMaterialsCache(): { message: string } | null {
+  try {
+    const cache = getChatRunContext().toolCallCache;
+    if (!cache) return null;
+
+    let hits: NonNullable<SearchMaterialsOutput["hits"]> = [];
+    for (const [key, value] of cache.entries()) {
+      if (!key.startsWith("search_materials:")) continue;
+      const found = ((value as SearchMaterialsOutput).hits ?? []).filter((hit) =>
+        hit.snippet?.trim(),
+      );
+      if (found.length > 0) hits = found;
+    }
+    if (hits.length === 0) return null;
+
+    const lines = hits.slice(0, 3).map((hit) => {
+      const where = [hit.documentName, hit.section].filter(Boolean).join(" — ");
+      return `- ${where ? `**${where}**: ` : ""}${hit.snippet?.trim()}`;
+    });
+    return { message: `Relevant passages from your materials:\n${lines.join("\n")}` };
+  } catch {
+    return null;
+  }
+}
+
 /** When the agent hits maxSteps without text, recover from tool results if we have them. */
-export function fallbackTurnFromToolCache(): { message: string; lessons: [] } {
+export function fallbackTurnFromToolCache(): { message: string } {
   try {
     const fromRead = fallbackFromReadMaterialsCache();
     if (fromRead) return fromRead;
+
+    const fromSearch = fallbackFromSearchMaterialsCache();
+    if (fromSearch) return fromSearch;
 
     const cached = getRememberedToolResult("list_materials", {}) as MaterialsListOutput | undefined;
     const materials = cached?.materials ?? [];
@@ -68,7 +103,6 @@ export function fallbackTurnFromToolCache(): { message: string; lessons: [] } {
       if (names.length > 0) {
         return {
           message: `Available documents:\n${names.map((name) => `- ${name}`).join("\n")}`,
-          lessons: [],
         };
       }
     }
@@ -78,6 +112,5 @@ export function fallbackTurnFromToolCache(): { message: string; lessons: [] } {
 
   return {
     message: "I couldn't finish that turn — please try again.",
-    lessons: [],
   };
 }
