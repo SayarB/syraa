@@ -18,7 +18,7 @@ EMBEDDING_ENV = (
 def _clean_embedding_env(monkeypatch) -> None:
     for name in EMBEDDING_ENV:
         monkeypatch.delenv(name, raising=False)
-    embed._parse_dims.cache_clear()
+    embed._warned_dims.clear()
 
 
 def test_queue_key() -> None:
@@ -112,7 +112,7 @@ def test_bad_dims_never_raise(monkeypatch, capsys, dims) -> None:
     vectors, _ = embed_texts(["hello"])
     embed_texts(["again"])
     assert len(vectors[0]) == 64
-    assert capsys.readouterr().out.count("EMBEDDING_DIMS") == 1
+    assert capsys.readouterr().err.count("EMBEDDING_DIMS") == 1
 
 
 def test_remote_failure_falls_back_to_fixed_dims(monkeypatch) -> None:

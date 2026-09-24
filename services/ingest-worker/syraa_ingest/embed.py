@@ -6,9 +6,9 @@ import hashlib
 import json
 import os
 import ssl
+import sys
 import urllib.error
 import urllib.request
-from functools import lru_cache
 from typing import Any
 
 
@@ -17,28 +17,31 @@ def _env(name: str, default: str = "") -> str:
     return (os.environ.get(name) or "").strip() or default
 
 
+DEFAULT_HASH_DIMS = 64
 MAX_HASH_DIMS = 4096
-# Remote-failure stubs always use this size, which no real embedding model has, so search's
-# dimension filter keeps them out of semantic results whatever EMBEDDING_DIMS says.
+# Remote-failure stubs always use this size, not EMBEDDING_DIMS, so they never take the size of
+# the configured model's vectors and search's dimension filter keeps them out.
 FALLBACK_DIMS = 64
+_warned_dims: set[str] = set()
 
 
 def _dims() -> int:
-    """EMBEDDING_DIMS for the hash provider; a missing or bad value means 64 (never raises)."""
-    return _parse_dims(_env("EMBEDDING_DIMS", "64"))
-
-
-@lru_cache(maxsize=8)
-def _parse_dims(raw: str) -> int:
-    # Cached per value so a bad setting is logged once, not on every job.
+    """EMBEDDING_DIMS for the hash provider; a missing or bad value means the default (never raises)."""
+    raw = _env("EMBEDDING_DIMS", str(DEFAULT_HASH_DIMS))
     try:
         dims = int(raw)
     except ValueError:
         dims = 0
     if 0 < dims <= MAX_HASH_DIMS:
         return dims
-    print(f"EMBEDDING_DIMS={raw!r} is not 1..{MAX_HASH_DIMS}; using 64", flush=True)
-    return 64
+    if raw not in _warned_dims:  # log a bad setting once, not on every job
+        _warned_dims.add(raw)
+        print(
+            f"EMBEDDING_DIMS={raw!r} is not 1..{MAX_HASH_DIMS}; using {DEFAULT_HASH_DIMS}",
+            file=sys.stderr,
+            flush=True,
+        )
+    return DEFAULT_HASH_DIMS
 
 
 def resolve_embedding_config() -> dict[str, Any]:
@@ -79,13 +82,7 @@ def resolve_embedding_config() -> dict[str, Any]:
     if provider == "hash":
         # Deterministic local stub for tests / offline MVP (not semantic).
         dims = _dims()
-        return {
-            "provider": "hash",
-            "model": f"hash-{dims}",
-            "dims": dims,
-            "base_url": None,
-            "api_key": None,
-        }
+        return {"provider": "hash", "model": f"hash-{dims}", "base_url": None, "api_key": None}
 
     raise ValueError(f"unknown EMBEDDING_PROVIDER={provider}")
 
@@ -163,8 +160,7 @@ def embed_texts(texts: list[str]) -> tuple[list[list[float] | None], str]:
         return [None for _ in texts], "none"
 
     if provider == "hash":
-        dims = int(cfg["dims"])
-        return [_hash_embedding(t, dims) for t in texts], "hash"
+        return [_hash_embedding(t, _dims()) for t in texts], "hash"
 
     try:
         vectors = _openai_compatible_embed(
