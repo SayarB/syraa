@@ -1,0 +1,388 @@
+{
+  "results": [
+    {
+      "id": "L01",
+      "cat": "long-aside",
+      "diff": "hard",
+      "user": "Okay so here's the situation with the offsite. We're about 25 people, mix of engineering and design, and the budget got approved last week at roughly 8 lakh all-in. HR wants it to be a two-night thing in the first half of December, ideally leaving Thursday evening and coming back Saturday afternoon so nobody loses a full weekend. Last year we did a beach resort in Gokarna and honestly the feedback was mixed — people liked the vibe but the travel was brutal and half the team got sunburnt on day one. Personally I'm always happier somewhere up in the hills with a bit of a chill in the air, I just feel more awake there. We need a decent meeting room for at least one half-day session, reliable wifi, and some kind of team activity that isn't forced fun. Vegetarian options are a must since a third of the team is veg. Can you shortlist four places within about six hours of Bangalore and give me a rough cost breakdown for each?",
+      "expect": "pending",
+      "plant": "up in the hills",
+      "strict": 0.29,
+      "reveals": 0.74,
+      "explicit": "implicit",
+      "explicitConf": 0.9,
+      "got": "pending",
+      "ms": 614,
+      "tokens": {
+        "input_tokens": 923,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "L02",
+      "cat": "long-aside",
+      "diff": "hard",
+      "user": "I need help restructuring the onboarding doc for new backend engineers. Right now it's a 40-page Notion page that grew organically over three years and nobody reads past page five. It covers local setup, our service map, the deploy process, on-call expectations, coding conventions, and a long list of links to ADRs. New hires keep asking the same questions in Slack in their first two weeks, mostly about how to get the local stack running and who owns what. I'd like to split it into a \"day one\" doc, a \"first week\" doc, and a reference section. For what it's worth, I absorb stuff way better from diagrams than from walls of text, so wherever a picture would do, lean on that. Keep the tone friendly but not cutesy. Also flag anything that looks outdated — I suspect the deploy section still mentions Jenkins even though we moved off it ages ago. Can you propose the new structure and a table of contents for each part?",
+      "expect": "pending",
+      "plant": "diagrams than from walls of text",
+      "strict": 0.46,
+      "reveals": 0.92,
+      "explicit": "implicit",
+      "explicitConf": 0.94,
+      "got": "pending",
+      "ms": 642,
+      "tokens": {
+        "input_tokens": 924,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "L03",
+      "cat": "long-aside",
+      "diff": "hard",
+      "user": "My parents are visiting for three weeks in January and I'm trying to plan a few weekend trips that work for them. Dad has a bad knee so anything with a lot of stairs or steep walking is out, and Mom gets carsick on winding roads, which rules out a lot of hill stations annoyingly. They love temples, old architecture, and good local food. I was thinking Hampi, Mysore, maybe Pondicherry. I'll be driving since I don't really trust the trains for them with the luggage. Budget isn't a big concern but I don't want anything too luxurious either, they get uncomfortable in fancy hotels. Can you put together three weekend itineraries with a rough driving time, where to stay, and two or three things to do each day that are gentle on the knees?",
+      "expect": "drop",
+      "accept": [
+        "pending"
+      ],
+      "note": "all facts about parents; 'I'll be driving' is situational",
+      "strict": 0.19,
+      "reveals": 0.47,
+      "explicit": "implicit",
+      "explicitConf": 0.95,
+      "got": "drop",
+      "ms": 652,
+      "tokens": {
+        "input_tokens": 884,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "L04",
+      "cat": "long-aside",
+      "diff": "hard",
+      "user": "We're getting a lot of flaky tests in the payments service and I want to finally clean it up. The suite has about 1,400 tests, runs in roughly 11 minutes on CI, and something like 2–3% of runs fail on tests that pass on retry. Most of the flakiness seems to be around time-dependent logic and a couple of integration tests that hit a local Postgres container. I've tried bumping timeouts but that just hides the problem. Our convention on this team is that every bug fix ships with a regression test first, no exceptions, so whatever we do needs to fit that. I'd like a plan: how to find the flakiest tests systematically, how to quarantine them without losing coverage, and what patterns to use for time-dependent code. We use Vitest and Testcontainers. Can you outline the approach and give me a small example of a deterministic clock setup?",
+      "expect": "pending",
+      "plant": "regression test first",
+      "strict": 0.35,
+      "reveals": 0.91,
+      "explicit": "implicit",
+      "explicitConf": 0.87,
+      "got": "pending",
+      "ms": 660,
+      "tokens": {
+        "input_tokens": 909,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "L05",
+      "cat": "long-aside",
+      "diff": "hard",
+      "user": "Can you help me write a toast for my best friend's wedding next month? We've known each other since we were eleven, grew up two streets apart in Salt Lake, and went to the same college before she moved to Pune for work. There are a few stories I want to include: the time we got lost in Darjeeling on a school trip, the terrible band we started in college, and how she met her husband at a trivia night where he got every sports question wrong. Speeches make me incredibly nervous, so I'd rather keep it short — three minutes, tops — and something I can mostly read without sounding like I'm reading. The crowd will be a mix of Bengali and Marathi families, plenty of older relatives, so nothing too risqué. Could you draft it and mark where I can pause for laughs?",
+      "expect": "pending",
+      "accept": [
+        "drop"
+      ],
+      "plant": "Speeches make me incredibly nervous",
+      "note": "grew up in Salt Lake (Kolkata) is also durable",
+      "strict": 0.06,
+      "reveals": 0.68,
+      "explicit": "implicit",
+      "explicitConf": 0.59,
+      "got": "pending",
+      "ms": 642,
+      "tokens": {
+        "input_tokens": 889,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "L06",
+      "cat": "long-aside",
+      "diff": "hard",
+      "user": "I'm evaluating whether to migrate our analytics pipeline from nightly batch jobs to something closer to real time. Right now we dump Postgres to S3 every night, run a few dbt models in Snowflake, and the dashboards are basically 24 hours stale. Product keeps asking for same-day numbers, especially for the growth team during campaigns. I've looked at Debezium plus Kafka, Fivetran's CDC, and just running dbt more often. Our data team is two people, so anything that needs a dedicated platform engineer is a non-starter. As a rule I'd rather pay for a managed service than run infrastructure ourselves — we got burned running our own Kafka at my last company. Can you compare the three options on cost, freshness, operational load, and how painful the migration would be?",
+      "expect": "pending",
+      "plant": "rather pay for a managed service",
+      "strict": 0.51,
+      "reveals": 0.89,
+      "explicit": "implicit",
+      "explicitConf": 0.94,
+      "got": "pending",
+      "ms": 642,
+      "tokens": {
+        "input_tokens": 887,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "L07",
+      "cat": "long-aside",
+      "diff": "hard",
+      "user": "Help me plan meals for next week. It's me and my flatmate, we both work from home three days and go into the office two days, so lunches on office days need to be packable. We have a decent kitchen, an air fryer, a pressure cooker, and not much patience on weeknights — anything over 40 minutes won't happen. I've cut out red meat completely for about a year now and don't miss it, chicken and fish are fine. My flatmate is trying to eat more protein because she's started lifting. We usually shop on Saturday mornings at the local market and top up with online groceries midweek. Can you give me a seven-day plan with a shopping list grouped by section?",
+      "expect": "pending",
+      "plant": "cut out red meat",
+      "strict": 0.57,
+      "reveals": 0.9,
+      "explicit": "implicit",
+      "explicitConf": 0.95,
+      "got": "pending",
+      "ms": 282,
+      "tokens": {
+        "input_tokens": 871,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "L08",
+      "cat": "long-aside",
+      "diff": "hard",
+      "user": "Our design review process has gotten really slow and I want to fix it before the next quarter. Right now every feature goes through a weekly design crit where 8–10 people give feedback, then a second review with the PM, then engineering feasibility. Features routinely sit for two weeks before anyone writes code. The designers feel like they're getting contradictory feedback, and engineers feel left out until it's too late. I've read a bit about async reviews with Loom and about smaller \"design pairs.\" When I plan anything like this I like having two options to choose between rather than one recommendation, it helps me think. We're about 30 people in product and engineering. Can you propose a leaner process, what to cut, and how to roll it out without upsetting the design team?",
+      "expect": "pending",
+      "plant": "two options to choose between",
+      "strict": 0.67,
+      "reveals": 0.93,
+      "explicit": "implicit",
+      "explicitConf": 0.98,
+      "got": "pending",
+      "ms": 250,
+      "tokens": {
+        "input_tokens": 878,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "L09",
+      "cat": "long-aside",
+      "diff": "hard",
+      "user": "I'm writing a short story for a local anthology — about 3,000 words, the theme is \"thresholds.\" My idea is an old woman who runs a tea stall at a railway crossing in a small town in Bengal and watches the same trains every day for forty years, and the story is the one day a train actually stops. I want it quiet, a bit melancholic, lots of sensory detail — the smell of the kerosene stove, the sound of the signal bell. I always write first drafts in present tense; it keeps me close to the character. Could you help me outline the scenes and suggest a structure? I don't want you to write the story itself, just help me think through the shape of it and where the emotional turn should land.",
+      "expect": "pending",
+      "plant": "first drafts in present tense",
+      "strict": 0.3,
+      "reveals": 0.79,
+      "explicit": "implicit",
+      "explicitConf": 0.96,
+      "got": "pending",
+      "ms": 278,
+      "tokens": {
+        "input_tokens": 878,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "L10",
+      "cat": "long-aside",
+      "diff": "hard",
+      "user": "Can you review this pull request description and the diff summary I've pasted below? It's a refactor of the notification service to move from polling to webhooks. The main changes are a new webhook receiver, signature verification, a retry queue for failed deliveries, and removing the old cron poller. I've tried to keep the PR small but it's still about 900 lines. I'm specifically worried about idempotency — providers sometimes send the same event twice — and whether the retry backoff is sensible. Heads up, I'm pretty new to Go (came from years of Java), so if something looks un-idiomatic, call it out and explain why instead of just rewriting it. Tests are in the second half of the diff. Tell me what you'd block on versus what's a nit.",
+      "expect": "pending",
+      "plant": "pretty new to Go",
+      "strict": 0.32,
+      "reveals": 0.92,
+      "explicit": "implicit",
+      "explicitConf": 0.88,
+      "got": "pending",
+      "ms": 234,
+      "tokens": {
+        "input_tokens": 885,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "L11",
+      "cat": "long-inferred",
+      "diff": "hard",
+      "user": "Thanks for the migration plan. I went through it with the team this morning and it's mostly right, but I ended up rewriting the whole rollout section before I could share it — it assumed we'd do a big-bang cutover over a weekend, and we just don't do that here; everything goes out behind a gradual percentage rollout with a kill switch, which is the third time I've had to fix that in something you've drafted. Anyway, the schema changes look good. Two questions: should the new column be nullable during the backfill, and how would you size the backfill batches for a table with about 400 million rows so we don't hammer the primary? We're on Postgres 16 with one read replica.",
+      "expect": "pending",
+      "plant": "third time I've had to fix that",
+      "strict": 0.82,
+      "reveals": 0.95,
+      "explicit": "implicit",
+      "explicitConf": 0.98,
+      "got": "pending",
+      "ms": 267,
+      "tokens": {
+        "input_tokens": 870,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "L12",
+      "cat": "long-inferred",
+      "diff": "hard",
+      "user": "Got the summary, thanks. It was useful but I had to cut it down a lot before sending to the leadership group — they're not going to read eleven bullet points with sub-bullets, and honestly neither am I most days. The actual content was right though. Next thing: can you look at the Q3 support ticket export I pasted and tell me the top five themes, how each changed versus Q2, and anything that looks like a new issue rather than a recurring one? The export has ticket title, tags, created date, and resolution time. Some tags are inconsistent (billing vs payments vs invoices) so group those sensibly.",
+      "expect": "pending",
+      "plant": "had to cut it down a lot",
+      "strict": 0.38,
+      "reveals": 0.86,
+      "explicit": "implicit",
+      "explicitConf": 0.84,
+      "got": "pending",
+      "ms": 226,
+      "tokens": {
+        "input_tokens": 848,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "L13",
+      "cat": "long-inferred",
+      "diff": "hard",
+      "user": "This is close. Couple of things before I use it. You wrote the examples in Java again — I've mentioned our stack is Kotlin and it's a bit annoying translating every snippet in my head, especially the null-handling bits which don't map one to one. Also the section on coroutines is great, keep that. What I actually need next is a checklist for reviewing PRs that touch our payment flows: what to look for in terms of idempotency, currency handling, rounding, and logging PII. Make the checklist practical, something a mid-level engineer could run through in ten minutes.",
+      "expect": "pending",
+      "plant": "our stack is Kotlin",
+      "strict": 0.72,
+      "reveals": 0.96,
+      "explicit": "implicit",
+      "explicitConf": 0.98,
+      "got": "pending",
+      "ms": 230,
+      "tokens": {
+        "input_tokens": 842,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "L14",
+      "cat": "long-control",
+      "diff": "hard",
+      "user": "So this week has been a lot. The release slipped twice, our biggest customer escalated a bug that turned out to be their own misconfiguration, and I spent most of Wednesday in back-to-back calls. I'm not complaining exactly, it's just been one of those weeks where nothing moves forward. My manager asked me to write a short retro for the release that's honest without throwing anyone under the bus. The main issues were: requirements changed late, QA had one person out sick, and the staging environment was broken for two days because of an expired certificate. Can you draft a half-page retro with what went wrong, what went right, and three concrete actions for next time?",
+      "expect": "drop",
+      "strict": 0.03,
+      "reveals": 0.28,
+      "explicit": "none",
+      "explicitConf": 0.64,
+      "got": "drop",
+      "ms": 252,
+      "tokens": {
+        "input_tokens": 859,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "L15",
+      "cat": "long-control",
+      "diff": "hard",
+      "user": "I'm helping my younger cousin choose between two colleges for computer science. One is a newer private university in Bangalore with great facilities and a strong placement record in the last two years, the other is an older state college in Kolkata with a solid reputation but older infrastructure. She's really into robotics and wants to do research eventually, maybe a master's abroad. Fees are about 3x at the private one. Her parents are leaning toward the state college for cost reasons but she's worried about the labs. Can you lay out the tradeoffs and what questions she should ask each college before deciding?",
+      "expect": "drop",
+      "strict": 0.02,
+      "reveals": 0.08,
+      "explicit": "none",
+      "explicitConf": 0.41,
+      "got": "drop",
+      "ms": 262,
+      "tokens": {
+        "input_tokens": 836,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "L16",
+      "cat": "long-control",
+      "diff": "hard",
+      "user": "The quarterly business review is on Thursday and I need slides. Last quarter's numbers: revenue up 18% QoQ, churn down from 3.1% to 2.4%, NPS flat at 41. The big wins were the enterprise SSO launch and closing two logos in healthcare. The misses were the mobile app redesign slipping to next quarter and support backlog growing 30%. The audience is the exec team and two board observers, so it needs to be crisp. For this deck in particular they want everything on a dark template with the new brand colours, which I'll apply myself. Can you outline 8–10 slides with the key message for each?",
+      "expect": "drop",
+      "strict": 0.06,
+      "reveals": 0.34,
+      "explicit": "implicit",
+      "explicitConf": 0.77,
+      "got": "drop",
+      "ms": 256,
+      "tokens": {
+        "input_tokens": 858,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "L17",
+      "cat": "long-control",
+      "diff": "hard",
+      "user": "Can you help me write a reply to this email from a vendor? They're saying we're 60 days overdue on an invoice for 4.2 lakh, but I'm pretty sure we paid it in August — I can see a bank transfer that matches the amount, though the reference number is different from what's on their invoice. The email is fairly aggressive and threatens to pause our service. I want to be firm but not escalate, attach proof of payment, and ask them to reconcile on their side. The vendor contact always signs off with \"Regards, Team Accounts\" so I don't even have a name. Draft something short.",
+      "expect": "drop",
+      "strict": 0.02,
+      "reveals": 0.41,
+      "explicit": "none",
+      "explicitConf": 0.38,
+      "got": "drop",
+      "ms": 270,
+      "tokens": {
+        "input_tokens": 847,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "L18",
+      "cat": "long-control",
+      "diff": "hard",
+      "user": "I'm reading about the history of the Grand Trunk Road for a podcast episode. I know it goes back to the Mauryan era in some form, was rebuilt by Sher Shah Suri, and then the British used it heavily. I'd like to understand how the route changed over time, which cities it connected in each era, and a couple of good stories or anecdotes I could tell on air — ideally ones that are well sourced rather than the usual internet myths. Also any recommendations for books or papers I could cite. The episode is about 40 minutes so I need enough material for three segments.",
+      "expect": "drop",
+      "strict": 0.02,
+      "reveals": 0.52,
+      "explicit": "none",
+      "explicitConf": 0.48,
+      "got": "drop",
+      "ms": 341,
+      "tokens": {
+        "input_tokens": 840,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "L19",
+      "cat": "long-control",
+      "diff": "hard",
+      "user": "My laptop has been running hot and the fan is loud even when I'm just in a browser. It's a 2021 MacBook Pro, 16GB, and it started maybe two weeks ago after a system update. Activity Monitor shows something called \"mds_stores\" spiking now and then, and Chrome helper processes using a lot of CPU. I've restarted, closed most tabs, and it's still noticeably warmer than it used to be. I don't want to reinstall the OS if I can avoid it. Can you walk me through what to check, in order, and what each thing would tell me?",
+      "expect": "drop",
+      "accept": [
+        "pending"
+      ],
+      "note": "owns a 2021 MacBook — mild durable fact",
+      "strict": 0.09,
+      "reveals": 0.64,
+      "explicit": "implicit",
+      "explicitConf": 0.45,
+      "got": "pending",
+      "ms": 269,
+      "tokens": {
+        "input_tokens": 848,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    },
+    {
+      "id": "L20",
+      "cat": "long-control",
+      "diff": "hard",
+      "user": "Help me prep for a job interview on Monday. It's for a staff engineer role at a logistics company, the loop is one system design, one coding, one behavioural, and a chat with the VP. The system design prompt they hinted at is something like \"design a real-time package tracking system.\" I've done similar work but not at their scale. For the behavioural round they apparently like STAR format answers and care a lot about cross-team influence. Can you give me a prep plan for the weekend, a sample system design outline, and three behavioural stories I should prepare, with prompts to help me pick examples from my own experience?",
+      "expect": "drop",
+      "strict": 0.03,
+      "reveals": 0.22,
+      "explicit": "implicit",
+      "explicitConf": 0.41,
+      "got": "drop",
+      "ms": 229,
+      "tokens": {
+        "input_tokens": 845,
+        "output_tokens": 73
+      },
+      "model": "jev-1.13.0"
+    }
+  ]
+}
