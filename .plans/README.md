@@ -7,7 +7,7 @@ Long-lived design notes live in [`../plans/`](../plans/).
 
 | Folder | What | Status |
 |---|---|---|
-| `semantic-retrieve/` | `search_materials` tool (hybrid lexical + semantic) | Shipped on `main` (review pass, round 2). Manual chat replay A1–A3 not run (no provider keys). |
+| `semantic-retrieve/` | `search_materials` tool (hybrid lexical + semantic) | Built, review pass (round 2); ships with PR #1 (`jev-lesson-gate`). Manual chat replay A1–A3 not run (no provider keys). Worker blank-`EMBEDDING_MODEL` follow-up: PR #3. |
 | `jev-system-one/` | Jev lesson gate (phase 1) + single LLM pass per turn (phase 2) | Built, review pass; PR #1 (`jev-lesson-gate`). In-app smoke not run (no chat key / DB on the build machine). |
 | `document-parsing/` | LiteParse parse layer, (page, y) slicing, Jev heading adjudication + chunk roles | **Brainstorm only.** Next: architect writes phases/plan/validations (no PRD pass — brainstorm is enough). |
 
