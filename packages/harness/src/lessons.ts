@@ -62,10 +62,6 @@ export function isDuplicateLesson(existing: MemoryItem[], text: string): boolean
   return false;
 }
 
-function isDuplicate(existing: MemoryItem[], text: string): boolean {
-  return isDuplicateLesson(existing, text);
-}
-
 export async function applyLessons(
   service: MemoryService,
   opts: {
@@ -82,8 +78,8 @@ export async function applyLessons(
   for (const lesson of opts.lessons.slice(0, 3)) {
     const text = lesson.text.trim();
     if (!text) continue;
-    if (isDuplicate(opts.existingItems, text)) continue;
-    if (isDuplicate(created, text)) continue;
+    if (isDuplicateLesson(opts.existingItems, text)) continue;
+    if (isDuplicateLesson(created, text)) continue;
 
     const item = await service.createItem({
       userId: opts.userId,
