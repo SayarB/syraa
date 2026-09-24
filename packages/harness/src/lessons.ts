@@ -62,10 +62,6 @@ export function isDuplicateLesson(existing: MemoryItem[], text: string): boolean
   return false;
 }
 
-function normalize(text: string): string {
-  return normalizeLessonText(text);
-}
-
 function isDuplicate(existing: MemoryItem[], text: string): boolean {
   return isDuplicateLesson(existing, text);
 }

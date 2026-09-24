@@ -1,10 +1,10 @@
 import { isTextUIPart, isToolUIPart, type UIMessage } from "ai";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { renderMarkdown } from "../lib/markdown";
 import { formatMemoryDraftNotice } from "../lib/memory-notice";
 import { pickThinkingPhrase } from "../lib/thinking-status";
 import { formatToolActivity } from "../lib/tool-activity";
 import { extractTurnMessage } from "../lib/turn-message";
-import { renderMarkdown } from "../lib/markdown";
 import type { MemoryItem } from "../lib/types";
 
 type ChatBlock =
@@ -164,6 +164,7 @@ export function UiMessageList({
     return () => window.clearInterval(id);
   }, [showThinking]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: deps are scroll triggers, not inputs.
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [blocks, showThinking, thinkingTick]);

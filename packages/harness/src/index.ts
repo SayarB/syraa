@@ -10,9 +10,19 @@ export {
 } from "./context.js";
 export { formatHarnessError } from "./errors.js";
 export type { GatedLesson } from "./lesson-gate.js";
-export { applyLessons, isDuplicateLesson, lessonDedupKey, lessonToItemType, normalizeLessonText } from "./lessons.js";
+export {
+  applyLessons,
+  isDuplicateLesson,
+  lessonDedupKey,
+  lessonToItemType,
+  normalizeLessonText,
+} from "./lessons.js";
 export type { ChatConfig, ChatMessage, ChatProvider } from "./llm.js";
 export { getChatConfig, resolveChatProvider, runChatTurn } from "./llm.js";
+export {
+  buildMaterialsWorkingMemoryContent,
+  seedMaterialsWorkingMemory,
+} from "./materials-working-memory.js";
 export type { MemoryHandle, SaveCommand } from "./memory.js";
 export {
   getMemory,
@@ -47,7 +57,3 @@ export {
 } from "./threads.js";
 export type { UploadIngestResult } from "./upload.js";
 export { getIngestJobStatus, handleIngestUpload } from "./upload.js";
-export {
-  buildMaterialsWorkingMemoryContent,
-  seedMaterialsWorkingMemory,
-} from "./materials-working-memory.js";

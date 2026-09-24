@@ -52,7 +52,7 @@ describe("mastraThreadToUiMessages", () => {
       "text",
     ]);
     expect(
-      (messages[1]?.parts[1] as { output?: { materials?: unknown[] } }).output?.materials,
+      (messages[1]!.parts[1] as { output?: { materials?: unknown[] } }).output?.materials,
     ).toHaveLength(1);
   });
 });

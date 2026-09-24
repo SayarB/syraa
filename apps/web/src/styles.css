@@ -219,7 +219,9 @@ button:disabled {
   font-weight: 500;
   font-size: 0.92rem;
   padding: 0.7rem 1rem;
-  transition: background 140ms ease, border-color 140ms ease;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease;
 }
 
 .auth-google:hover:not(:disabled) {
@@ -330,7 +332,11 @@ button:disabled {
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(ellipse 80% 50% at 50% -10%, color-mix(in srgb, var(--accent) 6%, transparent), transparent),
+    radial-gradient(
+      ellipse 80% 50% at 50% -10%,
+      color-mix(in srgb, var(--accent) 6%, transparent),
+      transparent
+    ),
     var(--bg);
 }
 
@@ -397,7 +403,9 @@ button:disabled {
   padding: 0.55rem 0.75rem;
   font-weight: 500;
   font-size: 0.88rem;
-  transition: background 140ms ease, border-color 140ms ease;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease;
 }
 
 .new-chat-btn:hover {
@@ -439,7 +447,9 @@ button:disabled {
   padding: 0.5rem 0.6rem;
   text-align: left;
   font-size: 0.88rem;
-  transition: background 140ms ease, color 140ms ease;
+  transition:
+    background 140ms ease,
+    color 140ms ease;
 }
 
 .side-link:hover:not(:disabled),
@@ -593,7 +603,10 @@ button:disabled {
   border-radius: var(--radius-md);
   padding: 0.35rem 0.65rem;
   font-size: 0.8rem;
-  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
 }
 
 .suggestion-pill:hover {
@@ -1084,7 +1097,10 @@ button:disabled {
   color: var(--muted-strong);
   font-weight: 500;
   font-size: 0.84rem;
-  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
 }
 
 .upload-btn:hover:not(:disabled) {
@@ -1113,7 +1129,9 @@ button:disabled {
   font-size: 1.1rem;
   line-height: 1;
   flex-shrink: 0;
-  transition: background 140ms ease, border-color 140ms ease;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease;
 }
 
 .prompt-icon:hover:not(:disabled) {
@@ -1413,7 +1431,10 @@ button:disabled {
   padding: 0.4rem 0.5rem;
   text-align: left;
   font-size: 0.8rem;
-  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
 }
 
 .thread-item:hover {
@@ -1452,7 +1473,10 @@ button:disabled {
   color: var(--muted-strong);
   padding: 0.4rem 0.5rem;
   text-align: left;
-  transition: border-color 140ms ease, background 140ms ease, color 140ms ease;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    color 140ms ease;
 }
 
 .material-item:hover {
@@ -1561,7 +1585,9 @@ button:disabled {
   color: var(--ink);
   padding: 0.3rem 0.35rem;
   text-align: left;
-  transition: background 140ms ease, border-color 140ms ease;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease;
 }
 
 .tree-row:hover,

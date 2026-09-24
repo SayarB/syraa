@@ -1,14 +1,14 @@
 import { randomUUID } from "node:crypto";
-import type { MemoryItem } from "@syraa/memory";
 import { toAISdkStream } from "@mastra/ai-sdk";
+import type { MemoryItem } from "@syraa/memory";
 import { createUIMessageStream, type UIMessage } from "ai";
 import { runWithChatContext } from "../chat-run-context.js";
-import { getSyraaAgent } from "./index.js";
 import { buildTurnInstructions } from "../turn-instructions.js";
+import { getSyraaAgent } from "./index.js";
 import {
   resolveTurnFromStreamOutput,
-  stripRuntimeFooters,
   type SyraaTurnMeta,
+  stripRuntimeFooters,
 } from "./resolve-turn.js";
 
 export type { SyraaTurnMeta };
