@@ -135,7 +135,7 @@ async function handleApi(
 
   if (req.method === "GET" && pathname === "/api/me") {
     const user = await requireUser(req);
-    sendJson(res, 200, { userId: user.userId, email: user.email });
+    sendJson(res, 200, { userId: user.userId, email: user.email, theme: user.theme });
     return;
   }
 
