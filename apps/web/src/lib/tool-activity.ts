@@ -116,7 +116,10 @@ function formatGenericOutput(output: unknown): { summary: string; detail: string
   const oneLine = json.replace(/\s+/g, " ").slice(0, 120);
   return {
     summary: oneLine.length < json.length ? `${oneLine}…` : oneLine,
-    detail: `Output\n${json.split("\n").map((line) => `  ${line}`).join("\n")}`,
+    detail: `Output\n${json
+      .split("\n")
+      .map((line) => `  ${line}`)
+      .join("\n")}`,
   };
 }
 

@@ -1,5 +1,5 @@
-import { resolveDatabaseUrl } from "@syraa/memory";
 import { PostgresStore } from "@mastra/pg";
+import { resolveDatabaseUrl } from "@syraa/memory";
 
 let store: PostgresStore | null = null;
 let initPromise: Promise<void> | null = null;

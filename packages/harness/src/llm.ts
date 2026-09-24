@@ -1,13 +1,10 @@
 import type { MemoryItem } from "@syraa/memory";
 import { runWithChatContext } from "./chat-run-context.js";
 import { getSyraaAgent } from "./mastra/index.js";
-import { fullReplyText, resolveTurnFromGenerateOutput } from "./mastra/resolve-turn.js";
 import { resolveChatModel, resolveChatProvider } from "./mastra/model.js";
+import { fullReplyText, resolveTurnFromGenerateOutput } from "./mastra/resolve-turn.js";
+import type { ChatMessage, ChatProvider } from "./schemas.js";
 import { buildTurnInstructions } from "./turn-instructions.js";
-import {
-  type ChatMessage,
-  type ChatProvider,
-} from "./schemas.js";
 
 export type ChatConfig = {
   provider: ChatProvider;
@@ -74,23 +71,22 @@ export async function runChatTurn(opts: {
   const agent = getSyraaAgent();
 
   return runWithChatContext({ userId: opts.userId, threadId: opts.threadId }, async () => {
-      let output: Awaited<ReturnType<typeof agent.generate>>;
-      try {
-        output = await agent.generate(opts.userMessage, await buildChatTurnOptions(opts));
-      } catch (error) {
-        const detail = error instanceof Error ? error.message : String(error);
-        throw new Error(`${chat.provider} generate failed: ${detail}`);
-      }
+    let output: Awaited<ReturnType<typeof agent.generate>>;
+    try {
+      output = await agent.generate(opts.userMessage, await buildChatTurnOptions(opts));
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      throw new Error(`${chat.provider} generate failed: ${detail}`);
+    }
 
-      const turn = await resolveTurnFromGenerateOutput({ text: fullReplyText(output) });
+    const turn = await resolveTurnFromGenerateOutput({ text: fullReplyText(output) });
 
-      return {
-        message: turn.message,
-        model: chat.model,
-        provider: chat.provider,
-      };
-    },
-  );
+    return {
+      message: turn.message,
+      model: chat.model,
+      provider: chat.provider,
+    };
+  });
 }
 
 export { resolveChatProvider } from "./mastra/model.js";

@@ -2,8 +2,9 @@
  * Programmatic Better Auth schema migrate (Kysely / pg Pool).
  * Used by Docker entrypoint — no `npx auth` download at boot.
  */
-import { getMigrations } from "better-auth/db/migration";
+
 import { betterAuth } from "better-auth";
+import { getMigrations } from "better-auth/db/migration";
 import { Pool } from "pg";
 import { buildBetterAuthOptions } from "./better-auth.js";
 
