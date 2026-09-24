@@ -447,7 +447,7 @@
     "prev": "(a 1,500-word answer)",
     "user": "shorter",
     "expect": "pending",
-    "accept": []
+    "accept": ["drop"]
   },
   {
     "id": "N1",
@@ -893,7 +893,7 @@
     "prev": "Short answer: no. The migration will lock the table. Run it at night.",
     "user": "perfect, that's exactly the tone I want from you",
     "expect": "pending",
-    "accept": ["auto"]
+    "accept": ["auto", "drop"]
   },
   {
     "id": "P07",
@@ -1486,6 +1486,42 @@
     "round": 4,
     "group": "long-control",
     "user": "Help me prep for a job interview on Monday. It's for a staff engineer role at a logistics company, the loop is one system design, one coding, one behavioural, and a chat with the VP. The system design prompt they hinted at is something like \"design a real-time package tracking system.\" I've done similar work but not at their scale. For the behavioural round they apparently like STAR format answers and care a lot about cross-team influence. Can you give me a prep plan for the weekend, a sample system design outline, and three behavioural stories I should prepare, with prompts to help me pick examples from my own experience?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "U1",
+    "round": 5,
+    "group": "context-leak",
+    "prev": "Here's what I know about you so far: you run an independent music label, you prefer concise answers, you're studying for a thermodynamics exam on Oct 3, and your team deploys only from the release branch. You've also uploaded thermo-lecture-notes.pdf and lisbon-guide.pdf.",
+    "user": "What do you already know about me?",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "U2",
+    "round": 5,
+    "group": "context-leak",
+    "prev": "Here's what I know about you so far: you run an independent music label, you prefer concise answers, you're studying for a thermodynamics exam on Oct 3, and your team deploys only from the release branch. You've also uploaded thermo-lecture-notes.pdf and lisbon-guide.pdf.",
+    "user": "thanks, that's helpful",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "U3",
+    "round": 5,
+    "group": "context-leak",
+    "prev": "Madverse is a music distribution company; artists on it usually release singles every six weeks and prefer Spotify over Apple Music.",
+    "user": "interesting, tell me more",
+    "expect": "drop",
+    "accept": []
+  },
+  {
+    "id": "U4",
+    "round": 5,
+    "group": "context-leak",
+    "prev": "Sure — here's a 7-day Lisbon itinerary. Since you're vegetarian and hate early mornings, every day starts at 10am.",
+    "user": "can you make it 5 days instead?",
     "expect": "drop",
     "accept": []
   }

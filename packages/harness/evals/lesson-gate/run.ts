@@ -1,21 +1,14 @@
 /**
  * Opt-in live eval for the lesson gate (calls Jev — not part of `npm run test`).
  *   npm run eval:lesson-gate -w @syraa/harness
- * Uses the SHIPPED questions and band rule from src/lesson-gate.ts, so any wording or threshold
- * change is re-checked against the 183 cases from the Jev brainstorm/eval.
+ * Uses the SHIPPED questions, band rule, and user-first decision (`evaluateTurn`) from
+ * src/lesson-gate.ts, so any wording, threshold, or policy change is re-checked against the cases.
  * Exits 1 if acceptable < MIN_ACCEPTABLE or any wrong auto-activation.
  */
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { config } from "dotenv";
-import {
-  askJev,
-  jevState,
-  LESSON_GATE_QUESTIONS,
-  type LessonBand,
-  lessonBand,
-  stripCodeBlocks,
-} from "../../src/lesson-gate.js";
+import { evaluateTurn, type LessonBand, stripCodeBlocks } from "../../src/lesson-gate.js";
 
 config({ path: fileURLToPath(new URL("../../../../.env", import.meta.url)) });
 
@@ -34,6 +27,7 @@ type EvalCase = {
 
 type EvalResult = EvalCase & {
   got: LessonBand;
+  source: "user" | "confirmation";
   ok: boolean;
   strict: number;
   reveals: number;
@@ -45,17 +39,20 @@ const cases = JSON.parse(
 ) as EvalCase[];
 
 async function evaluate(c: EvalCase): Promise<EvalResult> {
-  const answers = await askJev(
-    jevState(c.prev ?? null, stripCodeBlocks(c.user)),
-    LESSON_GATE_QUESTIONS,
-  );
+  const decision = await evaluateTurn(c.prev ?? null, stripCodeBlocks(c.user));
   const scores = {
-    strict: answers.strict,
-    reveals: answers.reveals,
-    explicitness: answers.explicitness,
+    strict: decision.answers.strict,
+    reveals: decision.answers.reveals,
+    explicitness: decision.answers.explicitness,
   };
-  const got = lessonBand(scores);
-  return { ...c, ...scores, got, ok: got === c.expect || c.accept.includes(got) };
+  const got = decision.band;
+  return {
+    ...c,
+    ...scores,
+    got,
+    source: decision.source,
+    ok: got === c.expect || c.accept.includes(got),
+  };
 }
 
 async function evaluateWithRetry(c: EvalCase): Promise<EvalResult> {
@@ -105,7 +102,7 @@ if (misses.length) {
   console.log("\nmisses:");
   for (const r of misses) {
     console.log(
-      `${r.id} (${r.group}) expected ${[r.expect, ...r.accept].join("/")} got ${r.got} — strict ${r.strict.toFixed(2)} reveals ${r.reveals.toFixed(2)} ${r.explicitness} — ${r.user.slice(0, 90).replace(/\n/g, " ")}`,
+      `${r.id} (${r.group}) expected ${[r.expect, ...r.accept].join("/")} got ${r.got} via ${r.source} — strict ${r.strict.toFixed(2)} reveals ${r.reveals.toFixed(2)} ${r.explicitness} — ${r.user.slice(0, 90).replace(/\n/g, " ")}`,
     );
   }
 }

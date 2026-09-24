@@ -5,6 +5,11 @@ import { lastAssistantMessageText } from "./threads.js";
 /**
  * Lesson gate: Jev (TypeSafe System One) decides whether a user turn teaches something
  * durable, and whether it auto-activates or needs HITL confirmation.
+ *
+ * Memory comes from the user's latest message only. The previous assistant message is used
+ * solely when the user explicitly confirms it ("yes, do that every time", "please remember
+ * that") — never as a source of facts on its own. See `decideLesson`.
+ *
  * Questions and band rule are frozen from the eval in `.plans/jev-system-one/` —
  * re-run `npm run eval:lesson-gate` after changing any wording or threshold.
  */
@@ -16,6 +21,7 @@ const GATED_KINDS: readonly GatedLesson["kind"][] = ["preference", "rule", "meth
 const MAX_SCORED_SENTENCES = 12;
 const VERBATIM_MIN = 0.85;
 const MAX_LESSON_CHARS = 240;
+const CONFIRMS_MIN = 0.7;
 
 export type LessonBand = "auto" | "pending" | "drop";
 
@@ -88,6 +94,21 @@ export const LESSON_GATE_QUESTIONS = {
   },
 } as const;
 
+/** Asked only with the previous assistant message in the state: may that message be used? */
+export const CONFIRMATION_QUESTIONS = {
+  ...LESSON_GATE_QUESTIONS,
+  confirms: {
+    type: "noul",
+    instructions:
+      "Is the user explicitly confirming something lasting from the previous assistant message: saying yes to its offer to remember something or to do something from now on, asking it to remember what it just said, or clearly confirming that something it just said about the user is true and lasting? A yes to a one-off task, a new question, small talk, a complaint, or asking what the assistant already knows or remembers does not count.",
+    criteria: {
+      true: "An explicit yes, confirmation, or 'remember that' aimed at a lasting preference, fact, rule, method, or decision in the previous assistant message.",
+      false:
+        "Anything else, including a new question, a yes to a one-off task, or a question about what the assistant knows.",
+    },
+  },
+} as const;
+
 export const SENTENCE_QUESTIONS = {
   reveals: LESSON_GATE_QUESTIONS.reveals,
   self_contained: LESSON_GATE_QUESTIONS.self_contained,
@@ -99,12 +120,70 @@ type JevAnswers<Q extends QuestionSet> = {
   [K in keyof Q]: Q[K]["type"] extends "noul" ? number : string;
 };
 
+type TurnAnswers = JevAnswers<typeof LESSON_GATE_QUESTIONS>;
+type ConfirmationAnswers = JevAnswers<typeof CONFIRMATION_QUESTIONS>;
+
+export type TurnDecision = {
+  band: LessonBand;
+  /** "user": learned from the user's message alone. "confirmation": the user confirmed the previous assistant message. */
+  source: "user" | "confirmation";
+  answers: TurnAnswers;
+};
+
 export function lessonBand(scores: LessonGateScores): LessonBand {
   if (scores.strict >= 0.65 && scores.explicitness === "explicit" && scores.reveals >= 0.5) {
     return "auto";
   }
   if ((scores.strict >= 0.5 && scores.reveals >= 0.5) || scores.reveals >= 0.6) return "pending";
   return "drop";
+}
+
+function scoresOf(answers: TurnAnswers): LessonGateScores {
+  return {
+    strict: answers.strict,
+    reveals: answers.reveals,
+    explicitness: answers.explicitness,
+  };
+}
+
+/**
+ * Pure decision rule. The user's message is judged on its own first; the previous assistant
+ * message only counts when the user clearly confirms it. Otherwise the turn is dropped, so a
+ * fact that appears only in an assistant reply (or the system prompt) is never learned.
+ */
+export function decideLesson(
+  userOnly: TurnAnswers,
+  confirmation: ConfirmationAnswers | null,
+): TurnDecision {
+  const userBand = lessonBand(scoresOf(userOnly));
+  if (userBand !== "drop") return { band: userBand, source: "user", answers: userOnly };
+
+  const confirmed = confirmation !== null && confirmation.confirms >= CONFIRMS_MIN;
+  if (!confirmed) return { band: "drop", source: "user", answers: userOnly };
+
+  return {
+    band: lessonBand(scoresOf(confirmation)),
+    source: "confirmation",
+    answers: confirmation,
+  };
+}
+
+/**
+ * Jev calls for one turn, run in parallel: the user's message alone, and — when there is a
+ * previous assistant message — the confirmation check. A failed confirmation call just means
+ * "not confirmed"; a failed user-only call throws (the caller fails closed).
+ */
+export async function evaluateTurn(
+  prevAssistant: string | null,
+  userMessage: string,
+): Promise<TurnDecision> {
+  const userOnlyCall = askJev(jevState(null, userMessage), LESSON_GATE_QUESTIONS);
+  const confirmationCall = prevAssistant
+    ? askJev(jevState(prevAssistant, userMessage), CONFIRMATION_QUESTIONS).catch(() => null)
+    : Promise.resolve(null);
+
+  const [userOnly, confirmation] = await Promise.all([userOnlyCall, confirmationCall]);
+  return decideLesson(userOnly, confirmation);
 }
 
 /** Fenced code is not the user speaking (e.g. `// always validate input`). */
@@ -165,23 +244,21 @@ export async function writeLessonText(opts: {
   userMessage: string;
   focus: string;
 }): Promise<string | null> {
-  const output = await getLessonWriterAgent().generate(
-    [
-      `Previous assistant message: ${opts.prevAssistant ?? "(none)"}`,
-      `User message: ${opts.userMessage}`,
-      `Most relevant part: ${opts.focus}`,
-    ].join("\n"),
-    {
-      // Reasoning models (gpt-oss) spend output tokens thinking first; MAX_LESSON_CHARS caps the text.
-      modelSettings: { temperature: 0, maxOutputTokens: 512 },
-      abortSignal: AbortSignal.timeout(WRITER_TIMEOUT_MS),
-    },
-  );
+  const prompt = [`User message: ${opts.userMessage}`, `Most relevant part: ${opts.focus}`];
+  // Only present when the user explicitly confirmed it (see `decideLesson`).
+  if (opts.prevAssistant) prompt.unshift(`Previous assistant message: ${opts.prevAssistant}`);
+
+  const output = await getLessonWriterAgent().generate(prompt.join("\n"), {
+    // Reasoning models (gpt-oss) spend output tokens thinking first; MAX_LESSON_CHARS caps the text.
+    modelSettings: { temperature: 0, maxOutputTokens: 512 },
+    abortSignal: AbortSignal.timeout(WRITER_TIMEOUT_MS),
+  });
   const text = (output.text ?? "")
     .trim()
     .replace(/^["'“]|["'”]$/g, "")
     .trim();
-  return text && text.length <= MAX_LESSON_CHARS ? text : null;
+  if (!text || text.toUpperCase().startsWith("NONE")) return null;
+  return text.length <= MAX_LESSON_CHARS ? text : null;
 }
 
 async function pickLessonText(opts: {
@@ -238,26 +315,23 @@ export async function gateLesson(opts: {
       userId: opts.userId,
       threadId: opts.threadId,
     });
-    const answers = await askJev(jevState(prevAssistant, userMessage), LESSON_GATE_QUESTIONS);
-    const scores: LessonGateScores = {
-      strict: answers.strict,
-      reveals: answers.reveals,
-      explicitness: answers.explicitness,
-    };
-    const band = lessonBand(scores);
+    const { band, source, answers } = await evaluateTurn(prevAssistant, userMessage);
     if (band === "drop") return [];
 
+    // The previous assistant message may shape the lesson only when the user confirmed it.
+    const confirmedContext = source === "confirmation" ? prevAssistant : null;
     const text = await pickLessonText({
-      prevAssistant,
+      prevAssistant: confirmedContext,
       userMessage,
       turnSelfContained: answers.self_contained,
     });
     if (!text) return [];
 
+    const scores = scoresOf(answers);
     const kind = GATED_KINDS.find((k) => k === answers.kind) ?? "preference";
     console.info(
       "[lesson-gate]",
-      JSON.stringify({ threadId: opts.threadId, band, ...scores, kind: answers.kind }),
+      JSON.stringify({ threadId: opts.threadId, band, source, ...scores, kind: answers.kind }),
     );
     return [
       {
