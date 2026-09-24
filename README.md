@@ -14,7 +14,7 @@ packages/ingest/           # Redis queue client + local drive paths
 services/ingest-worker/    # Python PDF ingest (heuristics → Postgres)
 scripts/dev/               # Local helpers (env + Python)
 plans/                     # Product brainstorm notes
-.plans/                    # Agent delivery phase plans (gitignored)
+.plans/                    # Delivery phase plans, validations, review reports (index: .plans/README.md)
 data/drive/                # Local PDF blob store
 ```
 
