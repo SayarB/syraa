@@ -52,7 +52,7 @@ function formatListMaterialsOutput(output: unknown): { summary: string; detail: 
   });
 
   return {
-    summary: `${materials.length} document(s): ${materials.map((m) => m.documentName).join(", ")}`,
+    summary: `${materials.length} document(s): ${materials.map((m) => m.documentName ?? "unknown").join(", ")}`,
     detail: ["Output", ...lines].join("\n"),
   };
 }
@@ -112,11 +112,16 @@ function formatReadSectionOutput(output: unknown): { summary: string; detail: st
 }
 
 function formatGenericOutput(output: unknown): { summary: string; detail: string } {
-  const json = JSON.stringify(output, null, 2);
-  const oneLine = json.replace(/\s+/g, " ").slice(0, 120);
+  // JSON.stringify(undefined) is undefined, not a string.
+  const json = output == null ? "(no output)" : JSON.stringify(output, null, 2);
+  const collapsed = json.replace(/\s+/g, " ");
+  const oneLine = collapsed.slice(0, 120);
   return {
-    summary: oneLine.length < json.length ? `${oneLine}…` : oneLine,
-    detail: `Output\n${json.split("\n").map((line) => `  ${line}`).join("\n")}`,
+    summary: collapsed.length > oneLine.length ? `${oneLine}…` : oneLine,
+    detail: `Output\n${json
+      .split("\n")
+      .map((line) => `  ${line}`)
+      .join("\n")}`,
   };
 }
 
@@ -165,7 +170,9 @@ export function formatToolActivity(
 
   const output = part.output;
   let formatted: { summary: string; detail: string };
-  if (toolName === "list_materials") {
+  if (output == null) {
+    formatted = formatGenericOutput(output);
+  } else if (toolName === "list_materials") {
     formatted = formatListMaterialsOutput(output);
   } else if (toolName === "read_materials_section") {
     formatted = formatReadSectionOutput(output);

@@ -43,12 +43,12 @@ export function lessonDedupKey(text: string): string {
 export function isDuplicateLesson(existing: MemoryItem[], text: string): boolean {
   const key = lessonDedupKey(text);
   if (!key) return true;
+  const a = normalizeLessonText(text);
 
   for (const item of existing) {
     const existingKey = lessonDedupKey(item.text);
     if (existingKey === key) return true;
 
-    const a = normalizeLessonText(text);
     const b = normalizeLessonText(item.text);
     if (a === b) return true;
 
@@ -60,14 +60,6 @@ export function isDuplicateLesson(existing: MemoryItem[], text: string): boolean
   }
 
   return false;
-}
-
-function normalize(text: string): string {
-  return normalizeLessonText(text);
-}
-
-function isDuplicate(existing: MemoryItem[], text: string): boolean {
-  return isDuplicateLesson(existing, text);
 }
 
 export async function applyLessons(
@@ -86,8 +78,9 @@ export async function applyLessons(
   for (const lesson of opts.lessons.slice(0, 3)) {
     const text = lesson.text.trim();
     if (!text) continue;
-    if (isDuplicate(opts.existingItems, text)) continue;
-    if (isDuplicate(created, text)) continue;
+    // existingItems also receives each created item (below), so this covers this turn's too.
+    if (isDuplicateLesson(opts.existingItems, text)) continue;
+    if (isDuplicateLesson(created, text)) continue;
 
     const item = await service.createItem({
       userId: opts.userId,

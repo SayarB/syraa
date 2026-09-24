@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
 import type { IncomingMessage } from "node:http";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   isBetterAuthConfigured,
   requireUserId,
@@ -44,9 +44,6 @@ describe("requireUserId / AUTH_DEV_USER", () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("BETTER_AUTH_URL", "https://syraa.example.com");
     vi.stubEnv("BETTER_AUTH_TRUSTED_ORIGINS", "https://alt.example.com/");
-    expect(trustedOrigins()).toEqual([
-      "https://syraa.example.com",
-      "https://alt.example.com",
-    ]);
+    expect(trustedOrigins()).toEqual(["https://syraa.example.com", "https://alt.example.com"]);
   });
 });

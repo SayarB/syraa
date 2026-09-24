@@ -5,11 +5,7 @@ import { formatMaterialsOutline } from "../src/mastra/prompt.js";
 import { buildMaterialsWorkingMemoryContent } from "../src/materials-working-memory.js";
 import { parseSaveCommand } from "../src/memory.js";
 import { chatRequestSchema, createThreadRequestSchema } from "../src/schemas.js";
-import {
-  buildThreadWorksMetadata,
-  isUntitledThread,
-  truncateThreadTitle,
-} from "../src/threads.js";
+import { buildThreadWorksMetadata, isUntitledThread, truncateThreadTitle } from "../src/threads.js";
 
 describe("resolveChatProvider", () => {
   afterEach(() => {

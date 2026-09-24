@@ -1,7 +1,7 @@
 import type { IncomingMessage } from "node:http";
 import { betterAuth } from "better-auth";
-import { magicLink } from "better-auth/plugins";
 import { fromNodeHeaders } from "better-auth/node";
+import { magicLink } from "better-auth/plugins";
 import { Pool } from "pg";
 
 export class UnauthorizedError extends Error {
