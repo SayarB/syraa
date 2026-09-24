@@ -34,3 +34,34 @@ def test_none_embeddings(monkeypatch) -> None:
     vectors, provider = embed_texts(["hello"])
     assert provider == "none"
     assert vectors == [None]
+
+
+def test_blank_env_uses_defaults(monkeypatch) -> None:
+    # compose passes `${EMBEDDING_MODEL:-}` → "" when unset; treat blank as unset.
+    monkeypatch.setenv("EMBEDDING_PROVIDER", "fireworks")
+    monkeypatch.setenv("FIREWORKS_API_KEY", "k")
+    monkeypatch.setenv("EMBEDDING_MODEL", "")
+    monkeypatch.setenv("EMBEDDING_BASE_URL", "  ")
+    cfg = resolve_embedding_config()
+    assert cfg["model"] == "nomic-ai/nomic-embed-text-v1.5"
+    assert cfg["base_url"] == "https://api.fireworks.ai/inference/v1"
+
+    monkeypatch.setenv("EMBEDDING_PROVIDER", "openai")
+    monkeypatch.setenv("OPENAI_API_KEY", "k")
+    cfg = resolve_embedding_config()
+    assert cfg["model"] == "text-embedding-3-small"
+    assert cfg["base_url"] == "https://api.openai.com/v1"
+
+
+def test_blank_dims_uses_default(monkeypatch) -> None:
+    monkeypatch.setenv("EMBEDDING_PROVIDER", "hash")
+    monkeypatch.setenv("EMBEDDING_DIMS", "")
+    vectors, _ = embed_texts(["hello"])
+    assert len(vectors[0]) == 64
+
+
+def test_explicit_model_kept(monkeypatch) -> None:
+    monkeypatch.setenv("EMBEDDING_PROVIDER", "openai")
+    monkeypatch.setenv("OPENAI_API_KEY", "k")
+    monkeypatch.setenv("EMBEDDING_MODEL", "text-embedding-3-large")
+    assert resolve_embedding_config()["model"] == "text-embedding-3-large"

@@ -11,6 +11,11 @@ import urllib.request
 from typing import Any
 
 
+def _env(name: str, default: str) -> str:
+    """Env var, or ``default`` when unset or blank (compose passes ``${X:-}`` as "")."""
+    return (os.environ.get(name) or "").strip() or default
+
+
 def resolve_embedding_config() -> dict[str, Any]:
     provider = (os.environ.get("EMBEDDING_PROVIDER") or "auto").strip().lower()
     if provider in ("", "none", "off", "null"):
@@ -30,11 +35,8 @@ def resolve_embedding_config() -> dict[str, Any]:
     if provider == "fireworks":
         return {
             "provider": "fireworks",
-            "model": os.environ.get(
-                "EMBEDDING_MODEL",
-                "nomic-ai/nomic-embed-text-v1.5",
-            ),
-            "base_url": os.environ.get(
+            "model": _env("EMBEDDING_MODEL", "nomic-ai/nomic-embed-text-v1.5"),
+            "base_url": _env(
                 "EMBEDDING_BASE_URL",
                 "https://api.fireworks.ai/inference/v1",
             ).rstrip("/"),
@@ -44,16 +46,14 @@ def resolve_embedding_config() -> dict[str, Any]:
     if provider == "openai":
         return {
             "provider": "openai",
-            "model": os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small"),
-            "base_url": os.environ.get("EMBEDDING_BASE_URL", "https://api.openai.com/v1").rstrip(
-                "/"
-            ),
+            "model": _env("EMBEDDING_MODEL", "text-embedding-3-small"),
+            "base_url": _env("EMBEDDING_BASE_URL", "https://api.openai.com/v1").rstrip("/"),
             "api_key": openai_key or os.environ.get("EMBEDDING_API_KEY") or "",
         }
 
     if provider == "hash":
         # Deterministic local stub for tests / offline MVP (not semantic).
-        dims = int(os.environ.get("EMBEDDING_DIMS", "64"))
+        dims = int(_env("EMBEDDING_DIMS", "64"))
         return {"provider": "hash", "model": f"hash-{dims}", "base_url": None, "api_key": None}
 
     raise ValueError(f"unknown EMBEDDING_PROVIDER={provider}")
@@ -144,7 +144,7 @@ def embed_texts(texts: list[str]) -> tuple[list[list[float] | None], str]:
         )
         return vectors, provider
     except Exception as err:  # noqa: BLE001 — keep ingest moving
-        dims = int(os.environ.get("EMBEDDING_DIMS", "64"))
+        dims = int(_env("EMBEDDING_DIMS", "64"))
         print(
             f"embedding via {provider} failed ({err}); falling back to hash-{dims}",
             flush=True,
