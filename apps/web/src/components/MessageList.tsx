@@ -19,7 +19,7 @@ export function MessageList({ messages }: Props) {
       {messages.map((message) => {
         if (message.role === "activity") {
           return (
-            <div key={message.id} className="chat-tool" role="note" aria-label="Agent activity">
+            <div key={message.id} className="chat-tool" role="status" aria-label="Agent activity">
               {message.content}
             </div>
           );

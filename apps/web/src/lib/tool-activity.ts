@@ -52,7 +52,7 @@ function formatListMaterialsOutput(output: unknown): { summary: string; detail: 
   });
 
   return {
-    summary: `${materials.length} document(s): ${materials.map((m) => m.documentName).join(", ")}`,
+    summary: `${materials.length} document(s): ${materials.map((m) => m.documentName ?? "unknown").join(", ")}`,
     detail: ["Output", ...lines].join("\n"),
   };
 }
@@ -170,7 +170,9 @@ export function formatToolActivity(
 
   const output = part.output;
   let formatted: { summary: string; detail: string };
-  if (toolName === "list_materials") {
+  if (output == null) {
+    formatted = formatGenericOutput(output);
+  } else if (toolName === "list_materials") {
     formatted = formatListMaterialsOutput(output);
   } else if (toolName === "read_materials_section") {
     formatted = formatReadSectionOutput(output);

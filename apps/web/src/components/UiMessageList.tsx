@@ -187,7 +187,7 @@ export function UiMessageList({
               key={block.id}
               className={`chat-tool-accordion${block.active ? " active" : ""}`}
             >
-              <summary className="chat-tool-summary-row" aria-label="Agent tool activity">
+              <summary className="chat-tool-summary-row">
                 <span className="chat-tool-chevron" aria-hidden="true">
                   ›
                 </span>
