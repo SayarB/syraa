@@ -113,7 +113,7 @@ function formatReadSectionOutput(output: unknown): { summary: string; detail: st
 
 function formatGenericOutput(output: unknown): { summary: string; detail: string } {
   // JSON.stringify(undefined) is undefined, not a string.
-  const json = JSON.stringify(output, null, 2) ?? "(no output)";
+  const json = output == null ? "(no output)" : JSON.stringify(output, null, 2);
   const collapsed = json.replace(/\s+/g, " ");
   const oneLine = collapsed.slice(0, 120);
   return {

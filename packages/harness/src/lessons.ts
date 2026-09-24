@@ -80,6 +80,7 @@ export async function applyLessons(
     if (!text) continue;
     // existingItems also receives each created item (below), so this covers this turn's too.
     if (isDuplicateLesson(opts.existingItems, text)) continue;
+    if (isDuplicateLesson(created, text)) continue;
 
     const item = await service.createItem({
       userId: opts.userId,

@@ -317,6 +317,25 @@ describe("applyLessons", () => {
     return { service: { createItem } as unknown as MemoryService, createItem };
   }
 
+  it("skips a near-duplicate lesson within the same turn", async () => {
+    const { service, createItem } = fakeService();
+    await applyLessons(service, {
+      userId: "u1",
+      memoryId: "m1",
+      existingItems: [],
+      lessons: [
+        {
+          text: "Prefers concise answers.",
+          kind: "preference",
+          activate: true,
+          confidence: "high",
+        },
+        { text: "Prefers concise answers", kind: "preference", activate: true, confidence: "high" },
+      ],
+    });
+    expect(createItem).toHaveBeenCalledTimes(1);
+  });
+
   it("activates only when the gate says so", async () => {
     const { service, createItem } = fakeService();
     await applyLessons(service, {
