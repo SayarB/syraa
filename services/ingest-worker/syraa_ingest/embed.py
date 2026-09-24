@@ -16,13 +16,20 @@ def _env(name: str, default: str = "") -> str:
     return (os.environ.get(name) or "").strip() or default
 
 
+MAX_HASH_DIMS = 4096
+
+
 def _dims() -> int:
     """EMBEDDING_DIMS for hash vectors; a missing or bad value means 64 (never raises)."""
+    raw = _env("EMBEDDING_DIMS", "64")
     try:
-        dims = int(_env("EMBEDDING_DIMS", "64"))
+        dims = int(raw)
     except ValueError:
-        return 64
-    return dims if dims > 0 else 64
+        dims = 0
+    if 0 < dims <= MAX_HASH_DIMS:
+        return dims
+    print(f"EMBEDDING_DIMS={raw!r} is not 1..{MAX_HASH_DIMS}; using 64", flush=True)
+    return 64
 
 
 def resolve_embedding_config() -> dict[str, Any]:
@@ -141,7 +148,7 @@ def embed_texts(texts: list[str]) -> tuple[list[list[float] | None], str]:
         return [None for _ in texts], "none"
 
     if provider == "hash":
-        dims = int(str(cfg["model"]).split("-")[-1])
+        dims = _dims()
         return [_hash_embedding(t, dims) for t in texts], "hash"
 
     try:

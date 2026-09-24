@@ -1,4 +1,5 @@
 import pytest
+from syraa_ingest import embed
 from syraa_ingest.embed import embed_texts, resolve_embedding_config
 from syraa_ingest.queue_protocol import QUEUE_KEY, IngestJob
 
@@ -103,19 +104,24 @@ def test_blank_provider_key_falls_back_to_embedding_api_key(monkeypatch) -> None
     assert resolve_embedding_config()["api_key"] == "sk-embed"
 
 
-@pytest.mark.parametrize("dims", ["auto", "768d", "0", "-3"])
-def test_bad_dims_never_raise(monkeypatch, dims) -> None:
+@pytest.mark.parametrize("dims", ["auto", "768d", "0", "-3", "100000000"])
+def test_bad_dims_never_raise(monkeypatch, capsys, dims) -> None:
     monkeypatch.setenv("EMBEDDING_PROVIDER", "hash")
     monkeypatch.setenv("EMBEDDING_DIMS", dims)
     vectors, _ = embed_texts(["hello"])
     assert len(vectors[0]) == 64
+    assert "EMBEDDING_DIMS" in capsys.readouterr().out
 
 
 def test_remote_failure_falls_back_even_with_bad_dims(monkeypatch) -> None:
     monkeypatch.setenv("EMBEDDING_PROVIDER", "openai")
     monkeypatch.setenv("OPENAI_API_KEY", "k")
-    monkeypatch.setenv("EMBEDDING_BASE_URL", "http://127.0.0.1:9")
     monkeypatch.setenv("EMBEDDING_DIMS", "auto")
+
+    def refuse(*_args, **_kwargs):
+        raise RuntimeError("embedding HTTP 503")
+
+    monkeypatch.setattr(embed, "_openai_compatible_embed", refuse)
     vectors, provider = embed_texts(["hello"])
     assert provider == "hash-fallback:openai"
     assert len(vectors[0]) == 64
