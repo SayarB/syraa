@@ -112,10 +112,12 @@ function formatReadSectionOutput(output: unknown): { summary: string; detail: st
 }
 
 function formatGenericOutput(output: unknown): { summary: string; detail: string } {
-  const json = JSON.stringify(output, null, 2);
-  const oneLine = json.replace(/\s+/g, " ").slice(0, 120);
+  // JSON.stringify(undefined) is undefined, not a string.
+  const json = JSON.stringify(output, null, 2) ?? "(no output)";
+  const collapsed = json.replace(/\s+/g, " ");
+  const oneLine = collapsed.slice(0, 120);
   return {
-    summary: oneLine.length < json.length ? `${oneLine}…` : oneLine,
+    summary: collapsed.length > oneLine.length ? `${oneLine}…` : oneLine,
     detail: `Output\n${json
       .split("\n")
       .map((line) => `  ${line}`)
