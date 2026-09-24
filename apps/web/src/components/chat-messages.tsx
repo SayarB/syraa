@@ -3,10 +3,11 @@ import { BrainIcon, CheckIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import { Shimmer } from "@/components/ai-elements/shimmer";
+import { Source, Sources, SourcesContent, SourcesTrigger } from "@/components/ai-elements/sources";
 import { Tool, ToolContent, ToolHeader, type ToolPart } from "@/components/ai-elements/tool";
 import { formatMemoryDraftNotice } from "@/lib/memory-notice";
 import { pickThinkingPhrase } from "@/lib/thinking-status";
-import { formatToolActivity } from "@/lib/tool-activity";
+import { formatToolActivity, type WebSource, webSourcesFromPart } from "@/lib/tool-activity";
 import { extractTurnMessage } from "@/lib/turn-message";
 import type { DisplayMessage, MemoryItem } from "@/lib/types";
 
@@ -20,6 +21,7 @@ type ChatBlock =
   | { kind: "user"; id: string; text: string }
   | { kind: "tool"; id: string; part: ToolPart; label: string; summary: string; detail: string }
   | { kind: "assistant"; id: string; text: string; streaming: boolean }
+  | { kind: "sources"; id: string; sources: WebSource[] }
   | { kind: "memory"; id: string; text: string; variant: "draft" | "saved" };
 
 function lastTextPartIndex(parts: UIMessage["parts"]): number {
@@ -72,11 +74,15 @@ function flattenMessages(
 
     const isLastMessage = message.id === lastMessageId;
     const textIndex = lastTextPartIndex(message.parts);
+    const sources = new Map<string, WebSource>();
 
     message.parts.forEach((part, index) => {
       if (part.type === "step-start") return;
 
       if (isToolUIPart(part)) {
+        for (const source of webSourcesFromPart(part)) {
+          if (!sources.has(source.url)) sources.set(source.url, source);
+        }
         const done = part.state === "output-available" || part.state === "output-error";
         const activity = formatToolActivity(part, !done && streaming && isLastMessage);
         if (!activity) return;
@@ -118,6 +124,10 @@ function flattenMessages(
         streaming: isStreamingText,
       });
     });
+
+    if (sources.size > 0) {
+      blocks.push({ kind: "sources", id: `${message.id}-sources`, sources: [...sources.values()] });
+    }
   }
 
   for (const notice of memoryNoticeLines) {
@@ -220,6 +230,24 @@ export function ChatMessages({
         }
 
         if (block.kind === "tool") return <ToolBlock key={block.id} block={block} />;
+
+        if (block.kind === "sources") {
+          return (
+            <Sources key={block.id} className="mb-0">
+              <SourcesTrigger count={block.sources.length} />
+              <SourcesContent>
+                {block.sources.map((source) => (
+                  <Source
+                    key={source.url}
+                    href={source.url}
+                    title={source.title}
+                    className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+                  />
+                ))}
+              </SourcesContent>
+            </Sources>
+          );
+        }
 
         if (block.kind === "memory") {
           return <MemoryNotice key={block.id} block={block} onOpenMemory={onOpenMemory} />;

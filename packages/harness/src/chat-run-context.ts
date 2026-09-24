@@ -7,6 +7,8 @@ export type ChatRunContext = {
   subprojectId?: string | null;
   /** Per-turn tool results for turn-end fallback only. */
   toolCallCache?: Map<string, unknown>;
+  /** web_search calls made this turn (capped per turn). */
+  webSearchCount?: number;
 };
 
 const storage = new AsyncLocalStorage<ChatRunContext>();
