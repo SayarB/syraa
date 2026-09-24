@@ -19,6 +19,15 @@ export function stripRuntimeFooters(text: string): string {
   return lines.join("\n").trim();
 }
 
+/**
+ * Whole reply text of a generate() result. After a tool step Mastra's `text` is only the last
+ * step's text, so join every step's text instead.
+ */
+export function fullReplyText(output: { text?: string; steps?: { text?: string }[] }): string {
+  const fromSteps = (output.steps ?? []).map((step) => step.text ?? "").join("");
+  return fromSteps.trim() ? fromSteps : (output.text ?? "");
+}
+
 export async function resolveTurnFromGenerateOutput(output: {
   text: string | Promise<string>;
 }): Promise<SyraaTurnMeta> {

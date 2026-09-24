@@ -27,6 +27,16 @@ describe("tool call cache", () => {
     });
   });
 
+  it("uses the most recent search when a query repeats", async () => {
+    await runWithChatContext({ userId: "u1", threadId: "t1" }, async () => {
+      const hits = (snippet: string) => ({ hits: [{ documentName: "a.pdf", snippet }] });
+      rememberToolResult("search_materials", { query: "foo" }, hits("old foo"));
+      rememberToolResult("search_materials", { query: "bar" }, hits("bar"));
+      rememberToolResult("search_materials", { query: "foo" }, hits("new foo"));
+      expect(fallbackTurnFromToolCache().message).toContain("new foo");
+    });
+  });
+
   it("recovers a doc list when turn resolution fails", async () => {
     await runWithChatContext({ userId: "u1", threadId: "t1" }, async () => {
       rememberToolResult(

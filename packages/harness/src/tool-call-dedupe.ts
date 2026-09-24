@@ -8,7 +8,10 @@ export function toolCallCacheKey(toolId: string, input: unknown): string {
 export function rememberToolResult(toolId: string, input: unknown, result: unknown): void {
   const ctx = getChatRunContext();
   if (!ctx.toolCallCache) ctx.toolCallCache = new Map();
-  ctx.toolCallCache.set(toolCallCacheKey(toolId, input), result);
+  // Delete first so a repeated call moves to the end: fallbacks read insertion order as recency.
+  const key = toolCallCacheKey(toolId, input);
+  ctx.toolCallCache.delete(key);
+  ctx.toolCallCache.set(key, result);
 }
 
 export function getRememberedToolResult(toolId: string, input: unknown): unknown | undefined {

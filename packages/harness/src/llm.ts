@@ -1,7 +1,7 @@
 import type { MemoryItem } from "@syraa/memory";
 import { runWithChatContext } from "./chat-run-context.js";
 import { getSyraaAgent } from "./mastra/index.js";
-import { resolveTurnFromGenerateOutput } from "./mastra/resolve-turn.js";
+import { fullReplyText, resolveTurnFromGenerateOutput } from "./mastra/resolve-turn.js";
 import { resolveChatModel, resolveChatProvider } from "./mastra/model.js";
 import { buildTurnInstructions } from "./turn-instructions.js";
 import {
@@ -82,7 +82,7 @@ export async function runChatTurn(opts: {
         throw new Error(`${chat.provider} generate failed: ${detail}`);
       }
 
-      const turn = await resolveTurnFromGenerateOutput(output);
+      const turn = await resolveTurnFromGenerateOutput({ text: fullReplyText(output) });
 
       return {
         message: turn.message,

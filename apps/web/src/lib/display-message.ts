@@ -16,12 +16,12 @@ export function patchLastAssistantDisplayMessage(
     const streamed = parts.flatMap((part) => (part.type === "text" ? [part.text] : [])).join("");
     if (streamed.trim() === displayMessage) break;
 
-    const start = streamed.indexOf(displayMessage);
+    const lead = streamed.length - streamed.trimStart().length;
     const patched: UIMessage["parts"] = [];
-    if (start !== -1) {
-      // Footer case: cut the streamed text after displayMessage, keeping text parts in place
-      // (a text → tool → text turn keeps its pre-tool text where it was).
-      let keep = start + displayMessage.length;
+    if (displayMessage && streamed.startsWith(displayMessage, lead)) {
+      // Footer case: displayMessage is the streamed reply minus a trailing footer. Cut the tail,
+      // keeping text parts in place (a text → tool → text turn keeps its pre-tool text).
+      let keep = lead + displayMessage.length;
       for (const part of parts) {
         if (part.type !== "text") {
           patched.push(part);

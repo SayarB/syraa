@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { runWithChatContext } from "../src/chat-run-context.js";
-import { resolveTurnFromGenerateOutput, stripRuntimeFooters } from "../src/mastra/resolve-turn.js";
+import {
+  fullReplyText,
+  resolveTurnFromGenerateOutput,
+  stripRuntimeFooters,
+} from "../src/mastra/resolve-turn.js";
 import { rememberToolResult } from "../src/tool-call-dedupe.js";
 
 describe("stripRuntimeFooters", () => {
@@ -12,6 +16,22 @@ describe("stripRuntimeFooters", () => {
     ["Plain reply.", "Plain reply."],
   ])("%j → %j", (input, expected) => {
     expect(stripRuntimeFooters(input)).toBe(expected);
+  });
+});
+
+describe("fullReplyText", () => {
+  it("joins every step's text, not just the last step's", () => {
+    expect(
+      fullReplyText({
+        text: "Found it.",
+        steps: [{ text: "Let me check. " }, { text: "Found it." }],
+      }),
+    ).toBe("Let me check. Found it.");
+  });
+
+  it("falls back to text when steps carry none", () => {
+    expect(fullReplyText({ text: "Hi", steps: [{ text: "" }] })).toBe("Hi");
+    expect(fullReplyText({ text: "Hi" })).toBe("Hi");
   });
 });
 
