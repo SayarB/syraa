@@ -163,7 +163,10 @@ const probeOnce: RedirectProbe = (url) =>
       {
         method: "GET",
         lookup: guardedLookup as never,
+        // `timeout` only catches an idle socket; the signal is the overall deadline, so a server
+        // trickling bytes can't hold the probe open.
         timeout: PROBE_TIMEOUT_MS,
+        signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
         headers: {
           "user-agent": "Mozilla/5.0 (compatible; SyraaBot/1.0)",
           accept: "text/html,*/*",
