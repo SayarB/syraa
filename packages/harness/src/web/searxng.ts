@@ -1,3 +1,5 @@
+import { createTtlCache } from "./ttl-cache.js";
+
 /**
  * Client for the self-hosted SearXNG instance behind the web_search tool (docker/searxng).
  * Results are normalised for citation and cached briefly so repeated queries don't re-hit
@@ -26,7 +28,10 @@ const CACHE_MAX_ENTRIES = 200;
 const MAX_SNIPPET_CHARS = 300;
 const MAX_RESULTS = 10;
 
-const cache = new Map<string, { expires: number; results: WebSearchResult[] }>();
+const cache = createTtlCache<WebSearchResult[]>({
+  ttlMs: CACHE_TTL_MS,
+  maxEntries: CACHE_MAX_ENTRIES,
+});
 
 export function isWebSearchConfigured(): boolean {
   return Boolean(process.env.SEARXNG_URL?.trim());
@@ -89,34 +94,13 @@ export function normalizeResults(body: unknown): WebSearchResult[] {
   return results;
 }
 
-function readCache(key: string): WebSearchResult[] | null {
-  const entry = cache.get(key);
-  if (!entry) return null;
-  if (entry.expires <= Date.now()) {
-    cache.delete(key);
-    return null;
-  }
-  return entry.results;
-}
-
-function writeCache(key: string, results: WebSearchResult[]): void {
-  cache.delete(key);
-  cache.set(key, { expires: Date.now() + CACHE_TTL_MS, results });
-  // Map keeps insertion order: evict the oldest entries past the cap.
-  while (cache.size > CACHE_MAX_ENTRIES) {
-    const oldest = cache.keys().next().value;
-    if (oldest === undefined) break;
-    cache.delete(oldest);
-  }
-}
-
 /** Searches the web through SearXNG. Throws on HTTP errors, timeouts and bad responses. */
 export async function searchWeb(
   query: string,
   opts: { limit: number },
 ): Promise<WebSearchResult[]> {
   const key = normalizeQuery(query);
-  const cached = readCache(key);
+  const cached = cache.get(key);
   if (cached) return cached.slice(0, opts.limit);
 
   const url = new URL("/search", baseUrl());
@@ -128,8 +112,17 @@ export async function searchWeb(
   });
   if (!res.ok) throw new Error(`searxng HTTP ${res.status}`);
 
-  const results = normalizeResults(await res.json());
-  writeCache(key, results);
+  const body: unknown = await res.json();
+  const results = normalizeResults(body);
+  if (results.length === 0) {
+    // Nothing is cached for empty results: they are often a temporary engine outage (CAPTCHAs).
+    const unresponsive = (body as { unresponsive_engines?: unknown[] })?.unresponsive_engines;
+    if (Array.isArray(unresponsive) && unresponsive.length > 0) {
+      throw new Error(`searxng: no results, ${unresponsive.length} engine(s) unresponsive`);
+    }
+    return [];
+  }
+  cache.set(key, results);
   return results.slice(0, opts.limit);
 }
 

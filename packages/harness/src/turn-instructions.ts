@@ -1,6 +1,7 @@
 import type { MemoryItem } from "@syraa/memory";
 import { getContextStore } from "./context.js";
 import { buildSystemPrompt, formatMaterialsOutline } from "./mastra/prompt.js";
+import { isPageReadingConfigured } from "./web/crawl4ai.js";
 import { isWebSearchConfigured } from "./web/searxng.js";
 
 export async function buildTurnInstructions(
@@ -15,5 +16,8 @@ export async function buildTurnInstructions(
   } catch {
     // context store unavailable — prompt still works without materials block
   }
-  return buildSystemPrompt(memoryItems, materialsOutline, { webSearch: isWebSearchConfigured() });
+  return buildSystemPrompt(memoryItems, materialsOutline, {
+    webSearch: isWebSearchConfigured(),
+    pageReading: isPageReadingConfigured(),
+  });
 }

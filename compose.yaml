@@ -47,6 +47,26 @@ services:
       retries: 10
       start_period: 20s
 
+  crawl4ai:
+    # Page reader for the web_fetch tool. Own network: it can't reach postgres/redis/searxng/api.
+    image: unclecode/crawl4ai:0.9.3
+    restart: unless-stopped
+    shm_size: 1g
+    mem_limit: 2g
+    environment:
+      CRAWL4AI_API_TOKEN: ${CRAWL4AI_API_TOKEN:?set CRAWL4AI_API_TOKEN (e.g. openssl rand -hex 32)}
+    networks:
+      - crawl
+    # Bind localhost only — never publicly reachable; the api container uses http://crawl4ai:11235
+    ports:
+      - "${CRAWL4AI_HOST_BIND:-127.0.0.1}:${CRAWL4AI_PORT:-11235}:11235"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:11235/health >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
   api:
     build:
       context: .
@@ -57,8 +77,15 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      # Web tools fail gracefully at runtime, so a slow or broken search/page service must not
+      # keep the API (and the whole app) from starting.
       searxng:
-        condition: service_healthy
+        condition: service_started
+      crawl4ai:
+        condition: service_started
+    networks:
+      - default
+      - crawl
     ports:
       - "${API_PORT:-3000}:3000"
     env_file:
@@ -84,6 +111,9 @@ services:
       TYPESAFE_API_KEY: ${TYPESAFE_API_KEY:-}
       # web_search tool — set empty to disable web search
       SEARXNG_URL: ${SEARXNG_URL-http://searxng:8080}
+      # web_fetch tool — set CRAWL4AI_URL empty to disable page reading
+      CRAWL4AI_URL: ${CRAWL4AI_URL-http://crawl4ai:11235}
+      CRAWL4AI_API_TOKEN: ${CRAWL4AI_API_TOKEN}
       # Query embedding for search_materials — must match the ingest-worker's embedding model
       EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-auto}
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-}
@@ -137,6 +167,10 @@ services:
       NODE_OPTIONS: --dns-result-order=ipv4first
     volumes:
       - drive_data:/data/drive
+
+networks:
+  # Only crawl4ai and api share this network.
+  crawl: {}
 
 volumes:
   postgres_data:

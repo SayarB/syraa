@@ -55,6 +55,33 @@ function userText(message: UIMessage): string {
     .trim();
 }
 
+const CITED_LINK = /\]\((https?:\/\/[^)\s]+)\)/g;
+
+/** Same page, ignoring case in the host, a trailing slash and a #fragment. */
+function comparableUrl(raw: string): string {
+  try {
+    const url = new URL(raw);
+    url.hash = "";
+    return url.href.replace(/\/$/, "");
+  } catch {
+    return raw;
+  }
+}
+
+/**
+ * Sources shown under a reply: the ones the reply actually links to. Falls back to every web
+ * result when the reply cites none (so the user can still see what was looked at).
+ */
+function citedSources(message: UIMessage, candidates: WebSource[]): WebSource[] {
+  const text = message.parts
+    .filter(isTextUIPart)
+    .map((part) => part.text)
+    .join("\n");
+  const cited = new Set([...text.matchAll(CITED_LINK)].map((match) => comparableUrl(match[1])));
+  const used = candidates.filter((source) => cited.has(comparableUrl(source.url)));
+  return used.length > 0 ? used : candidates;
+}
+
 function flattenMessages(
   messages: UIMessage[],
   streaming: boolean,
@@ -126,7 +153,11 @@ function flattenMessages(
     });
 
     if (sources.size > 0) {
-      blocks.push({ kind: "sources", id: `${message.id}-sources`, sources: [...sources.values()] });
+      blocks.push({
+        kind: "sources",
+        id: `${message.id}-sources`,
+        sources: citedSources(message, [...sources.values()]),
+      });
     }
   }
 
