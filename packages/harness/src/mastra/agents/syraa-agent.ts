@@ -1,5 +1,6 @@
 import { Agent } from "@mastra/core/agent";
 import { ToolCallFilter } from "@mastra/core/processors";
+import { isPageReadingConfigured } from "../../web/crawl4ai.js";
 import { isWebSearchConfigured } from "../../web/searxng.js";
 import { getSyraaMemory } from "../memory.js";
 import { requireChatModel } from "../model.js";
@@ -8,7 +9,7 @@ import { StripFootersProcessor } from "../strip-footers-processor.js";
 import { StripReasoningProcessor } from "../strip-reasoning-processor.js";
 import { syraaTools } from "../tools/materials-tools.js";
 import { getMyMemoryTool } from "../tools/memory-tools.js";
-import { webSearchTool } from "../tools/web-tools.js";
+import { webFetchTool, webSearchTool } from "../tools/web-tools.js";
 
 export const SYRAA_AGENT_ID = "syraa-agent";
 
@@ -24,6 +25,7 @@ export function createSyraaAgent(): Agent {
       ...syraaTools,
       get_my_memory: getMyMemoryTool,
       ...(isWebSearchConfigured() ? { web_search: webSearchTool } : {}),
+      ...(isPageReadingConfigured() ? { web_fetch: webFetchTool } : {}),
     },
     inputProcessors: [
       new StripReasoningProcessor(),

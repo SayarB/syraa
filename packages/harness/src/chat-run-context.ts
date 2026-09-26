@@ -9,6 +9,8 @@ export type ChatRunContext = {
   toolCallCache?: Map<string, unknown>;
   /** web_search calls made this turn (capped per turn). */
   webSearchCount?: number;
+  /** web_fetch calls made this turn (capped per turn). */
+  webFetchCount?: number;
 };
 
 const storage = new AsyncLocalStorage<ChatRunContext>();

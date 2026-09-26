@@ -13,6 +13,7 @@ const TOOL_LABELS: Record<string, string> = {
   read_materials_section: "Read document section",
   get_my_memory: "Checked memory",
   web_search: "Searched the web",
+  web_fetch: "Read page",
 };
 
 function toolTitle(name: string, active: boolean): string {
@@ -134,12 +135,49 @@ function formatWebSearchOutput(output: unknown): { summary: string; detail: stri
   };
 }
 
+type WebFetchOutput = {
+  url?: string;
+  content?: string;
+  truncated?: boolean;
+  error?: string;
+};
+
+function hostnameOf(url: string | undefined): string {
+  if (!url) return "page";
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url;
+  }
+}
+
+function formatWebFetchOutput(output: unknown): { summary: string; detail: string } {
+  const data = output as WebFetchOutput;
+  const host = hostnameOf(data.url);
+  if (data.error)
+    return { summary: `${host} · ${data.error}`, detail: `Output\n  error: ${data.error}` };
+
+  const chars = data.content?.length ?? 0;
+  const truncated = data.truncated ? " (truncated)" : "";
+  return {
+    summary: `${host} · ${chars.toLocaleString()} characters${truncated}`,
+    detail: `Output\n  ${data.url ?? ""}\n  ${chars.toLocaleString()} characters${truncated}`,
+  };
+}
+
 export type WebSource = { title: string; url: string };
 
 /** Links a finished web tool call contributed, for the Sources list under the reply. */
 export function webSourcesFromPart(part: UIMessage["parts"][number]): WebSource[] {
   if (!isToolUIPart(part) || part.state !== "output-available") return [];
-  if (getToolName(part) !== "web_search") return [];
+  const toolName = getToolName(part);
+
+  if (toolName === "web_fetch") {
+    const page = part.output as WebFetchOutput | undefined;
+    if (!page?.url || page.error) return [];
+    return [{ title: hostnameOf(page.url), url: page.url }];
+  }
+  if (toolName !== "web_search") return [];
 
   const results = (part.output as WebSearchOutput | undefined)?.results ?? [];
   return results.flatMap((result) =>
@@ -210,6 +248,8 @@ export function formatToolActivity(
     formatted = formatReadSectionOutput(output);
   } else if (toolName === "web_search") {
     formatted = formatWebSearchOutput(output);
+  } else if (toolName === "web_fetch") {
+    formatted = formatWebFetchOutput(output);
   } else {
     formatted = formatGenericOutput(output);
   }
