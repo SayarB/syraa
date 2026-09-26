@@ -1,5 +1,5 @@
 import { createTtlCache } from "./ttl-cache.js";
-import { assertPublicHttpUrl } from "./url-guard.js";
+import { assertPublicHttpUrl, resolvePublicRedirects } from "./url-guard.js";
 
 /**
  * Client for the self-hosted Crawl4AI service behind the web_fetch tool. Returns a page's main
@@ -33,9 +33,13 @@ function config(): { baseUrl: string; token: string } {
  * and a plain Error for HTTP failures, timeouts, and unreadable pages.
  */
 export async function readPage(raw: string): Promise<PageRead> {
-  const url = await assertPublicHttpUrl(raw);
-  const cached = cache.get(url.href);
+  const requested = await assertPublicHttpUrl(raw);
+  const cached = cache.get(requested.href);
   if (cached) return cached;
+
+  // Crawl4AI follows redirects on its own, so resolve them here first (each hop checked) and
+  // only ever hand it the final public URL.
+  const url = await resolvePublicRedirects(requested);
 
   const { baseUrl, token } = config();
   const res = await fetch(new URL("/md", baseUrl), {
@@ -55,7 +59,7 @@ export async function readPage(raw: string): Promise<PageRead> {
     content: markdown.slice(0, MAX_PAGE_CHARS),
     truncated: markdown.length > MAX_PAGE_CHARS,
   };
-  cache.set(url.href, page);
+  cache.set(requested.href, page);
   return page;
 }
 

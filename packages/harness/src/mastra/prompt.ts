@@ -86,6 +86,8 @@ export function buildSystemPrompt(
 
   const webSections = [
     opts.webSearch ? WEB_SEARCH_INSTRUCTIONS : "",
+    // Without web_search, the page-reading rules need their own heading.
+    opts.pageReading && !opts.webSearch ? "## Web pages\n" : "",
     opts.pageReading ? PAGE_READING_INSTRUCTIONS : "",
   ].filter(Boolean);
   const webBlock = webSections.length > 0 ? `\n\n${webSections.join("\n")}` : "";

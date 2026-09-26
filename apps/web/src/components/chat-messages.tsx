@@ -55,6 +55,22 @@ function userText(message: UIMessage): string {
     .trim();
 }
 
+const CITED_LINK = /\]\((https?:\/\/[^)\s]+)\)/g;
+
+/**
+ * Sources shown under a reply: the ones the reply actually links to. Falls back to every web
+ * result when the reply cites none (so the user can still see what was looked at).
+ */
+function citedSources(message: UIMessage, candidates: WebSource[]): WebSource[] {
+  const text = message.parts
+    .filter(isTextUIPart)
+    .map((part) => part.text)
+    .join("\n");
+  const cited = new Set([...text.matchAll(CITED_LINK)].map((match) => match[1]));
+  const used = candidates.filter((source) => cited.has(source.url));
+  return used.length > 0 ? used : candidates;
+}
+
 function flattenMessages(
   messages: UIMessage[],
   streaming: boolean,
@@ -126,7 +142,11 @@ function flattenMessages(
     });
 
     if (sources.size > 0) {
-      blocks.push({ kind: "sources", id: `${message.id}-sources`, sources: [...sources.values()] });
+      blocks.push({
+        kind: "sources",
+        id: `${message.id}-sources`,
+        sources: citedSources(message, [...sources.values()]),
+      });
     }
   }
 

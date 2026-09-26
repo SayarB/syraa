@@ -112,7 +112,16 @@ export async function searchWeb(
   });
   if (!res.ok) throw new Error(`searxng HTTP ${res.status}`);
 
-  const results = normalizeResults(await res.json());
+  const body: unknown = await res.json();
+  const results = normalizeResults(body);
+  if (results.length === 0) {
+    // Nothing is cached for empty results: they are often a temporary engine outage (CAPTCHAs).
+    const unresponsive = (body as { unresponsive_engines?: unknown[] })?.unresponsive_engines;
+    if (Array.isArray(unresponsive) && unresponsive.length > 0) {
+      throw new Error(`searxng: no results, ${unresponsive.length} engine(s) unresponsive`);
+    }
+    return [];
+  }
   cache.set(key, results);
   return results.slice(0, opts.limit);
 }

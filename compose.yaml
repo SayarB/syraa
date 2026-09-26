@@ -77,10 +77,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      # Web tools fail gracefully at runtime, so a slow or broken search/page service must not
+      # keep the API (and the whole app) from starting.
       searxng:
-        condition: service_healthy
+        condition: service_started
       crawl4ai:
-        condition: service_healthy
+        condition: service_started
     networks:
       - default
       - crawl

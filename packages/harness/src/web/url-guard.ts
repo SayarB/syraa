@@ -1,4 +1,6 @@
 import { lookup } from "node:dns/promises";
+import http from "node:http";
+import https from "node:https";
 import { BlockList, isIP } from "node:net";
 
 /** A URL the web_fetch tool refuses to read. The message is safe to show the user. */
@@ -112,4 +114,87 @@ export async function assertPublicHttpUrl(raw: string): Promise<URL> {
     throw new BlockedUrlError("That address is not public.");
   }
   return url;
+}
+
+type LookupCallback = (
+  error: Error | null,
+  address?: string | { address: string; family: number }[],
+  family?: number,
+) => void;
+
+/**
+ * DNS lookup for outgoing connections that refuses non-public addresses. Used as the socket's
+ * `lookup`, so the address that is checked is the address that is connected to (no gap for
+ * DNS rebinding between check and connect).
+ */
+export function guardedLookup(
+  hostname: string,
+  options: { all?: boolean } | number | undefined,
+  callback: LookupCallback,
+): void {
+  lookup(hostname, { all: true, verbatim: true }).then(
+    (addresses) => {
+      if (addresses.length === 0 || addresses.some(({ address }) => isBlockedAddress(address))) {
+        callback(new BlockedUrlError("That address is not public."));
+        return;
+      }
+      const wantsAll = typeof options === "object" && options?.all === true;
+      if (wantsAll) {
+        callback(null, addresses);
+        return;
+      }
+      callback(null, addresses[0].address, addresses[0].family);
+    },
+    (error: unknown) => callback(error instanceof Error ? error : new Error(String(error))),
+  );
+}
+
+export type RedirectProbe = (url: URL) => Promise<{ status: number; location?: string }>;
+
+const MAX_REDIRECTS = 5;
+const PROBE_TIMEOUT_MS = 8000;
+
+/** One GET with redirects off; reads the status line + Location, then drops the connection. */
+const probeOnce: RedirectProbe = (url) =>
+  new Promise((resolve, reject) => {
+    const client = url.protocol === "https:" ? https : http;
+    const request = client.request(
+      url,
+      {
+        method: "GET",
+        lookup: guardedLookup as never,
+        timeout: PROBE_TIMEOUT_MS,
+        headers: {
+          "user-agent": "Mozilla/5.0 (compatible; SyraaBot/1.0)",
+          accept: "text/html,*/*",
+        },
+      },
+      (response) => {
+        const location = response.headers.location;
+        response.destroy();
+        resolve({ status: response.statusCode ?? 0, location });
+      },
+    );
+    request.on("timeout", () => request.destroy(new Error("timed out")));
+    request.on("error", reject);
+    request.end();
+  });
+
+/**
+ * Follows HTTP redirects ourselves, re-checking every hop, and returns the final public URL.
+ * The page reader is then given that URL, so a public link can't bounce it to an internal
+ * address (e.g. the cloud metadata service).
+ */
+export async function resolvePublicRedirects(
+  start: URL,
+  probe: RedirectProbe = probeOnce,
+): Promise<URL> {
+  let current = start;
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
+    await assertPublicHttpUrl(current.href);
+    const { status, location } = await probe(current);
+    if (status < 300 || status >= 400 || !location) return current;
+    current = new URL(location, current);
+  }
+  throw new BlockedUrlError("That page redirects too many times.");
 }
