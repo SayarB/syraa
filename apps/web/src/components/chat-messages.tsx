@@ -57,6 +57,17 @@ function userText(message: UIMessage): string {
 
 const CITED_LINK = /\]\((https?:\/\/[^)\s]+)\)/g;
 
+/** Same page, ignoring case in the host, a trailing slash and a #fragment. */
+function comparableUrl(raw: string): string {
+  try {
+    const url = new URL(raw);
+    url.hash = "";
+    return url.href.replace(/\/$/, "");
+  } catch {
+    return raw;
+  }
+}
+
 /**
  * Sources shown under a reply: the ones the reply actually links to. Falls back to every web
  * result when the reply cites none (so the user can still see what was looked at).
@@ -66,8 +77,8 @@ function citedSources(message: UIMessage, candidates: WebSource[]): WebSource[] 
     .filter(isTextUIPart)
     .map((part) => part.text)
     .join("\n");
-  const cited = new Set([...text.matchAll(CITED_LINK)].map((match) => match[1]));
-  const used = candidates.filter((source) => cited.has(source.url));
+  const cited = new Set([...text.matchAll(CITED_LINK)].map((match) => comparableUrl(match[1])));
+  const used = candidates.filter((source) => cited.has(comparableUrl(source.url)));
   return used.length > 0 ? used : candidates;
 }
 
