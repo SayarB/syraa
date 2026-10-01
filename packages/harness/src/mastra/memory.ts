@@ -4,6 +4,7 @@ import {
   WorkingMemory,
 } from "@mastra/core/processors";
 import type { RequestContext } from "@mastra/core/request-context";
+import type { MastraCompositeStore } from "@mastra/core/storage";
 import { Memory } from "@mastra/memory";
 import { getMastraStorage } from "./storage.js";
 
@@ -58,10 +59,15 @@ class SyraaMemory extends Memory {
   }
 }
 
+/** Syraa memory over the given storage (evals pass an in-memory store). */
+export function createSyraaMemory(storage: MastraCompositeStore): Memory {
+  return new SyraaMemory({ storage, options: SYRAA_MEMORY_OPTIONS });
+}
+
 /** Shared Mastra Memory for Syraa chat threads (history + read-only thread WM). */
 export function getSyraaMemory(): Memory {
   if (!memory) {
-    memory = new SyraaMemory({ storage: getMastraStorage(), options: SYRAA_MEMORY_OPTIONS });
+    memory = createSyraaMemory(getMastraStorage());
   }
   return memory;
 }

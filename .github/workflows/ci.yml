@@ -74,3 +74,37 @@ jobs:
 
       - name: Python tests
         run: npm run test:py
+
+  # Live model eval: flags unnecessary or repeated agent tool calls (evals/tool-calls).
+  # Stub tools + in-memory storage, so no database. Never sends traces to Langfuse.
+  agent-tool-calls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
+      FIREWORKS_MODEL: ${{ vars.FIREWORKS_MODEL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Build workspace packages
+        run: |
+          npm run build -w @syraa/memory
+          npm run build -w @syraa/context
+          npm run build -w @syraa/ingest
+
+      - name: Agent tool-call eval
+        run: |
+          if [ -z "$FIREWORKS_API_KEY" ]; then
+            echo "::error::FIREWORKS_API_KEY secret is not set; the agent tool-call eval cannot run."
+            exit 1
+          fi
+          npm run eval:tool-calls -w @syraa/harness
