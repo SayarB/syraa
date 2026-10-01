@@ -67,6 +67,8 @@ For hot-reload UI work, use the host commands above instead of Compose.
 
 Upload PDFs from the web composer. Flow: drive → Redis → worker (bookmarks → printed TOC → heading heuristics) → topics/chunks → Postgres. Bridge text is title + lead excerpt (no LLM). Embeddings optional via `EMBEDDING_PROVIDER`.
 
+Each upload also gets a short AI summary (from its top-level headings and opening text, one model call). The chat prompt lists documents by name + summary instead of every section title. For documents uploaded before summaries existed, run the backfill once (in Docker: `docker exec <ingest-worker> python services/ingest-worker/backfill_summaries.py`; add `--dry-run` first to preview).
+
 ## Quality
 
 ```bash

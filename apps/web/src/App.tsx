@@ -399,17 +399,6 @@ export default function App() {
     pushEventLine({ kind: "system", text: content });
   }
 
-  async function refreshThreadMaterials(activeThreadId = threadId) {
-    if (!activeThreadId) return;
-    try {
-      await apiFetch(`/api/threads/${encodeURIComponent(activeThreadId)}/refresh-materials`, {
-        method: "POST",
-      });
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
   async function onUpload(file: File) {
     setUploading(true);
     try {
@@ -429,7 +418,6 @@ export default function App() {
         pushSystem(
           `Ready: “${status.name}” · ${status.topicCount ?? "?"} topics · ${status.chunkCount ?? "?"} chunks`,
         );
-        await refreshThreadMaterials();
       }
       await refreshResources();
     } catch (err) {

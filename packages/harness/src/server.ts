@@ -22,12 +22,7 @@ import {
   parseJsonBody,
   ValidationError,
 } from "./schemas.js";
-import {
-  createChatThread,
-  listChatThreads,
-  listThreadMessages,
-  refreshChatThreadMaterials,
-} from "./threads.js";
+import { createChatThread, listChatThreads, listThreadMessages } from "./threads.js";
 import { getIngestJobStatus, handleIngestUpload } from "./upload.js";
 
 const MIME: Record<string, string> = {
@@ -163,30 +158,6 @@ async function handleApi(
       subprojectId: body.subprojectId,
     });
     sendJson(res, 201, { thread });
-    return;
-  }
-
-  if (req.method === "POST" && pathname.endsWith("/refresh-materials")) {
-    const prefix = "/api/threads/";
-    if (!pathname.startsWith(prefix) || pathname === `${prefix}refresh-materials`) {
-      sendJson(res, 400, { error: "thread id required" });
-      return;
-    }
-    const threadId = pathname.slice(prefix.length, -"/refresh-materials".length);
-    if (!threadId || threadId.includes("/")) {
-      sendJson(res, 400, { error: "thread id required" });
-      return;
-    }
-    try {
-      await refreshChatThreadMaterials({ userId, threadId });
-      sendJson(res, 200, { ok: true, threadId });
-    } catch (err) {
-      if (err instanceof ValidationError) {
-        sendJson(res, 404, { error: err.message });
-        return;
-      }
-      throw err;
-    }
     return;
   }
 

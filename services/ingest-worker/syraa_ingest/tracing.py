@@ -60,3 +60,25 @@ def trace_ingest_job(
             yield root
     finally:
         client.flush()
+
+
+@contextmanager
+def trace_backfill_summary(*, user_id: str, resource_id: str) -> Iterator[None]:
+    """One ``summarize-document`` trace per backfilled document (tagged ``backfill``); flushed after."""
+    client = _client()
+    if client is None:
+        yield None
+        return
+
+    from langfuse import propagate_attributes
+
+    try:
+        with propagate_attributes(
+            user_id=user_id,
+            trace_name="summarize-document",
+            tags=["backfill"],
+            metadata={"resourceId": resource_id},
+        ):
+            yield None
+    finally:
+        client.flush()

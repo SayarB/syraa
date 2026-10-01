@@ -170,6 +170,13 @@ services:
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-}
       FIREWORKS_API_KEY: ${FIREWORKS_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      # Document summaries (made once per upload) use the same chat model as the API by default
+      CHAT_PROVIDER: ${CHAT_PROVIDER:-fireworks}
+      FIREWORKS_MODEL: ${FIREWORKS_MODEL:-accounts/fireworks/models/gpt-oss-120b}
+      FIREWORKS_BASE_URL: ${FIREWORKS_BASE_URL:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
+      SUMMARY_MODEL: ${SUMMARY_MODEL:-}
       # Langfuse tracing — off unless both keys are set (see .env.example)
       LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}

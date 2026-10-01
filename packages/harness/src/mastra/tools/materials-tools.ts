@@ -85,7 +85,8 @@ export const searchMaterialsTool = createTool({
 
 export const listMaterialsTool = createTool({
   id: "list_materials",
-  description: "List all ingested documents and their top-level section titles.",
+  description:
+    "List all ingested documents with their summary and full list of top-level section titles.",
   inputSchema: z.object({}),
   mcp: {
     annotations: {
@@ -104,6 +105,7 @@ export const listMaterialsTool = createTool({
         documentName: material.name,
         resourceId: material.resourceId,
         status: material.status,
+        summary: material.summary,
         sectionTitles: material.sectionTitles,
       })),
     };

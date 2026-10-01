@@ -2,7 +2,7 @@
  * Live eval: does the Syraa agent make unnecessary tool calls? (calls the chat model — not part of
  * `npm run test`; CI runs it as its own job.)
  *   npm run eval:tool-calls -w @syraa/harness
- * Runs the SHIPPED agent (instructions, processors, read-only working memory, turn system prompt)
+ * Runs the SHIPPED agent (instructions, processors, turn system prompt with the materials overview)
  * against fixed fixtures: tools are stubs with the real ids, descriptions and input schemas, and
  * storage is in memory — no Postgres, no product memory, no context store.
  * Never traced: the agent runs outside the Mastra instance (no observability) and Langfuse env
@@ -26,7 +26,6 @@ import {
   searchMaterialsTool,
 } from "../../src/mastra/tools/materials-tools.js";
 import { getMyMemoryTool } from "../../src/mastra/tools/memory-tools.js";
-import { buildMaterialsWorkingMemoryContent } from "../../src/materials-working-memory.js";
 
 config({ path: fileURLToPath(new URL("../../../../.env", import.meta.url)) });
 for (const key of Object.keys(process.env)) {
@@ -123,6 +122,7 @@ function stubTools(fixture: Fixture, calls: ToolCall[]) {
             documentName: doc.name,
             resourceId: `res-${index}`,
             status: "ready",
+            summary: null,
             sectionTitles: doc.sections.map((s) => s.title),
           })),
         };
@@ -225,17 +225,12 @@ async function runOnce(c: EvalCase): Promise<RunResult> {
     name: doc.name,
     status: "ready",
     sectionTitles: doc.sections.map((s) => s.title),
+    // Fixtures have no AI summaries, so the overview falls back to section titles.
+    summary: null,
   }));
 
-  // As in production: the thread exists and its working memory holds the materials overview.
+  // As in production: the thread exists; the materials overview lives in the system prompt.
   await memory.createThread({ threadId, resourceId });
-  await memory.updateWorkingMemory({
-    threadId,
-    resourceId,
-    workingMemory: buildMaterialsWorkingMemoryContent(
-      outline as Parameters<typeof buildMaterialsWorkingMemoryContent>[0],
-    ),
-  });
 
   const memoryItems = fixture.memory
     .filter((m) => m.status === "active")

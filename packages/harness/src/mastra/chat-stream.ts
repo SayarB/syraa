@@ -42,6 +42,8 @@ export async function createSyraaUIMessageStream(opts: {
       modelSettings: {
         temperature: 0.4,
         maxOutputTokens: 2048,
+        // Fireworks routes a thread's calls to the same prompt cache (long, stable prefix).
+        headers: { "x-session-affinity": opts.threadId },
       },
       tracingContext: { currentSpan: opts.turnSpan },
     });

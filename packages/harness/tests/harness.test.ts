@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { isDuplicateLesson } from "../src/lessons.js";
 import { resolveChatProvider } from "../src/llm.js";
 import { formatMaterialsOutline } from "../src/mastra/prompt.js";
-import { buildMaterialsWorkingMemoryContent } from "../src/materials-working-memory.js";
 import { parseSaveCommand } from "../src/memory.js";
 import { chatRequestSchema, createThreadRequestSchema } from "../src/schemas.js";
 import { buildThreadWorksMetadata, isUntitledThread, truncateThreadTitle } from "../src/threads.js";
@@ -40,43 +39,36 @@ describe("parseSaveCommand", () => {
 });
 
 describe("formatMaterialsOutline", () => {
-  it("lists file names and first-layer sections", () => {
+  const material = (name: string, summary: string | null, sectionTitles: string[] = []) => ({
+    resourceId: name,
+    name,
+    status: "ready" as const,
+    sectionTitles,
+    summary,
+  });
+
+  it("lists each document with its summary, not its sections", () => {
     const text = formatMaterialsOutline([
-      {
-        resourceId: "a",
-        name: "report.pdf",
-        status: "ready",
-        sectionTitles: ["I. Introduction", "II. Methods"],
-      },
+      material("report.pdf", "A survey of solar adoption.", ["I. Introduction", "II. Methods"]),
     ]);
-    expect(text).toContain("report.pdf");
-    expect(text).toContain("I. Introduction");
-    expect(text).toContain("II. Methods");
+    expect(text).toBe("- report.pdf — A survey of solar adoption.");
+  });
+
+  it("falls back to the first few sections when there is no summary", () => {
+    const titles = ["A", "B", "C", "D", "E", "F", "G"];
+    const text = formatMaterialsOutline([material("notes.pdf", null, titles)]);
+    expect(text).toBe("- notes.pdf — sections: A; B; C; D; E (+2 more)");
+  });
+
+  it("caps the overview and points at list_materials", () => {
+    const docs = Array.from({ length: 50 }, (_, i) => material(`doc-${i}.pdf`, "x".repeat(600)));
+    const text = formatMaterialsOutline(docs);
+    expect(text.length).toBeLessThanOrEqual(12_000 + 60);
+    expect(text).toMatch(/… \d+ more documents — call list_materials$/);
   });
 
   it("handles empty materials", () => {
     expect(formatMaterialsOutline([])).toBe("No ingested materials yet.");
-  });
-});
-
-describe("buildMaterialsWorkingMemoryContent", () => {
-  it("wraps outline in session materials header", () => {
-    const content = buildMaterialsWorkingMemoryContent([
-      {
-        resourceId: "a",
-        name: "notes.pdf",
-        status: "ready",
-        sectionTitles: ["Intro"],
-      },
-    ]);
-    expect(content).toContain("# Session materials");
-    expect(content).toContain("notes.pdf");
-    expect(content).toContain("Intro");
-    expect(content).not.toContain("[syraa:materials-overview]");
-  });
-
-  it("accepts optional Works scope params via seed helper signature", () => {
-    expect(typeof buildMaterialsWorkingMemoryContent).toBe("function");
   });
 });
 

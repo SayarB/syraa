@@ -60,7 +60,18 @@ export type MaterialsLayer1Outline = {
   status: ResourceStatus;
   /** Top-level section titles under the document root (depth === 1). */
   sectionTitles: string[];
+  /** AI summary made at ingest; null when there is none (failed, skipped, or not backfilled yet). */
+  summary: string | null;
 };
+
+/** Card summary written by ingest before AI summaries existed — not a real summary. */
+const PLACEHOLDER_SUMMARY = /^Ingested outline with \d+ topics/;
+
+function cardSummary(summary: string | null | undefined): string | null {
+  const text = summary?.trim();
+  if (!text || PLACEHOLDER_SUMMARY.test(text)) return null;
+  return text;
+}
 
 export type SearchMaterialsInput = {
   query: string;
@@ -372,11 +383,18 @@ export function createContextStore(db: ContextDb, opts: ContextStoreOptions = {}
         byResource.set(topic.resourceId, list);
       }
 
+      const cards = await db
+        .select({ resourceId: contextCards.resourceId, summary: contextCards.summary })
+        .from(contextCards)
+        .where(and(eq(contextCards.userId, userId), inArray(contextCards.resourceId, resourceIds)));
+      const summaries = new Map(cards.map((card) => [card.resourceId, cardSummary(card.summary)]));
+
       return resources.map((resource) => ({
         resourceId: resource.id,
         name: resource.name,
         status: resource.status,
         sectionTitles: byResource.get(resource.id) ?? [],
+        summary: summaries.get(resource.id) ?? null,
       }));
     },
 
