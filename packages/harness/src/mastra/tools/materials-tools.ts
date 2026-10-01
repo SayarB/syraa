@@ -8,7 +8,7 @@ import {
   joinTextsWithLimit,
   resolveResourceIdByName,
 } from "../../materials-retrieve.js";
-import { rememberToolResult } from "../../tool-call-dedupe.js";
+import { rememberToolResult, repeatedToolResult } from "../../tool-call-dedupe.js";
 
 const MAX_CHARS = 24_000;
 
@@ -28,6 +28,8 @@ export const searchMaterialsTool = createTool({
     },
   },
   execute: async (input) => {
+    const repeat = repeatedToolResult("search_materials", input);
+    if (repeat) return repeat;
     const { userId } = getChatRunContext();
     const { store } = await getContextStore();
 
@@ -93,6 +95,8 @@ export const listMaterialsTool = createTool({
     },
   },
   execute: async () => {
+    const repeat = repeatedToolResult("list_materials", {});
+    if (repeat) return repeat;
     const { userId } = getChatRunContext();
     const { store } = await getContextStore();
     const materials = await store.listMaterialsLayer1(userId);
@@ -125,6 +129,8 @@ export const readMaterialsSectionTool = createTool({
     },
   },
   execute: async (input) => {
+    const repeat = repeatedToolResult("read_materials_section", input);
+    if (repeat) return repeat;
     const { userId } = getChatRunContext();
     const { store } = await getContextStore();
     const materials = await store.listMaterialsLayer1(userId);

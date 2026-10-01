@@ -1,0 +1,220 @@
+{
+  "fixtures": {
+    "empty": {
+      "materials": [],
+      "memory": []
+    },
+    "student": {
+      "materials": [
+        {
+          "name": "CS101 Syllabus.pdf",
+          "sections": [
+            {
+              "title": "Course overview",
+              "text": "CS101 introduces programming in Python: variables, control flow, functions, and basic data structures."
+            },
+            {
+              "title": "Grading",
+              "text": "Grading: weekly problem sets 30%, midterm exam 30%, final exam 40%. Late problem sets lose 10% per day."
+            },
+            {
+              "title": "Schedule",
+              "text": "Lectures run Monday and Wednesday 10:00-11:30. The midterm is in week 7 and the final exam is in week 14."
+            }
+          ]
+        },
+        {
+          "name": "Madverse Pitch Deck.pdf",
+          "sections": [
+            {
+              "title": "Problem",
+              "text": "Independent artists struggle to distribute music and get paid fairly across streaming platforms."
+            },
+            {
+              "title": "Solution",
+              "text": "Madverse distributes releases to every major DSP and pays royalties monthly through one dashboard."
+            },
+            {
+              "title": "Business model",
+              "text": "Madverse charges a yearly subscription per artist and takes no cut of royalties."
+            }
+          ]
+        },
+        {
+          "name": "Engineering Principles.pdf",
+          "sections": [
+            {
+              "title": "Tools",
+              "text": "We store embeddings in Postgres with pgvector and run background jobs on Redis queues."
+            },
+            {
+              "title": "Values",
+              "text": "Ship small changes, measure everything, and prefer boring technology."
+            }
+          ]
+        }
+      ],
+      "memory": [
+        { "type": "preference", "text": "Prefers short, direct answers.", "status": "active" },
+        {
+          "type": "rule",
+          "text": "Always state prices in Indian rupees.",
+          "status": "active"
+        },
+        {
+          "type": "decision",
+          "text": "Is building a music distribution startup.",
+          "status": "active"
+        },
+        { "type": "preference", "text": "Likes examples in Python.", "status": "pending" }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "list-docs-empty",
+      "group": "documents overview",
+      "fixture": "empty",
+      "user": "Which documents have I uploaded?",
+      "maxCalls": 1,
+      "forbid": ["get_my_memory", "search_materials", "read_materials_section"]
+    },
+    {
+      "id": "list-docs",
+      "group": "documents overview",
+      "fixture": "student",
+      "user": "Which documents have I uploaded?",
+      "maxCalls": 1,
+      "forbid": ["get_my_memory", "search_materials", "read_materials_section"]
+    },
+    {
+      "id": "count-docs",
+      "group": "documents overview",
+      "fixture": "student",
+      "user": "How many files do I have here?",
+      "maxCalls": 1,
+      "forbid": ["get_my_memory", "search_materials", "read_materials_section"]
+    },
+    {
+      "id": "doc-sections",
+      "group": "documents overview",
+      "fixture": "student",
+      "user": "What sections does the pitch deck have?",
+      "maxCalls": 1,
+      "forbid": ["get_my_memory", "search_materials"]
+    },
+    {
+      "id": "greeting",
+      "group": "no tools needed",
+      "fixture": "student",
+      "user": "hey, how's it going?",
+      "maxCalls": 0
+    },
+    {
+      "id": "general-knowledge",
+      "group": "no tools needed",
+      "fixture": "student",
+      "user": "What's the capital of France?",
+      "maxCalls": 0
+    },
+    {
+      "id": "thanks",
+      "group": "no tools needed",
+      "fixture": "student",
+      "history": [
+        { "role": "user", "content": "How is CS101 graded?" },
+        {
+          "role": "assistant",
+          "content": "Problem sets are 30%, the midterm 30%, and the final exam 40%."
+        }
+      ],
+      "user": "thanks, that's helpful!",
+      "maxCalls": 0
+    },
+    {
+      "id": "answer-from-history",
+      "group": "follow-up",
+      "fixture": "student",
+      "history": [
+        { "role": "user", "content": "How is CS101 graded?" },
+        {
+          "role": "assistant",
+          "content": "Problem sets are 30%, the midterm 30%, and the final exam 40%."
+        }
+      ],
+      "user": "So how much was the final worth again?",
+      "maxCalls": 1,
+      "forbid": ["get_my_memory", "list_materials"]
+    },
+    {
+      "id": "what-remember",
+      "group": "product memory",
+      "fixture": "student",
+      "user": "What do you remember about me?",
+      "maxCalls": 1,
+      "require": ["get_my_memory"]
+    },
+    {
+      "id": "what-remember-empty",
+      "group": "product memory",
+      "fixture": "empty",
+      "user": "What do you know about me?",
+      "maxCalls": 1,
+      "require": ["get_my_memory"]
+    },
+    {
+      "id": "memory-and-docs",
+      "group": "product memory",
+      "fixture": "student",
+      "user": "What do you know about me, and which files have I given you?",
+      "maxCalls": 2,
+      "require": ["get_my_memory"],
+      "forbid": ["search_materials", "read_materials_section"]
+    },
+    {
+      "id": "content-question",
+      "group": "document content",
+      "fixture": "student",
+      "user": "How is CS101 graded?",
+      "maxCalls": 2,
+      "requireAny": ["search_materials", "read_materials_section"],
+      "forbid": ["get_my_memory"]
+    },
+    {
+      "id": "entity-search",
+      "group": "document content",
+      "fixture": "student",
+      "user": "What do my documents say about Madverse?",
+      "maxCalls": 3,
+      "requireAny": ["search_materials", "read_materials_section"],
+      "forbid": ["get_my_memory"]
+    },
+    {
+      "id": "not-in-docs",
+      "group": "document content",
+      "fixture": "student",
+      "user": "Do any of my documents mention Kubernetes?",
+      "maxCalls": 2,
+      "require": ["search_materials"],
+      "forbid": ["get_my_memory", "read_materials_section"]
+    },
+    {
+      "id": "read-section",
+      "group": "document content",
+      "fixture": "student",
+      "user": "Read me the Schedule section of the syllabus.",
+      "maxCalls": 2,
+      "requireAny": ["read_materials_section", "search_materials"],
+      "forbid": ["get_my_memory"]
+    },
+    {
+      "id": "summarize-doc",
+      "group": "document content",
+      "fixture": "student",
+      "user": "Summarize my pitch deck in three bullets.",
+      "maxCalls": 3,
+      "requireAny": ["read_materials_section", "search_materials"],
+      "forbid": ["get_my_memory"]
+    }
+  ]
+}
