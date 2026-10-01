@@ -1,3 +1,4 @@
+import type { AnySpan } from "@mastra/core/observability";
 import type { MemoryItem } from "@syraa/memory";
 import { runWithChatContext } from "./chat-run-context.js";
 import { getSyraaAgent } from "./mastra/index.js";
@@ -29,6 +30,7 @@ async function buildChatTurnOptions(opts: {
   userId: string;
   threadId: string;
   memoryItems: MemoryItem[];
+  turnSpan?: AnySpan;
 }) {
   return {
     memory: {
@@ -41,6 +43,7 @@ async function buildChatTurnOptions(opts: {
       maxOutputTokens: 2048,
     },
     maxSteps: 50,
+    tracingContext: { currentSpan: opts.turnSpan },
   };
 }
 
@@ -60,6 +63,8 @@ export async function runChatTurn(opts: {
   threadId: string;
   userMessage: string;
   memoryItems: MemoryItem[];
+  /** Langfuse `chat-turn` span; the agent run nests under it. */
+  turnSpan?: AnySpan;
 }) {
   const chat = resolveChatModel();
   if (!chat) {

@@ -1,4 +1,6 @@
+import { type AnySpan, SpanType } from "@mastra/core/observability";
 import { getLessonWriterAgent } from "./mastra/index.js";
+import { failSpan } from "./mastra/observability.js";
 import type { LessonKind } from "./schemas.js";
 import { lastAssistantMessageText } from "./threads.js";
 
@@ -15,6 +17,7 @@ import { lastAssistantMessageText } from "./threads.js";
  */
 
 const JEV_URL = "https://api.typesafe.ai/v1/systemone";
+const JEV_MODEL = "jev-latest";
 const JEV_TIMEOUT_MS = 3000;
 const WRITER_TIMEOUT_MS = 5000;
 const GATED_KINDS: readonly GatedLesson["kind"][] = ["preference", "rule", "method", "decision"];
@@ -176,10 +179,17 @@ export function decideLesson(
 export async function evaluateTurn(
   prevAssistant: string | null,
   userMessage: string,
+  parentSpan?: AnySpan,
 ): Promise<TurnDecision> {
-  const userOnlyCall = askJev(jevState(null, userMessage), LESSON_GATE_QUESTIONS);
+  const userOnlyCall = askJev(jevState(null, userMessage), LESSON_GATE_QUESTIONS, {
+    parentSpan,
+    name: "classify-turn",
+  });
   const confirmationCall = prevAssistant
-    ? askJev(jevState(prevAssistant, userMessage), CONFIRMATION_QUESTIONS).catch(() => null)
+    ? askJev(jevState(prevAssistant, userMessage), CONFIRMATION_QUESTIONS, {
+        parentSpan,
+        name: "check-confirmation",
+      }).catch(() => null)
     : Promise.resolve(null);
 
   const [userOnly, confirmation] = await Promise.all([userOnlyCall, confirmationCall]);
@@ -208,24 +218,54 @@ export function jevState(prevAssistant: string | null, userMessage: string): str
   ].join("\n");
 }
 
+/** Where a Jev call shows up in Langfuse: a generation named `name` under `parentSpan`. */
+type JevTrace = { parentSpan?: AnySpan; name: string };
+
 /** One Jev evaluation. Throws on missing key, HTTP error, timeout, or a malformed answer. */
 export async function askJev<Q extends QuestionSet>(
   state: string,
   questions: Q,
+  trace?: JevTrace,
 ): Promise<JevAnswers<Q>> {
+  const span = trace?.parentSpan?.createChildSpan({
+    type: SpanType.MODEL_GENERATION,
+    name: trace.name,
+    input: { state, questions },
+    attributes: { model: JEV_MODEL, provider: "typesafe" },
+  });
+
+  try {
+    const { answers, model, usage } = await callJev(state, questions);
+    span?.end({
+      output: answers,
+      attributes: {
+        model,
+        usage: usage && { inputTokens: usage.input_tokens, outputTokens: usage.output_tokens },
+      },
+    });
+    return answers;
+  } catch (error) {
+    failSpan(span, error);
+    throw error;
+  }
+}
+
+async function callJev<Q extends QuestionSet>(state: string, questions: Q) {
   const key = process.env.TYPESAFE_API_KEY?.trim();
   if (!key) throw new Error("TYPESAFE_API_KEY not set");
 
   const res = await fetch(JEV_URL, {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "jev-latest", state, questions }),
+    body: JSON.stringify({ model: JEV_MODEL, state, questions }),
     signal: AbortSignal.timeout(JEV_TIMEOUT_MS),
   });
   if (!res.ok) throw new Error(`jev HTTP ${res.status}`);
 
   const body = (await res.json()) as {
     answers?: Record<string, { noul?: unknown; choice?: unknown }>;
+    model?: string;
+    usage?: { input_tokens?: number; output_tokens?: number };
   };
   const answers: Record<string, number | string> = {};
   for (const [name, question] of Object.entries(questions)) {
@@ -235,7 +275,11 @@ export async function askJev<Q extends QuestionSet>(
     if (!valid) throw new Error(`jev answer missing: ${name}`);
     answers[name] = value as number | string;
   }
-  return answers as JevAnswers<Q>;
+  return {
+    answers: answers as JevAnswers<Q>,
+    model: body.model ?? JEV_MODEL,
+    usage: body.usage,
+  };
 }
 
 /** One-sentence lesson text when the user's own words don't stand alone. */
@@ -243,6 +287,7 @@ export async function writeLessonText(opts: {
   prevAssistant: string | null;
   userMessage: string;
   focus: string;
+  parentSpan?: AnySpan;
 }): Promise<string | null> {
   const prompt = [`User message: ${opts.userMessage}`, `Most relevant part: ${opts.focus}`];
   // Only present when the user explicitly confirmed it (see `decideLesson`).
@@ -252,6 +297,7 @@ export async function writeLessonText(opts: {
     // Reasoning models (gpt-oss) spend output tokens thinking first; MAX_LESSON_CHARS caps the text.
     modelSettings: { temperature: 0, maxOutputTokens: 512 },
     abortSignal: AbortSignal.timeout(WRITER_TIMEOUT_MS),
+    tracingContext: { currentSpan: opts.parentSpan },
   });
   const text = (output.text ?? "")
     .trim()
@@ -265,6 +311,7 @@ async function pickLessonText(opts: {
   prevAssistant: string | null;
   userMessage: string;
   turnSelfContained: number;
+  parentSpan?: AnySpan;
 }): Promise<string | null> {
   const sentences = splitSentences(opts.userMessage);
   let best = { sentence: opts.userMessage, reveals: 1, selfContained: opts.turnSelfContained };
@@ -275,7 +322,10 @@ async function pickLessonText(opts: {
   } else if (sentences.length > 1) {
     const settled = await Promise.allSettled(
       sentences.map(async (sentence) => {
-        const answers = await askJev(jevState(opts.prevAssistant, sentence), SENTENCE_QUESTIONS);
+        const answers = await askJev(jevState(opts.prevAssistant, sentence), SENTENCE_QUESTIONS, {
+          parentSpan: opts.parentSpan,
+          name: "score-sentence",
+        });
         return { sentence, reveals: answers.reveals, selfContained: answers.self_contained };
       }),
     );
@@ -293,6 +343,7 @@ async function pickLessonText(opts: {
     prevAssistant: opts.prevAssistant,
     userMessage: opts.userMessage,
     focus: best.sentence,
+    parentSpan: opts.parentSpan,
   });
 }
 
@@ -304,45 +355,65 @@ export async function gateLesson(opts: {
   userId: string;
   threadId: string;
   userMessage: string;
+  /** Langfuse `chat-turn` span; the gate shows up under it as `gate-lesson`. */
+  parentSpan?: AnySpan;
 }): Promise<GatedLesson[]> {
   // Gate off (documented default): skip the thread read and the per-turn warning.
   if (!process.env.TYPESAFE_API_KEY?.trim()) return [];
+
+  const span = opts.parentSpan?.createChildSpan({
+    type: SpanType.GENERIC,
+    name: "gate-lesson",
+    input: opts.userMessage,
+  });
   try {
-    const userMessage = stripCodeBlocks(opts.userMessage);
-    if (!userMessage) return [];
-
-    const prevAssistant = await lastAssistantMessageText({
-      userId: opts.userId,
-      threadId: opts.threadId,
-    });
-    const { band, source, answers } = await evaluateTurn(prevAssistant, userMessage);
-    if (band === "drop") return [];
-
-    // The previous assistant message may shape the lesson only when the user confirmed it.
-    const confirmedContext = source === "confirmation" ? prevAssistant : null;
-    const text = await pickLessonText({
-      prevAssistant: confirmedContext,
-      userMessage,
-      turnSelfContained: answers.self_contained,
-    });
-    if (!text) return [];
-
-    const scores = scoresOf(answers);
-    const kind = GATED_KINDS.find((k) => k === answers.kind) ?? "preference";
-    console.info(
-      "[lesson-gate]",
-      JSON.stringify({ threadId: opts.threadId, band, source, ...scores, kind: answers.kind }),
-    );
-    return [
-      {
-        text,
-        kind,
-        activate: band === "auto",
-        confidence: scores.reveals >= 0.85 ? "high" : scores.reveals >= 0.6 ? "medium" : "low",
-      },
-    ];
+    const lessons = await decideTurnLessons(opts, span);
+    span?.end({ output: lessons });
+    return lessons;
   } catch (error) {
+    failSpan(span, error);
     console.warn("[lesson-gate] skipped:", error instanceof Error ? error.message : error);
     return [];
   }
+}
+
+async function decideTurnLessons(
+  opts: { userId: string; threadId: string; userMessage: string },
+  span: AnySpan | undefined,
+): Promise<GatedLesson[]> {
+  const userMessage = stripCodeBlocks(opts.userMessage);
+  if (!userMessage) return [];
+
+  const prevAssistant = await lastAssistantMessageText({
+    userId: opts.userId,
+    threadId: opts.threadId,
+  });
+  const { band, source, answers } = await evaluateTurn(prevAssistant, userMessage, span);
+  const scores = scoresOf(answers);
+  span?.update({ metadata: { band, source, ...scores, kind: answers.kind } });
+  if (band === "drop") return [];
+
+  // The previous assistant message may shape the lesson only when the user confirmed it.
+  const confirmedContext = source === "confirmation" ? prevAssistant : null;
+  const text = await pickLessonText({
+    prevAssistant: confirmedContext,
+    userMessage,
+    turnSelfContained: answers.self_contained,
+    parentSpan: span,
+  });
+  if (!text) return [];
+
+  const kind = GATED_KINDS.find((k) => k === answers.kind) ?? "preference";
+  console.info(
+    "[lesson-gate]",
+    JSON.stringify({ threadId: opts.threadId, band, source, ...scores, kind: answers.kind }),
+  );
+  return [
+    {
+      text,
+      kind,
+      activate: band === "auto",
+      confidence: scores.reveals >= 0.85 ? "high" : scores.reveals >= 0.6 ? "medium" : "low",
+    },
+  ];
 }

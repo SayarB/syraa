@@ -11,6 +11,8 @@ import urllib.error
 import urllib.request
 from typing import Any
 
+from syraa_ingest.tracing import observe
+
 
 def _env(name: str, default: str = "") -> str:
     """Env var, or ``default`` when unset or blank (compose passes ``${X:-}`` as "")."""
@@ -130,12 +132,26 @@ def _openai_compatible_embed(
         },
         method="POST",
     )
-    try:
-        with urllib.request.urlopen(req, timeout=60, context=_ssl_context()) as resp:
-            payload = json.loads(resp.read().decode("utf-8"))
-    except urllib.error.HTTPError as err:
-        detail = err.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"embedding HTTP {err.code}: {detail}") from err
+    chars = sum(len(text) for text in texts)
+    with observe(
+        "embed-chunks",
+        as_type="embedding",
+        model=model,
+        input={"chunks": len(texts), "chars": chars},
+    ) as embedding:
+        try:
+            with urllib.request.urlopen(req, timeout=60, context=_ssl_context()) as resp:
+                payload = json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError as err:
+            detail = err.read().decode("utf-8", errors="replace")
+            raise RuntimeError(f"embedding HTTP {err.code}: {detail}") from err
+
+        if embedding:
+            tokens = (payload.get("usage") or {}).get("prompt_tokens")
+            embedding.update(
+                output={"vectors": len(payload.get("data") or [])},
+                usage_details={"input": tokens} if tokens is not None else None,
+            )
 
     data = payload.get("data") or []
     data_sorted = sorted(data, key=lambda row: int(row.get("index", 0)))

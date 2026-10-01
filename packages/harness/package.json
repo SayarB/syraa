@@ -24,7 +24,9 @@
   "dependencies": {
     "@mastra/ai-sdk": "^1.10.0",
     "@mastra/core": "^1.63.2",
+    "@mastra/langfuse": "^1.5.12",
     "@mastra/memory": "^1.28.1",
+    "@mastra/observability": "^1.18.3",
     "@mastra/pg": "^1.22.2",
     "@syraa/context": "*",
     "@syraa/ingest": "*",

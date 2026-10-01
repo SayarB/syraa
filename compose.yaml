@@ -109,6 +109,12 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-}
       TYPESAFE_API_KEY: ${TYPESAFE_API_KEY:-}
+      # Langfuse tracing — off unless both keys are set (see .env.example)
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+      LANGFUSE_BASE_URL: ${LANGFUSE_BASE_URL:-https://cloud.langfuse.com}
+      LANGFUSE_TRACING_ENVIRONMENT: ${LANGFUSE_TRACING_ENVIRONMENT:-production}
+      LANGFUSE_RELEASE: ${LANGFUSE_RELEASE:-}
       # web_search tool — set empty to disable web search
       SEARXNG_URL: ${SEARXNG_URL-http://searxng:8080}
       # web_fetch tool — set CRAWL4AI_URL empty to disable page reading
@@ -164,6 +170,12 @@ services:
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-}
       FIREWORKS_API_KEY: ${FIREWORKS_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      # Langfuse tracing — off unless both keys are set (see .env.example)
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+      LANGFUSE_BASE_URL: ${LANGFUSE_BASE_URL:-https://cloud.langfuse.com}
+      LANGFUSE_TRACING_ENVIRONMENT: ${LANGFUSE_TRACING_ENVIRONMENT:-production}
+      LANGFUSE_RELEASE: ${LANGFUSE_RELEASE:-}
       NODE_OPTIONS: --dns-result-order=ipv4first
     volumes:
       - drive_data:/data/drive

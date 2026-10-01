@@ -48,6 +48,8 @@ Use the repo root [`compose.yaml`](compose.yaml) (or Dokploy “Docker Compose�
 
 Smoke after deploy: open the domain → Google or magic-link sign-in → one chat turn → upload a PDF → sign out. Health: `GET /api/health`.
 
+Tracing: set `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` and `LANGFUSE_BASE_URL` to send traces to Langfuse — one `chat-turn` trace per message (grouped into a session per thread, with model calls, reasoning, token usage, tool calls and the lesson gate) and one `ingest-document` trace per upload. Unset = tracing off.
+
 For Google: set `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` and add redirect  
 `https://your.domain/api/auth/callback/google` in Google Cloud Console.  
 For email magic links in production: set `RESEND_API_KEY` and `EMAIL_FROM`.
