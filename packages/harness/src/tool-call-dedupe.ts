@@ -4,7 +4,7 @@ export function toolCallCacheKey(toolId: string, input: unknown): string {
   return `${toolId}:${JSON.stringify(input ?? {})}`;
 }
 
-/** Record a successful tool result for turn-end fallback only — does not block later tool calls. */
+/** Record a tool result: feeds the turn-end fallback and repeatedToolResult(). */
 export function rememberToolResult(toolId: string, input: unknown, result: unknown): void {
   const ctx = getChatRunContext();
   if (!ctx.toolCallCache) ctx.toolCallCache = new Map();
@@ -16,6 +16,22 @@ export function rememberToolResult(toolId: string, input: unknown, result: unkno
 
 export function getRememberedToolResult(toolId: string, input: unknown): unknown | undefined {
   return getChatRunContext().toolCallCache?.get(toolCallCacheKey(toolId, input));
+}
+
+export const REPEATED_CALL_NOTE =
+  "Already called with these arguments this turn; this is the same result. Do not call it again — answer the user from it now.";
+
+/**
+ * For read-only tools whose data can't change mid-turn: when the model repeats an identical call,
+ * hand back the earlier result with a stop note instead of running the tool again.
+ */
+export function repeatedToolResult(
+  toolId: string,
+  input: unknown,
+): (Record<string, unknown> & { repeatedCall: string }) | undefined {
+  const cached = getRememberedToolResult(toolId, input);
+  if (cached === undefined || cached === null || typeof cached !== "object") return undefined;
+  return { ...(cached as Record<string, unknown>), repeatedCall: REPEATED_CALL_NOTE };
 }
 
 type MaterialsListOutput = {
