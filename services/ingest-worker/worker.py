@@ -18,6 +18,7 @@ from syraa_ingest.queue_protocol import (
     job_key,
     status_fields,
 )
+from syraa_ingest.tracing import observe, trace_ingest_job
 
 
 def _redis_client():
@@ -53,19 +54,38 @@ def _set_status(r, job: IngestJob, **kwargs) -> None:
 
 
 def process_job(job: IngestJob) -> dict:
+    with trace_ingest_job(
+        user_id=job.user_id,
+        input={"name": job.name, "mime": job.mime},
+        metadata={"resourceId": job.resource_id, "jobId": job.job_id},
+    ) as trace:
+        stats = _run_job(job)
+        if trace:
+            trace.update(output=stats)
+        return stats
+
+
+def _run_job(job: IngestJob) -> dict:
     pdf = Path(job.file_path)
     if not pdf.is_file():
         raise FileNotFoundError(f"upload not found: {pdf}")
 
-    artifact = ingest_pdf(pdf)
+    with observe("parse-pdf", input={"name": job.name}) as span:
+        artifact = ingest_pdf(pdf)
+        if span:
+            span.update(output=artifact["meta"])
+
     texts = [c["text"] for c in artifact["chunks"]]
     embeddings, provider = embed_texts(texts)
-    persist_ingest_result(
-        user_id=job.user_id,
-        resource_id=job.resource_id,
-        artifact=artifact,
-        embeddings=embeddings,
-    )
+
+    with observe("persist-result", input={"resourceId": job.resource_id}):
+        persist_ingest_result(
+            user_id=job.user_id,
+            resource_id=job.resource_id,
+            artifact=artifact,
+            embeddings=embeddings,
+        )
+
     meta = artifact["meta"]
     return {
         "topic_count": int(meta["topic_count"]),
