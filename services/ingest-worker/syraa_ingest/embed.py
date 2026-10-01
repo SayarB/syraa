@@ -113,6 +113,9 @@ def _hash_embedding(text: str, dims: int) -> list[float]:
     return [v / norm for v in values]
 
 
+MAX_ERROR_BODY_BYTES = 4096
+
+
 def _openai_compatible_embed(
     texts: list[str],
     *,
@@ -143,7 +146,8 @@ def _openai_compatible_embed(
             with urllib.request.urlopen(req, timeout=60, context=_ssl_context()) as resp:
                 payload = json.loads(resp.read().decode("utf-8"))
         except urllib.error.HTTPError as err:
-            detail = err.read().decode("utf-8", errors="replace")
+            # Only for the error message — never read an unbounded error body.
+            detail = err.read(MAX_ERROR_BODY_BYTES).decode("utf-8", errors="replace")
             raise RuntimeError(f"embedding HTTP {err.code}: {detail}") from err
 
         if embedding:

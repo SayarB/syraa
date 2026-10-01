@@ -140,7 +140,11 @@ async function prepareChatTurn(request: ChatRequest, mode: "stream" | "generate"
     };
   }
 
+  const { memory, items, dedupItems } = await listMemoryForUser(service, request.userId);
+  const activeItems = items.filter((item) => item.status === "active");
+
   // One Langfuse trace per turn (undefined when tracing is off); the agent and lesson gate nest under it.
+  // Started last, so nothing above can fail and leave it open.
   const turnSpan = startChatTurnSpan({
     userId: request.userId,
     threadId,
@@ -158,16 +162,6 @@ async function prepareChatTurn(request: ChatRequest, mode: "stream" | "generate"
     userMessage: message,
     parentSpan: turnSpan,
   });
-
-  let listed: Awaited<ReturnType<typeof listMemoryForUser>>;
-  try {
-    listed = await listMemoryForUser(service, request.userId);
-  } catch (error) {
-    failSpan(turnSpan, error);
-    throw error;
-  }
-  const { memory, items, dedupItems } = listed;
-  const activeItems = items.filter((item) => item.status === "active");
 
   return {
     kind: "turn" as const,
