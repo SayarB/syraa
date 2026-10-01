@@ -7,10 +7,15 @@ export type SyraaTurnMeta = {
 const FOOTER_LINE =
   /^\s*(?:[-*_]{3,}\s*)?[*_]*\s*(?:working memory updated|memory updated|lessons? (?:extracted|saved|recorded)|_?agentNote)(?![a-z0-9]).*$/i;
 const BLANK_OR_RULE = /^\s*(?:[-*_]{3,})?\s*$/;
+// Leaked tool-planning, e.g. "We need to call updateWorkingMemory." glued to the reply's start.
+const WORKING_MEMORY_TOOL_SENTENCE = /[^.!?\n]*\bupdate_?working_?memory\b[^.!?\n]*[.!?]?[ \t]*/gi;
 
-/** Drop trailing runtime/status lines the model sometimes appends (and a dangling rule before them). */
+/**
+ * Drop trailing runtime/status lines the model sometimes appends (and a dangling rule before them),
+ * plus any sentence about calling updateWorkingMemory — a tool Syraa never exposes.
+ */
 export function stripRuntimeFooters(text: string): string {
-  const lines = text.trimEnd().split("\n");
+  const lines = text.replace(WORKING_MEMORY_TOOL_SENTENCE, "").trimEnd().split("\n");
   while (lines.length > 0) {
     const last = lines[lines.length - 1];
     if (!FOOTER_LINE.test(last) && !BLANK_OR_RULE.test(last)) break;
