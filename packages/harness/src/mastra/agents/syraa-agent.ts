@@ -40,6 +40,10 @@ export function createSyraaAgent(overrides: { tools?: ToolsInput; memory?: Memor
       // Earlier turns' web results are stale: drop them from the prompt. Transient — stored
       // messages and the UI keep them; the current turn still sees its own results.
       new ToolCallFilter({ exclude: ["web_search", "web_fetch"] }),
+      // Old tool results made up most of the history (one section read can be 24k chars). Keep
+      // only the last few tool steps: enough for this turn's chain and the latest earlier lookup
+      // (exact quotes on follow-ups); older results drop and the model re-fetches if needed.
+      new ToolCallFilter({ filterAfterToolSteps: 3 }),
     ],
     outputProcessors: [new StripFootersProcessor(), new StripReasoningProcessor()],
   });
