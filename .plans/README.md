@@ -3,22 +3,28 @@
 Working folder for feature delivery (brainstorm → plan → validations → build → review).
 Long-lived design notes live in [`../plans/`](../plans/).
 
-## Status (2026-09-24)
+## Status (2026-10-01)
 
 | Folder | What | Status |
 |---|---|---|
-| `semantic-retrieve/` | `search_materials` tool (hybrid lexical + semantic) | Built, review pass; ships in PR #1. Manual chat replay A1–A3 not run (no provider keys). |
-| `jev-system-one/` | Jev lesson gate (phase 1) + single LLM pass per turn (phase 2) | Built, review pass; PR #1 went through 5 more code-review rounds (triage in PR comments). In-app smoke not run (no chat key / DB on the build machine). |
+| `semantic-retrieve/` | `search_materials` tool (hybrid lexical + semantic) | Merged in PR #1. Manual chat replay A1–A3 not run. |
+| `jev-system-one/` | Jev lesson gate (phase 1) + single LLM pass per turn (phase 2) | Merged in PR #1. In-app smoke not run. |
 | `document-parsing/` | LiteParse parse layer, (page, y) slicing, Jev heading adjudication + chunk roles | **Brainstorm only.** Next: architect writes phases/plan/validations (no PRD pass — brainstorm is enough). |
 
-### Open PRs and merge order
+### Merged PRs
 
-1. **#1** `jev-lesson-gate` → `main`: search_materials, lesson gate, single LLM pass, review fixes.
-2. **#4** `fix-lint-baseline` (stacked on #1): makes `npm run check` / CI pass. GitHub retargets it to `main` after #1.
-3. **#3** `fix-worker-embedding-env`: blank embedding env vars in the worker. CI goes green once `main` has #4.
-4. **#2** `track-plans` (this folder). CI goes green once `main` has #4.
+- **#1** search_materials, Jev lesson gate, single LLM pass per chat turn.
+- **#3** Worker: blank embedding env vars are treated as unset.
+- **#5** Tailwind + shadcn/ui + AI Elements with Soft Layers themes; fixed the repo-wide Biome baseline (CI green).
+- **#6** Memory is written only from user messages, not assistant replies or old thread history.
+- **#7** Web search: self-hosted SearXNG + `web_search` tool with citations.
+- **#8** Page reading: self-hosted Crawl4AI + `web_fetch` tool.
+- **#2** Track `.plans` in git (this folder).
+- Closed unmerged: **#4** lint baseline (superseded by #5).
 
-Before merging #1: run the in-app smoke from its PR description (needs a chat key + Postgres/Redis).
+### Not built yet
+
+- Chat event persistence: upload, memory-saved and thread-created lines vanish when a chat is reopened (they live only in web state; the "Ready" line comes from `pollIngestJob` in `apps/web/src/App.tsx`). Agreed design (2026-09-07): one unified message interface, events not model-visible, one server-side item per document ("Uploaded X", later filled with topic/chunk counts), no "queued" state.
 
 ### Follow-ups raised in review (not done)
 
