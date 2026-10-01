@@ -18,6 +18,7 @@ from syraa_ingest.queue_protocol import (
     job_key,
     status_fields,
 )
+from syraa_ingest.summarize import summarize_document
 from syraa_ingest.tracing import observe, trace_ingest_job
 
 
@@ -74,6 +75,9 @@ def _run_job(job: IngestJob) -> dict:
         artifact = ingest_pdf(pdf)
         if span:
             span.update(output=artifact["meta"])
+
+    # "" = no summary (skipped or failed); the chat prompt then falls back to a few headings.
+    artifact["card"]["summary"] = summarize_document(artifact) or ""
 
     texts = [c["text"] for c in artifact["chunks"]]
     embeddings, provider = embed_texts(texts)

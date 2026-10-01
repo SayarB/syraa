@@ -41,6 +41,8 @@ async function buildChatTurnOptions(opts: {
     modelSettings: {
       temperature: 0.4,
       maxOutputTokens: 2048,
+      // Fireworks routes a thread's calls to the same prompt cache (long, stable prefix).
+      headers: { "x-session-affinity": opts.threadId },
     },
     maxSteps: 50,
     tracingContext: { currentSpan: opts.turnSpan },

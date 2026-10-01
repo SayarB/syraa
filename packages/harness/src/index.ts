@@ -19,10 +19,6 @@ export {
 } from "./lessons.js";
 export type { ChatConfig, ChatMessage, ChatProvider } from "./llm.js";
 export { getChatConfig, resolveChatProvider, runChatTurn } from "./llm.js";
-export {
-  buildMaterialsWorkingMemoryContent,
-  seedMaterialsWorkingMemory,
-} from "./materials-working-memory.js";
 export type { MemoryHandle, SaveCommand } from "./memory.js";
 export {
   getMemory,

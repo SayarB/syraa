@@ -293,6 +293,8 @@ export async function writeLessonText(opts: {
   prevAssistant: string | null;
   userMessage: string;
   focus: string;
+  /** Sent as the session-affinity key so the writer shares the thread's prompt cache routing. */
+  threadId?: string;
   parentSpan?: AnySpan;
 }): Promise<string | null> {
   const prompt = [`User message: ${opts.userMessage}`, `Most relevant part: ${opts.focus}`];
@@ -301,7 +303,11 @@ export async function writeLessonText(opts: {
 
   const output = await getLessonWriterAgent().generate(prompt.join("\n"), {
     // Reasoning models (gpt-oss) spend output tokens thinking first; MAX_LESSON_CHARS caps the text.
-    modelSettings: { temperature: 0, maxOutputTokens: 512 },
+    modelSettings: {
+      temperature: 0,
+      maxOutputTokens: 512,
+      headers: opts.threadId ? { "x-session-affinity": opts.threadId } : undefined,
+    },
     abortSignal: AbortSignal.timeout(WRITER_TIMEOUT_MS),
     tracingContext: { currentSpan: opts.parentSpan },
   });
@@ -317,6 +323,7 @@ async function pickLessonText(opts: {
   prevAssistant: string | null;
   userMessage: string;
   turnSelfContained: number;
+  threadId: string;
   parentSpan?: AnySpan;
 }): Promise<string | null> {
   const sentences = splitSentences(opts.userMessage);
@@ -349,6 +356,7 @@ async function pickLessonText(opts: {
     prevAssistant: opts.prevAssistant,
     userMessage: opts.userMessage,
     focus: best.sentence,
+    threadId: opts.threadId,
     parentSpan: opts.parentSpan,
   });
 }
@@ -405,6 +413,7 @@ async function decideTurnLessons(
     prevAssistant: confirmedContext,
     userMessage,
     turnSelfContained: answers.self_contained,
+    threadId: opts.threadId,
     parentSpan: span,
   });
   if (!text) return [];

@@ -206,3 +206,67 @@ def mark_resource_failed(user_id: str, resource_id: str, error: str) -> None:
                 (error[:2000], now, resource_id, user_id),
             )
         conn.commit()
+
+
+# Summary backfill (see backfill_summaries.py). Cards still holding the pipeline's placeholder
+# were ingested before summaries existed; "" means summarising was tried and skipped or failed.
+_PLACEHOLDER_SUMMARY = "Ingested outline with %"
+
+
+def list_resources_needing_summary(
+    user_id: str | None = None, limit: int | None = None, include_empty: bool = False
+) -> list[dict[str, Any]]:
+    query = """
+        SELECT r.id, r.user_id, r.name, c.title
+        FROM context_resources r
+        JOIN context_cards c ON c.resource_id = r.id
+        WHERE r.status = 'ready' AND (c.summary LIKE %s OR (%s AND c.summary = ''))
+    """
+    params: list[Any] = [_PLACEHOLDER_SUMMARY, include_empty]
+    if user_id:
+        query += " AND r.user_id = %s"
+        params.append(user_id)
+    query += " ORDER BY r.created_at"
+    if limit:
+        query += " LIMIT %s"
+        params.append(limit)
+
+    with psycopg.connect(resolve_database_url()) as conn, conn.cursor() as cur:
+        cur.execute(query, params)
+        return [
+            {"resource_id": str(row[0]), "user_id": row[1], "name": row[2], "title": row[3]}
+            for row in cur.fetchall()
+        ]
+
+
+def load_summary_sources(resource_id: str) -> dict[str, list[dict[str, Any]]]:
+    """Depth-1 topics and leaf chunks in document order — what summarize_sources reads."""
+    with psycopg.connect(resolve_database_url()) as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT title, depth, ordinal FROM context_topics
+            WHERE resource_id = %s AND depth = 1
+            ORDER BY ordinal
+            """,
+            (resource_id,),
+        )
+        topics = [{"title": row[0], "depth": row[1], "ordinal": row[2]} for row in cur.fetchall()]
+        cur.execute(
+            """
+            SELECT role, text FROM context_chunks
+            WHERE resource_id = %s AND role = 'leaf'
+            ORDER BY (anchor->>'page_start')::int NULLS LAST, ordinal
+            """,
+            (resource_id,),
+        )
+        chunks = [{"role": row[0], "text": row[1]} for row in cur.fetchall()]
+    return {"topics": topics, "chunks": chunks}
+
+
+def update_card_summary(resource_id: str, summary: str) -> None:
+    with psycopg.connect(resolve_database_url()) as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE context_cards SET summary = %s, updated_at = %s WHERE resource_id = %s",
+            (summary, _utc_now(), resource_id),
+        )
+        conn.commit()

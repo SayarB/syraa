@@ -7,6 +7,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY services/ingest-worker/syraa_ingest ./services/ingest-worker/syraa_ingest
 COPY services/ingest-worker/worker.py ./services/ingest-worker/worker.py
+COPY services/ingest-worker/backfill_summaries.py ./services/ingest-worker/backfill_summaries.py
 
 ENV PYTHONPATH=/app/services/ingest-worker
 ENV DRIVE_ROOT=/data/drive

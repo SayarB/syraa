@@ -1,9 +1,5 @@
 import type { MastraDBMessage } from "@mastra/core/agent";
 import { getSyraaMemory } from "./mastra/memory.js";
-import {
-  refreshMaterialsWorkingMemory,
-  seedMaterialsWorkingMemory,
-} from "./materials-working-memory.js";
 import { ValidationError } from "./schemas.js";
 import { mastraThreadToUiMessages, type ThreadUiMessageDto } from "./thread-ui-messages.js";
 
@@ -118,24 +114,12 @@ export async function ensureChatThread(opts: {
       resourceId: opts.userId,
       metadata,
     });
-    await seedMaterialsWorkingMemory({
-      threadId: created.id,
-      userId: opts.userId,
-      projectId: opts.projectId,
-      subprojectId: opts.subprojectId,
-    });
     return { threadId: created.id, created: true, metadata };
   }
 
   const created = await memory.createThread({
     resourceId: opts.userId,
     metadata,
-  });
-  await seedMaterialsWorkingMemory({
-    threadId: created.id,
-    userId: opts.userId,
-    projectId: opts.projectId,
-    subprojectId: opts.subprojectId,
   });
   return { threadId: created.id, created: true, metadata };
 }
@@ -155,12 +139,6 @@ export async function createChatThread(opts: {
     resourceId: opts.userId,
     title: opts.title,
     metadata,
-  });
-  await seedMaterialsWorkingMemory({
-    threadId: created.id,
-    userId: opts.userId,
-    projectId: opts.projectId,
-    subprojectId: opts.subprojectId,
   });
   return toThreadDto(created);
 }
@@ -344,27 +322,4 @@ export async function listThreadMessages(opts: {
   const messages = mastraThreadToUiMessages(recalled.messages);
 
   return { thread: toThreadDto(thread), messages };
-}
-
-/** Refresh materials L1 in thread working memory (e.g. after ingest). */
-export async function refreshChatThreadMaterials(opts: {
-  userId: string;
-  threadId: string;
-}): Promise<void> {
-  const memory = getSyraaMemory();
-  const thread = await memory.getThreadById({
-    threadId: opts.threadId,
-    resourceId: opts.userId,
-  });
-  if (!thread || (thread.resourceId && thread.resourceId !== opts.userId)) {
-    throw new ValidationError("thread not found");
-  }
-
-  const meta = metadataFromThread(thread.metadata);
-  await refreshMaterialsWorkingMemory({
-    threadId: opts.threadId,
-    userId: opts.userId,
-    projectId: meta.projectId,
-    subprojectId: meta.subprojectId,
-  });
 }
