@@ -218,7 +218,10 @@ export function jevState(prevAssistant: string | null, userMessage: string): str
   ].join("\n");
 }
 
-/** Where a Jev call shows up in Langfuse: a generation named `name` under `parentSpan`. */
+/**
+ * Where a Jev call shows up in Langfuse: a generation under `parentSpan`. Model-call spans are
+ * named `chat <model>` on export, so `name` (e.g. `classify-turn`) goes in metadata as `jevCall`.
+ */
 type JevTrace = { parentSpan?: AnySpan; name: string };
 
 /** One Jev evaluation. Throws on missing key, HTTP error, timeout, or a malformed answer. */
@@ -228,9 +231,12 @@ export async function askJev<Q extends QuestionSet>(
   trace?: JevTrace,
 ): Promise<JevAnswers<Q>> {
   const span = trace?.parentSpan?.createChildSpan({
-    type: SpanType.MODEL_GENERATION,
+    // MODEL_INFERENCE, not MODEL_GENERATION: only the per-call type is exported as a Langfuse
+    // generation (model + token usage); MODEL_GENERATION becomes a plain span.
+    type: SpanType.MODEL_INFERENCE,
     name: trace.name,
     input: { state, questions },
+    metadata: { jevCall: trace.name },
     attributes: { model: JEV_MODEL, provider: "typesafe" },
   });
 
