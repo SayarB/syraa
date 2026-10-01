@@ -9,20 +9,25 @@ import { formatMemoryDraftNotice } from "@/lib/memory-notice";
 import { pickThinkingPhrase } from "@/lib/thinking-status";
 import { formatToolActivity, type WebSource, webSourcesFromPart } from "@/lib/tool-activity";
 import { extractTurnMessage } from "@/lib/turn-message";
-import type { DisplayMessage, MemoryItem } from "@/lib/types";
+import type { MemoryItem } from "@/lib/types";
 
-export type MemoryNoticeLine = {
+/**
+ * A line the app adds to the transcript (upload progress, errors, memory saved). It stays where it
+ * happened: right after `afterMessageId`, or before every message when that is null.
+ */
+export type ChatEventLine = {
   id: string;
+  afterMessageId: string | null;
   text: string;
-  variant: "draft" | "saved";
-};
+} & ({ kind: "system" } | { kind: "memory"; variant: "draft" | "saved" });
 
 type ChatBlock =
   | { kind: "user"; id: string; text: string }
   | { kind: "tool"; id: string; part: ToolPart; label: string; summary: string; detail: string }
   | { kind: "assistant"; id: string; text: string; streaming: boolean }
   | { kind: "sources"; id: string; sources: WebSource[] }
-  | { kind: "memory"; id: string; text: string; variant: "draft" | "saved" };
+  | { kind: "memory"; id: string; text: string; variant: "draft" | "saved" }
+  | { kind: "system"; id: string; text: string };
 
 function lastTextPartIndex(parts: UIMessage["parts"]): number {
   for (let index = parts.length - 1; index >= 0; index -= 1) {
@@ -82,22 +87,50 @@ function citedSources(message: UIMessage, candidates: WebSource[]): WebSource[] 
   return used.length > 0 ? used : candidates;
 }
 
+function eventBlock(line: ChatEventLine): ChatBlock {
+  return line.kind === "memory"
+    ? { kind: "memory", id: line.id, text: line.text, variant: line.variant }
+    : { kind: "system", id: line.id, text: line.text };
+}
+
 function flattenMessages(
   messages: UIMessage[],
   streaming: boolean,
-  memoryNoticeLines: MemoryNoticeLine[],
+  eventLines: ChatEventLine[],
 ): ChatBlock[] {
   const blocks: ChatBlock[] = [];
   const lastMessageId = messages.at(-1)?.id;
+  const messageIds = new Set(messages.map((message) => message.id));
+  const linesAfter = new Map<string | null, ChatEventLine[]>();
+  for (const line of eventLines) {
+    // A line whose message is gone (thread reloaded) goes to the end rather than disappearing.
+    const anchor =
+      line.afterMessageId === null || messageIds.has(line.afterMessageId)
+        ? line.afterMessageId
+        : (lastMessageId ?? null);
+    linesAfter.set(anchor, [...(linesAfter.get(anchor) ?? []), line]);
+  }
+  const pushLinesAfter = (anchor: string | null) => {
+    for (const line of linesAfter.get(anchor) ?? []) blocks.push(eventBlock(line));
+  };
+
+  pushLinesAfter(null);
 
   for (const message of messages) {
+    pushMessageBlocks(message);
+    pushLinesAfter(message.id);
+  }
+
+  return blocks;
+
+  function pushMessageBlocks(message: UIMessage) {
     if (message.role === "user") {
       const text = userText(message);
       if (text) blocks.push({ kind: "user", id: message.id, text });
-      continue;
+      return;
     }
 
-    if (message.role !== "assistant") continue;
+    if (message.role !== "assistant") return;
 
     const isLastMessage = message.id === lastMessageId;
     const textIndex = lastTextPartIndex(message.parts);
@@ -160,12 +193,6 @@ function flattenMessages(
       });
     }
   }
-
-  for (const notice of memoryNoticeLines) {
-    blocks.push({ kind: "memory", id: notice.id, text: notice.text, variant: notice.variant });
-  }
-
-  return blocks;
 }
 
 function ToolBlock({ block }: { block: Extract<ChatBlock, { kind: "tool" }> }) {
@@ -221,8 +248,7 @@ function MemoryNotice({
 type Props = {
   messages: UIMessage[];
   streaming?: boolean;
-  memoryNoticeLines?: MemoryNoticeLine[];
-  systemMessages?: DisplayMessage[];
+  eventLines?: ChatEventLine[];
   onOpenMemory?: () => void;
 };
 
@@ -230,15 +256,14 @@ type Props = {
 export function ChatMessages({
   messages,
   streaming = false,
-  memoryNoticeLines = [],
-  systemMessages = [],
+  eventLines = [],
   onOpenMemory,
 }: Props) {
   const [thinkingTick, setThinkingTick] = useState(0);
   const showThinking = shouldShowThinking(messages, streaming);
   const blocks = useMemo(
-    () => flattenMessages(messages, streaming, memoryNoticeLines),
-    [messages, streaming, memoryNoticeLines],
+    () => flattenMessages(messages, streaming, eventLines),
+    [messages, streaming, eventLines],
   );
 
   useEffect(() => {
@@ -284,6 +309,14 @@ export function ChatMessages({
           return <MemoryNotice key={block.id} block={block} onOpenMemory={onOpenMemory} />;
         }
 
+        if (block.kind === "system") {
+          return (
+            <p key={block.id} className="self-center text-center text-muted-foreground text-xs">
+              {block.text}
+            </p>
+          );
+        }
+
         return (
           <Message key={block.id} from="assistant">
             <MessageContent className="text-[0.95rem] leading-relaxed">
@@ -298,12 +331,6 @@ export function ChatMessages({
           <Shimmer>{pickThinkingPhrase(thinkingTick)}</Shimmer>
         </div>
       ) : null}
-
-      {systemMessages.map((message) => (
-        <p key={message.id} className="self-center text-center text-muted-foreground text-xs">
-          {message.content}
-        </p>
-      ))}
     </>
   );
 }

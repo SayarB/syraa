@@ -21,7 +21,7 @@ import {
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AuthShell, SignInCard } from "@/components/auth-screen";
-import { ChatMessages, type MemoryNoticeLine } from "@/components/chat-messages";
+import { type ChatEventLine, ChatMessages } from "@/components/chat-messages";
 import { ThemeModeToggle } from "@/components/theme-mode-toggle";
 import { TopicTreeDialog } from "@/components/topic-tree-dialog";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -35,7 +35,6 @@ import type {
   ChatConfig,
   ChatThread,
   ContextResource,
-  DisplayMessage,
   IngestJobStatus,
   MemoryItem,
   MemorySnapshot,
@@ -48,6 +47,11 @@ const SUGGESTIONS = [
   { label: "prefer concise answers", prompt: "Remember that I prefer concise answers." },
   { label: "what do you know about me", prompt: "What do you already know about me?" },
 ];
+
+/** A ChatEventLine before it gets an id and a position (Omit kept per union member). */
+type NewEventLine<Line = ChatEventLine> = Line extends unknown
+  ? Omit<Line, "id" | "afterMessageId">
+  : never;
 
 function nextId(prefix: string): string {
   return `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
@@ -102,8 +106,7 @@ export default function App() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [systemMessages, setSystemMessages] = useState<DisplayMessage[]>([]);
-  const [memoryNoticeLines, setMemoryNoticeLines] = useState<MemoryNoticeLine[]>([]);
+  const [eventLines, setEventLines] = useState<ChatEventLine[]>([]);
   const [threadId, setThreadId] = useState<string | null>(null);
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [threadsLoading, setThreadsLoading] = useState(false);
@@ -203,6 +206,14 @@ export default function App() {
     (message) => message.role === "user" || message.role === "assistant",
   );
   const streaming = chatStatus === "streaming" || chatStatus === "submitted";
+  // Read by async handlers (upload, memory) so a line lands after the latest message, not a stale one.
+  const lastMessageIdRef = useRef<string | null>(null);
+  lastMessageIdRef.current = chatMessages.at(-1)?.id ?? null;
+
+  function pushEventLine(line: NewEventLine) {
+    const afterMessageId = lastMessageIdRef.current;
+    setEventLines((prev) => [...prev, { ...line, id: nextId(line.kind), afterMessageId }]);
+  }
 
   async function refreshMemory() {
     try {
@@ -246,7 +257,7 @@ export default function App() {
     setThreadId(nextThreadId);
     if (userId) storeThreadId(userId, nextThreadId);
     setMemoryOpen(false);
-    setMemoryNoticeLines([]);
+    setEventLines([]);
     try {
       const res = await apiFetch(`/api/threads/${encodeURIComponent(nextThreadId)}`);
       if (!res.ok) {
@@ -257,11 +268,12 @@ export default function App() {
       setChatMessages(toUiMessages(data.messages));
     } catch (err) {
       console.error(err);
-      setSystemMessages([
+      setEventLines([
         {
           id: nextId("system"),
-          role: "system",
-          content: `Could not load thread: ${err instanceof Error ? err.message : String(err)}`,
+          kind: "system",
+          afterMessageId: null,
+          text: `Could not load thread: ${err instanceof Error ? err.message : String(err)}`,
         },
       ]);
     }
@@ -368,12 +380,7 @@ export default function App() {
     await refreshMemory();
     if (status === "active" && item) {
       const text = formatMemorySavedNotice([{ ...item, status: "active" }]);
-      if (text) {
-        setMemoryNoticeLines((prev) => [
-          ...prev,
-          { id: nextId("memory-saved"), text, variant: "saved" },
-        ]);
-      }
+      if (text) pushEventLine({ kind: "memory", text, variant: "saved" });
     }
   }
 
@@ -389,7 +396,7 @@ export default function App() {
   }
 
   function pushSystem(content: string) {
-    setSystemMessages((prev) => [...prev, { id: nextId("system"), role: "system", content }]);
+    pushEventLine({ kind: "system", text: content });
   }
 
   async function refreshThreadMaterials(activeThreadId = threadId) {
@@ -455,8 +462,7 @@ export default function App() {
     setThreadId(null);
     if (userId) storeThreadId(userId, null);
     setChatMessages([]);
-    setSystemMessages([]);
-    setMemoryNoticeLines([]);
+    setEventLines([]);
     setMemoryOpen(false);
     inputRef.current?.focus();
   }
@@ -608,8 +614,7 @@ export default function App() {
                 <ChatMessages
                   messages={chatMessages}
                   streaming={streaming}
-                  memoryNoticeLines={memoryNoticeLines}
-                  systemMessages={systemMessages}
+                  eventLines={eventLines}
                   onOpenMemory={() => setMemoryOpen(true)}
                 />
               ) : (
@@ -621,9 +626,9 @@ export default function App() {
                     {greeting()}, {displayName}
                   </h2>
                   <p className="text-muted-foreground">How can I help you today?</p>
-                  {systemMessages.map((message) => (
-                    <p key={message.id} className="text-muted-foreground text-xs">
-                      {message.content}
+                  {eventLines.map((line) => (
+                    <p key={line.id} className="text-muted-foreground text-xs">
+                      {line.text}
                     </p>
                   ))}
                 </ConversationEmptyState>
