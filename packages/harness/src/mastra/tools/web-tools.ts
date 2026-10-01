@@ -27,6 +27,15 @@ const webSearchOutputSchema = z.object({
 
 export type WebSearchOutput = z.infer<typeof webSearchOutputSchema>;
 
+/**
+ * toModelOutput must return a typed tool output, not a bare string: a string reaches the
+ * OpenAI-compatible request as a tool message with no `content`, so the model sees an empty result
+ * and writes an imagined one (raw JSON in the reply, made-up "results").
+ */
+function textForModel(value: string): { type: "text"; value: string } {
+  return { type: "text", value };
+}
+
 /** Counts a web call against this turn's budget; false once the cap is reached. */
 function takeTurnSlot(counter: "webSearchCount" | "webFetchCount", max: number): boolean {
   const ctx: ChatRunContext = getChatRunContext();
@@ -70,7 +79,7 @@ export const webSearchTool = createTool({
       openWorldHint: true,
     },
   },
-  toModelOutput: (output) => formatSearchForModel(output),
+  toModelOutput: (output) => textForModel(formatSearchForModel(output)),
   execute: async (input) => {
     const { query, limit } = input;
     if (!takeTurnSlot("webSearchCount", MAX_WEB_SEARCHES_PER_TURN)) {
@@ -132,7 +141,7 @@ export const webFetchTool = createTool({
       openWorldHint: true,
     },
   },
-  toModelOutput: (output) => formatPageForModel(output),
+  toModelOutput: (output) => textForModel(formatPageForModel(output)),
   execute: async (input) => {
     const { url } = input;
     if (!takeTurnSlot("webFetchCount", MAX_WEB_FETCHES_PER_TURN)) {
