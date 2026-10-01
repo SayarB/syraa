@@ -6,18 +6,51 @@ import hashlib
 import json
 import os
 import ssl
+import sys
 import urllib.error
 import urllib.request
 from typing import Any
 
 
+def _env(name: str, default: str = "") -> str:
+    """Env var, or ``default`` when unset or blank (compose passes ``${X:-}`` as "")."""
+    return (os.environ.get(name) or "").strip() or default
+
+
+DEFAULT_HASH_DIMS = 64
+MAX_HASH_DIMS = 4096
+# Remote-failure stubs always use this size, not EMBEDDING_DIMS, so they never take the size of
+# the configured model's vectors and search's dimension filter keeps them out.
+FALLBACK_DIMS = 64
+_warned_dims: set[str] = set()
+
+
+def _dims() -> int:
+    """EMBEDDING_DIMS for the hash provider; a missing or bad value means the default (never raises)."""
+    raw = _env("EMBEDDING_DIMS", str(DEFAULT_HASH_DIMS))
+    try:
+        dims = int(raw)
+    except ValueError:
+        dims = 0
+    if 0 < dims <= MAX_HASH_DIMS:
+        return dims
+    if raw not in _warned_dims:  # log a bad setting once, not on every job
+        _warned_dims.add(raw)
+        print(
+            f"EMBEDDING_DIMS={raw!r} is not 1..{MAX_HASH_DIMS}; using {DEFAULT_HASH_DIMS}",
+            file=sys.stderr,
+            flush=True,
+        )
+    return DEFAULT_HASH_DIMS
+
+
 def resolve_embedding_config() -> dict[str, Any]:
-    provider = (os.environ.get("EMBEDDING_PROVIDER") or "auto").strip().lower()
-    if provider in ("", "none", "off", "null"):
+    provider = _env("EMBEDDING_PROVIDER", "auto").lower()
+    if provider in ("none", "off", "null"):
         return {"provider": "none", "model": None, "base_url": None, "api_key": None}
 
-    fireworks_key = os.environ.get("FIREWORKS_API_KEY") or ""
-    openai_key = os.environ.get("OPENAI_API_KEY") or ""
+    fireworks_key = _env("FIREWORKS_API_KEY")
+    openai_key = _env("OPENAI_API_KEY")
 
     if provider == "auto":
         if fireworks_key:
@@ -30,30 +63,25 @@ def resolve_embedding_config() -> dict[str, Any]:
     if provider == "fireworks":
         return {
             "provider": "fireworks",
-            "model": os.environ.get(
-                "EMBEDDING_MODEL",
-                "nomic-ai/nomic-embed-text-v1.5",
-            ),
-            "base_url": os.environ.get(
+            "model": _env("EMBEDDING_MODEL", "nomic-ai/nomic-embed-text-v1.5"),
+            "base_url": _env(
                 "EMBEDDING_BASE_URL",
                 "https://api.fireworks.ai/inference/v1",
             ).rstrip("/"),
-            "api_key": fireworks_key or os.environ.get("EMBEDDING_API_KEY") or "",
+            "api_key": fireworks_key or _env("EMBEDDING_API_KEY"),
         }
 
     if provider == "openai":
         return {
             "provider": "openai",
-            "model": os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small"),
-            "base_url": os.environ.get("EMBEDDING_BASE_URL", "https://api.openai.com/v1").rstrip(
-                "/"
-            ),
-            "api_key": openai_key or os.environ.get("EMBEDDING_API_KEY") or "",
+            "model": _env("EMBEDDING_MODEL", "text-embedding-3-small"),
+            "base_url": _env("EMBEDDING_BASE_URL", "https://api.openai.com/v1").rstrip("/"),
+            "api_key": openai_key or _env("EMBEDDING_API_KEY"),
         }
 
     if provider == "hash":
         # Deterministic local stub for tests / offline MVP (not semantic).
-        dims = int(os.environ.get("EMBEDDING_DIMS", "64"))
+        dims = _dims()
         return {"provider": "hash", "model": f"hash-{dims}", "base_url": None, "api_key": None}
 
     raise ValueError(f"unknown EMBEDDING_PROVIDER={provider}")
@@ -132,8 +160,7 @@ def embed_texts(texts: list[str]) -> tuple[list[list[float] | None], str]:
         return [None for _ in texts], "none"
 
     if provider == "hash":
-        dims = int(str(cfg["model"]).split("-")[-1])
-        return [_hash_embedding(t, dims) for t in texts], "hash"
+        return [_hash_embedding(t, _dims()) for t in texts], "hash"
 
     try:
         vectors = _openai_compatible_embed(
@@ -144,7 +171,7 @@ def embed_texts(texts: list[str]) -> tuple[list[list[float] | None], str]:
         )
         return vectors, provider
     except Exception as err:  # noqa: BLE001 — keep ingest moving
-        dims = int(os.environ.get("EMBEDDING_DIMS", "64"))
+        dims = FALLBACK_DIMS
         print(
             f"embedding via {provider} failed ({err}); falling back to hash-{dims}",
             flush=True,
