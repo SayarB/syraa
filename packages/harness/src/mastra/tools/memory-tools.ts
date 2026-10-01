@@ -2,7 +2,7 @@ import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
 import { getChatRunContext } from "../../chat-run-context.js";
 import { getMemory, listMemoryForUser } from "../../memory.js";
-import { rememberToolResult } from "../../tool-call-dedupe.js";
+import { rememberToolResult, repeatedToolResult } from "../../tool-call-dedupe.js";
 
 /**
  * What Syraa knows about the user, read from product memory at call time. The answer to
@@ -21,6 +21,8 @@ export const getMyMemoryTool = createTool({
     },
   },
   execute: async (input) => {
+    const repeat = repeatedToolResult("get_my_memory", input);
+    if (repeat) return repeat;
     const { userId } = getChatRunContext();
     const { service } = await getMemory();
     const { items } = await listMemoryForUser(service, userId);
