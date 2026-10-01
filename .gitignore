@@ -23,5 +23,3 @@ apps/api/data/
 fixtures/pdfs/*.pdf
 !fixtures/pdfs/.gitkeep
 
-# Agent phase plans (keep folder locally; not published)
-.plans/

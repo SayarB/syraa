@@ -1,0 +1,1114 @@
+{
+  "results": [
+    {
+      "id": "S1",
+      "group": "aside",
+      "kind": "preference",
+      "accept": [
+        "pending",
+        "auto"
+      ],
+      "plant": "I usually end up in the hills",
+      "user": "Planning a long weekend in late October, probably Thursday to Sunday. Budget is flexible but I don't want to spend more than half a day travelling each way. I usually end up in the hills anyway, beaches just aren't my thing. Can you suggest three options from Bangalore with a rough plan for each?",
+      "strict": 0.33,
+      "reveals": 0.85,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.98,
+        "probabilities": {
+          "none": 0.02,
+          "implicit": 0.98,
+          "explicit": 0
+        }
+      },
+      "perSentence": [
+        {
+          "s": "Planning a long weekend in late October, probably Thursday to Sunday.",
+          "p": 0.08
+        },
+        {
+          "s": "Budget is flexible but I don't want to spend more than half a day travelling each way.",
+          "p": 0.47
+        },
+        {
+          "s": "I usually end up in the hills anyway, beaches just aren't my thing.",
+          "p": 0.91
+        },
+        {
+          "s": "Can you suggest three options from Bangalore with a rough plan for each?",
+          "p": 0.15
+        }
+      ],
+      "topSentence": "I usually end up in the hills anyway, beaches just aren't my thing.",
+      "topHitsPlant": true,
+      "ms": 713,
+      "tokens": {
+        "input_tokens": 749,
+        "output_tokens": 73
+      }
+    },
+    {
+      "id": "S2",
+      "group": "aside",
+      "kind": "preference",
+      "accept": [
+        "pending",
+        "auto"
+      ],
+      "plant": "I read everything on my phone",
+      "user": "Can you draft a one-page summary of the Q3 infra costs from the notes I pasted earlier? Keep the tables narrow, I read everything on my phone during the commute. Highlight anything that went up more than 20% month on month.",
+      "strict": 0.15,
+      "reveals": 0.8,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.9,
+        "probabilities": {
+          "explicit": 0,
+          "implicit": 0.93,
+          "none": 0.07
+        }
+      },
+      "perSentence": [
+        {
+          "s": "Can you draft a one-page summary of the Q3 infra costs from the notes I pasted earlier?",
+          "p": 0.2
+        },
+        {
+          "s": "Keep the tables narrow, I read everything on my phone during the commute.",
+          "p": 0.85
+        },
+        {
+          "s": "Highlight anything that went up more than 20% month on month.",
+          "p": 0.2
+        }
+      ],
+      "topSentence": "Keep the tables narrow, I read everything on my phone during the commute.",
+      "topHitsPlant": true,
+      "ms": 261,
+      "tokens": {
+        "input_tokens": 737,
+        "output_tokens": 73
+      }
+    },
+    {
+      "id": "S3",
+      "group": "aside",
+      "kind": "preference",
+      "accept": [
+        "pending",
+        "auto"
+      ],
+      "plant": "I'm lactose intolerant",
+      "user": "Need a quick dinner idea for tonight, something under 30 minutes. I've got chicken thighs, spinach, some rice and the usual spices. I'm lactose intolerant so the creamy stuff is out. Nothing too fancy.",
+      "strict": 0.42,
+      "reveals": 0.92,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.99,
+        "probabilities": {
+          "explicit": 0,
+          "implicit": 0.99,
+          "none": 0.01
+        }
+      },
+      "perSentence": [
+        {
+          "s": "Need a quick dinner idea for tonight, something under 30 minutes.",
+          "p": 0.17
+        },
+        {
+          "s": "I've got chicken thighs, spinach, some rice and the usual spices.",
+          "p": 0.11
+        },
+        {
+          "s": "I'm lactose intolerant so the creamy stuff is out.",
+          "p": 0.95
+        },
+        {
+          "s": "Nothing too fancy.",
+          "p": 0.62
+        }
+      ],
+      "topSentence": "I'm lactose intolerant so the creamy stuff is out.",
+      "topHitsPlant": true,
+      "ms": 299,
+      "tokens": {
+        "input_tokens": 735,
+        "output_tokens": 73
+      }
+    },
+    {
+      "id": "S4",
+      "group": "aside",
+      "kind": "preference",
+      "accept": [
+        "pending",
+        "auto"
+      ],
+      "plant": "I think in TypeScript",
+      "user": "I'm trying to understand how rate limiting with a token bucket actually works under concurrency. Could you walk me through it with a small example? I think in TypeScript, Python examples take me twice as long to follow. Also mention what breaks when you run multiple instances.",
+      "strict": 0.33,
+      "reveals": 0.89,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.98,
+        "probabilities": {
+          "explicit": 0,
+          "none": 0.01,
+          "implicit": 0.99
+        }
+      },
+      "perSentence": [
+        {
+          "s": "I'm trying to understand how rate limiting with a token bucket actually works under concurrency.",
+          "p": 0.13
+        },
+        {
+          "s": "Could you walk me through it with a small example?",
+          "p": 0.56
+        },
+        {
+          "s": "I think in TypeScript, Python examples take me twice as long to follow.",
+          "p": 0.84
+        },
+        {
+          "s": "Also mention what breaks when you run multiple instances.",
+          "p": 0.32
+        }
+      ],
+      "topSentence": "I think in TypeScript, Python examples take me twice as long to follow.",
+      "topHitsPlant": true,
+      "ms": 257,
+      "tokens": {
+        "input_tokens": 743,
+        "output_tokens": 73
+      }
+    },
+    {
+      "id": "S5",
+      "group": "aside",
+      "kind": "preference",
+      "accept": [
+        "pending",
+        "auto"
+      ],
+      "plant": "I'm a morning person",
+      "user": "Help me restructure my week. I have about 12 hours of deep work to fit in around standups at 10 and a lot of meetings on Tuesday and Thursday. I'm a morning person, my brain is mush after 4pm. Give me a simple block schedule.",
+      "strict": 0.33,
+      "reveals": 0.85,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.93,
+        "probabilities": {
+          "implicit": 0.95,
+          "none": 0.05,
+          "explicit": 0
+        }
+      },
+      "perSentence": [
+        {
+          "s": "Help me restructure my week.",
+          "p": 0.07
+        },
+        {
+          "s": "I have about 12 hours of deep work to fit in around standups at 10 and a lot of meetings on Tuesday and Thursday.",
+          "p": 0.59
+        },
+        {
+          "s": "I'm a morning person, my brain is mush after 4pm.",
+          "p": 0.9
+        },
+        {
+          "s": "Give me a simple block schedule.",
+          "p": 0.38
+        }
+      ],
+      "topSentence": "I'm a morning person, my brain is mush after 4pm.",
+      "topHitsPlant": true,
+      "ms": 259,
+      "tokens": {
+        "input_tokens": 747,
+        "output_tokens": 73
+      }
+    },
+    {
+      "id": "S6",
+      "group": "aside",
+      "kind": "decision",
+      "accept": [
+        "pending",
+        "auto"
+      ],
+      "plant": "we moved everything to Bun",
+      "user": "The CI job for the web app is taking almost 9 minutes and I want it under 4. It installs deps, typechecks, runs unit tests and builds. Since we moved everything to Bun last month the install step is fast, so it's mostly the tests and the build. What would you cut or parallelise first?",
+      "strict": 0.06,
+      "reveals": 0.19,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.27,
+        "probabilities": {
+          "none": 0.49,
+          "implicit": 0.51,
+          "explicit": 0
+        }
+      },
+      "perSentence": [
+        {
+          "s": "The CI job for the web app is taking almost 9 minutes and I want it under 4.",
+          "p": 0.1
+        },
+        {
+          "s": "It installs deps, typechecks, runs unit tests and builds.",
+          "p": 0.12
+        },
+        {
+          "s": "Since we moved everything to Bun last month the install step is fast, so it's mostly the tests and the build.",
+          "p": 0.4
+        },
+        {
+          "s": "What would you cut or parallelise first?",
+          "p": 0.12
+        }
+      ],
+      "topSentence": "Since we moved everything to Bun last month the install step is fast, so it's mostly the tests and the build.",
+      "topHitsPlant": true,
+      "ms": 227,
+      "tokens": {
+        "input_tokens": 756,
+        "output_tokens": 73
+      }
+    },
+    {
+      "id": "S7",
+      "group": "aside",
+      "kind": "preference",
+      "accept": [
+        "pending",
+        "auto"
+      ],
+      "plant": "I'm based in Kolkata",
+      "user": "Can you look at this flight search and tell me whether the 6am or the 11pm option makes more sense for a Delhi meeting at 2pm? I'm based in Kolkata so either way it's a short hop. I don't mind early starts but I hate red-eyes.",
+      "strict": 0.29,
+      "reveals": 0.79,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.96,
+        "probabilities": {
+          "implicit": 0.97,
+          "none": 0.03,
+          "explicit": 0
+        }
+      },
+      "perSentence": [
+        {
+          "s": "Can you look at this flight search and tell me whether the 6am or the 11pm option makes more sense for a Delhi meeting at 2pm?",
+          "p": 0.08
+        },
+        {
+          "s": "I'm based in Kolkata so either way it's a short hop.",
+          "p": 0.81
+        },
+        {
+          "s": "I don't mind early starts but I hate red-eyes.",
+          "p": 0.85
+        }
+      ],
+      "topSentence": "I don't mind early starts but I hate red-eyes.",
+      "topHitsPlant": false,
+      "ms": 230,
+      "tokens": {
+        "input_tokens": 748,
+        "output_tokens": 73
+      }
+    },
+    {
+      "id": "S8",
+      "group": "aside",
+      "kind": "preference",
+      "accept": [
+        "pending",
+        "auto"
+      ],
+      "plant": "spoilers ruin it for me",
+      "user": "I just finished the second season of Severance and loved it. What should I watch next that has a similar slow-burn mystery vibe? Please keep the descriptions vague, spoilers ruin it for me even small ones.",
+      "strict": 0.23,
+      "reveals": 0.9,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.94,
+        "probabilities": {
+          "implicit": 0.96,
+          "none": 0.02,
+          "explicit": 0.02
+        }
+      },
+      "perSentence": [
+        {
+          "s": "I just finished the second season of Severance and loved it.",
+          "p": 0.63
+        },
+        {
+          "s": "What should I watch next that has a similar slow-burn mystery vibe?",
+          "p": 0.57
+        },
+        {
+          "s": "Please keep the descriptions vague, spoilers ruin it for me even small ones.",
+          "p": 0.83
+        }
+      ],
+      "topSentence": "Please keep the descriptions vague, spoilers ruin it for me even small ones.",
+      "topHitsPlant": true,
+      "ms": 272,
+      "tokens": {
+        "input_tokens": 731,
+        "output_tokens": 73
+      }
+    },
+    {
+      "id": "S9",
+      "group": "aside",
+      "kind": "method",
+      "accept": [
+        "pending",
+        "auto"
+      ],
+      "plant": "I like seeing the failing test first",
+      "user": "The date parser returns the wrong day for timestamps near midnight in IST. Before you jump to a fix, I like seeing the failing test first, then the change. Here's the function and two example inputs that break it.",
+      "strict": 0.39,
+      "reveals": 0.89,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.96,
+        "probabilities": {
+          "none": 0.01,
+          "explicit": 0.02,
+          "implicit": 0.97
+        }
+      },
+      "perSentence": [
+        {
+          "s": "The date parser returns the wrong day for timestamps near midnight in IST.",
+          "p": 0.08
+        },
+        {
+          "s": "Before you jump to a fix, I like seeing the failing test first, then the change.",
+          "p": 0.92
+        },
+        {
+          "s": "Here's the function and two example inputs that break it.",
+          "p": 0.08
+        }
+      ],
+      "topSentence": "Before you jump to a fix, I like seeing the failing test first, then the change.",
+      "topHitsPlant": true,
+      "ms": 239,
+      "tokens": {
+        "input_tokens": 732,
+        "output_tokens": 73
+      }
+    },
+    {
+      "id": "S10",
+      "group": "aside",
+      "kind": "preference",
+      "accept": [
+        "pending",
+        "auto"
+      ],
+      "plant": "I go to Goa every December",
+      "user": "Thinking about which credit card to get for travel. I spend maybe 2 lakh a year on flights and hotels, mostly domestic. I go to Goa every December with the same group of friends, so hotel points would actually get used. Which cards should I look at?",
+      "strict": 0.35,
+      "reveals": 0.64,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.94,
+        "probabilities": {
+          "implicit": 0.96,
+          "none": 0.04,
+          "explicit": 0
+        }
+      },
+      "perSentence": [
+        {
+          "s": "Thinking about which credit card to get for travel.",
+          "p": 0.25
+        },
+        {
+          "s": "I spend maybe 2 lakh a year on flights and hotels, mostly domestic.",
+          "p": 0.85
+        },
+        {
+          "s": "I go to Goa every December with the same group of friends, so hotel points would actually get used.",
+          "p": 0.83
+        },
+        {
+          "s": "Which cards should I look at?",
+          "p": 0.05
+        }
+      ],
+      "topSentence": "I spend maybe 2 lakh a year on flights and hotels, mostly domestic.",
+      "topHitsPlant": false,
+      "ms": 251,
+      "tokens": {
+        "input_tokens": 741,
+        "output_tokens": 73
+      }
+    },
+    {
+      "id": "S11",
+      "group": "aside",
+      "kind": "preference",
+      "accept": [
+        "pending",
+        "auto"
+      ],
+      "plant": "I'm colour-blind",
+      "user": "Can you pick a colour palette for the dashboard charts? Five categories, needs to work on a dark background. Worth knowing I'm colour-blind, red-green specifically, so I've been burned by default palettes before.",
+      "strict": 0.66,
+      "reveals": 0.95,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 1,
+        "probabilities": {
+          "implicit": 1,
+          "none": 0,
+          "explicit": 0
+        }
+      },
+      "perSentence": [
+        {
+          "s": "Can you pick a colour palette for the dashboard charts?",
+          "p": 0.06
+        },
+        {
+          "s": "Five categories, needs to work on a dark background.",
+          "p": 0.23
+        },
+        {
+          "s": "Worth knowing I'm colour-blind, red-green specifically, so I've been burned by default palettes before.",
+          "p": 0.97
+        }
+      ],
+      "topSentence": "Worth knowing I'm colour-blind, red-green specifically, so I've been burned by default palettes before.",
+      "topHitsPlant": true,
+      "ms": 267,
+      "tokens": {
+        "input_tokens": 732,
+        "output_tokens": 73
+      }
+    },
+    {
+      "id": "S12",
+      "group": "aside",
+      "kind": "preference",
+      "accept": [
+        "pending",
+        "auto"
+      ],
+      "plant": "my Hindi is much better than my Bengali",
+      "user": "My grandmother sent a voice note that I transcribed below and I can only half understand it. Can you translate it to English and explain any idioms? Honestly my Hindi is much better than my Bengali these days, which is a bit embarrassing.",
+      "strict": 0.3,
+      "reveals": 0.79,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.93,
+        "probabilities": {
+          "implicit": 0.95,
+          "none": 0.05,
+          "explicit": 0
+        }
+      },
+      "perSentence": [
+        {
+          "s": "My grandmother sent a voice note that I transcribed below and I can only half understand it.",
+          "p": 0.13
+        },
+        {
+          "s": "Can you translate it to English and explain any idioms?",
+          "p": 0.36
+        },
+        {
+          "s": "Honestly my Hindi is much better than my Bengali these days, which is a bit embarrassing.",
+          "p": 0.85
+        }
+      ],
+      "topSentence": "Honestly my Hindi is much better than my Bengali these days, which is a bit embarrassing.",
+      "topHitsPlant": true,
+      "ms": 355,
+      "tokens": {
+        "input_tokens": 738,
+        "output_tokens": 73
+      }
+    },
+    {
+      "id": "R1",
+      "group": "inferred-rule",
+      "kind": "preference",
+      "accept": [
+        "pending"
+      ],
+      "plant": "strip out all the emojis",
+      "user": "Thanks, that works. Had to strip out all the emojis again before pasting it into the client email though. Can you now do the same summary for the October report?",
+      "strict": 0.31,
+      "reveals": 0.84,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.92,
+        "probabilities": {
+          "implicit": 0.95,
+          "none": 0.04,
+          "explicit": 0.01
+        }
+      },
+      "perSentence": [
+        {
+          "s": "Thanks, that works.",
+          "p": 0.06
+        },
+        {
+          "s": "Had to strip out all the emojis again before pasting it into the client email though.",
+          "p": 0.69
+        },
+        {
+          "s": "Can you now do the same summary for the October report?",
+          "p": 0.2
+        }
+      ],
+      "topSentence": "Had to strip out all the emojis again before pasting it into the client email though.",
+      "topHitsPlant": true,
+      "ms": 302,
+      "tokens": {
+        "input_tokens": 722,
+        "output_tokens": 73
+      }
+    },
+    {
+      "id": "R2",
+      "group": "inferred-rule",
+      "kind": "preference",
+      "accept": [
+        "pending"
+      ],
+      "plant": "third time",
+      "prev": "(a detailed answer that opens with a 4-paragraph background section)",
+      "user": "This is the third time I've had to scroll past a history lesson to get to the answer. Anyway, what's the actual command to rotate the key?",
+      "strict": 0.29,
+      "reveals": 0.89,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.81,
+        "probabilities": {
+          "explicit": 0,
+          "none": 0.13,
+          "implicit": 0.87
+        }
+      },
+      "perSentence": [
+        {
+          "s": "This is the third time I've had to scroll past a history lesson to get to the answer.",
+          "p": 0.9
+        },
+        {
+          "s": "Anyway, what's the actual command to rotate the key?",
+          "p": 0.68
+        }
+      ],
+      "topSentence": "This is the third time I've had to scroll past a history lesson to get to the answer.",
+      "topHitsPlant": true,
+      "ms": 301,
+      "tokens": {
+        "input_tokens": 729,
+        "output_tokens": 73
+      }
+    },
+    {
+      "id": "R3",
+      "group": "inferred-rule",
+      "kind": "method",
+      "accept": [
+        "pending"
+      ],
+      "plant": "keep converting",
+      "prev": "Here's the snippet using Python's requests library: ...",
+      "user": "I keep converting these back to fetch myself. The rest of the codebase is TypeScript. Can you redo it?",
+      "strict": 0.37,
+      "reveals": 0.83,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.94,
+        "probabilities": {
+          "implicit": 0.96,
+          "explicit": 0,
+          "none": 0.04
+        }
+      },
+      "perSentence": [
+        {
+          "s": "I keep converting these back to fetch myself.",
+          "p": 0.65
+        },
+        {
+          "s": "The rest of the codebase is TypeScript.",
+          "p": 0.61
+        },
+        {
+          "s": "Can you redo it?",
+          "p": 0.12
+        }
+      ],
+      "topSentence": "I keep converting these back to fetch myself.",
+      "topHitsPlant": true,
+      "ms": 261,
+      "tokens": {
+        "input_tokens": 717,
+        "output_tokens": 73
+      }
+    },
+    {
+      "id": "R4",
+      "group": "inferred-rule",
+      "kind": "preference",
+      "accept": [
+        "pending"
+      ],
+      "plant": "in rupees",
+      "prev": "The plan costs about $49/month, or roughly $490/year billed annually.",
+      "user": "ok and in rupees? I had to convert the last three quotes too",
+      "strict": 0.18,
+      "reveals": 0.78,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.93,
+        "probabilities": {
+          "implicit": 0.96,
+          "none": 0.04,
+          "explicit": 0
+        }
+      },
+      "perSentence": [
+        {
+          "s": "ok and in rupees?",
+          "p": 0.51
+        },
+        {
+          "s": "I had to convert the last three quotes too",
+          "p": 0.22
+        }
+      ],
+      "topSentence": "ok and in rupees?",
+      "topHitsPlant": true,
+      "ms": 268,
+      "tokens": {
+        "input_tokens": 714,
+        "output_tokens": 73
+      }
+    },
+    {
+      "id": "R5",
+      "group": "inferred-rule",
+      "kind": "rule",
+      "accept": [
+        "pending"
+      ],
+      "plant": "without asking me",
+      "prev": "Done — I've renamed the files and pushed the commit to main.",
+      "user": "Please don't do that without asking me. I review everything before it goes to main. Can you revert the push?",
+      "strict": 0.71,
+      "reveals": 0.93,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.84,
+        "probabilities": {
+          "explicit": 0.1,
+          "implicit": 0.89,
+          "none": 0.01
+        }
+      },
+      "perSentence": [
+        {
+          "s": "Please don't do that without asking me.",
+          "p": 0.88
+        },
+        {
+          "s": "I review everything before it goes to main.",
+          "p": 0.85
+        },
+        {
+          "s": "Can you revert the push?",
+          "p": 0.08
+        }
+      ],
+      "topSentence": "Please don't do that without asking me.",
+      "topHitsPlant": true,
+      "ms": 258,
+      "tokens": {
+        "input_tokens": 718,
+        "output_tokens": 73
+      }
+    },
+    {
+      "id": "R6",
+      "group": "inferred-rule",
+      "kind": "preference",
+      "accept": [
+        "pending"
+      ],
+      "plant": "shorter",
+      "prev": "(a 1,500-word answer)",
+      "user": "shorter",
+      "note": "single-word correction — ambiguous, could be one-off",
+      "strict": 0.16,
+      "reveals": 0.66,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.75,
+        "probabilities": {
+          "explicit": 0,
+          "implicit": 0.84,
+          "none": 0.16
+        }
+      },
+      "perSentence": [
+        {
+          "s": "shorter",
+          "p": 0.63
+        }
+      ],
+      "topSentence": "shorter",
+      "topHitsPlant": true,
+      "ms": 262,
+      "tokens": {
+        "input_tokens": 692,
+        "output_tokens": 73
+      }
+    },
+    {
+      "id": "N1",
+      "group": "control",
+      "accept": [
+        "drop"
+      ],
+      "user": "I'm at the airport right now and my flight got delayed by three hours, which is annoying because I had a dinner planned. Can you find me a decent place to eat in Terminal 2 that's open late and not a food court?",
+      "strict": 0.03,
+      "reveals": 0.29,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.55,
+        "probabilities": {
+          "implicit": 0.7,
+          "explicit": 0,
+          "none": 0.3
+        }
+      },
+      "perSentence": [
+        {
+          "s": "I'm at the airport right now and my flight got delayed by three hours, which is annoying because I had a dinner planned.",
+          "p": 0.07
+        },
+        {
+          "s": "Can you find me a decent place to eat in Terminal 2 that's open late and not a food court?",
+          "p": 0.22
+        }
+      ],
+      "topSentence": "Can you find me a decent place to eat in Terminal 2 that's open late and not a food court?",
+      "topHitsPlant": null,
+      "ms": 263,
+      "tokens": {
+        "input_tokens": 736,
+        "output_tokens": 73
+      }
+    },
+    {
+      "id": "N2",
+      "group": "control",
+      "accept": [
+        "drop"
+      ],
+      "user": "My sister is visiting next week and she loves hiking, so I want to plan something for Saturday. She's pretty fit, I'm less so. Any trails within 2 hours of Bangalore that work for mixed fitness levels?",
+      "strict": 0.08,
+      "reveals": 0.29,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.83,
+        "probabilities": {
+          "explicit": 0,
+          "none": 0.11,
+          "implicit": 0.89
+        }
+      },
+      "perSentence": [
+        {
+          "s": "My sister is visiting next week and she loves hiking, so I want to plan something for Saturday.",
+          "p": 0.09
+        },
+        {
+          "s": "She's pretty fit, I'm less so.",
+          "p": 0.64
+        },
+        {
+          "s": "Any trails within 2 hours of Bangalore that work for mixed fitness levels?",
+          "p": 0.28
+        }
+      ],
+      "topSentence": "She's pretty fit, I'm less so.",
+      "topHitsPlant": null,
+      "ms": 255,
+      "tokens": {
+        "input_tokens": 732,
+        "output_tokens": 73
+      }
+    },
+    {
+      "id": "N3",
+      "group": "control",
+      "accept": [
+        "drop"
+      ],
+      "user": "I've been feeling pretty tired this week, probably because of the release crunch. Anyway, can you help me write a short update to the team saying the launch is moving by two days and why?",
+      "strict": 0.03,
+      "reveals": 0.1,
+      "explicitness": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 0.49,
+        "probabilities": {
+          "implicit": 0.34,
+          "explicit": 0,
+          "none": 0.66
+        }
+      },
+      "perSentence": [
+        {
+          "s": "I've been feeling pretty tired this week, probably because of the release crunch.",
+          "p": 0.1
+        },
+        {
+          "s": "Anyway, can you help me write a short update to the team saying the launch is moving by two days and why?",
+          "p": 0.1
+        }
+      ],
+      "topSentence": "I've been feeling pretty tired this week, probably because of the release crunch.",
+      "topHitsPlant": null,
+      "ms": 258,
+      "tokens": {
+        "input_tokens": 727,
+        "output_tokens": 73
+      }
+    },
+    {
+      "id": "N4",
+      "group": "control",
+      "accept": [
+        "drop"
+      ],
+      "user": "I'm reading a book right now where the main character always takes the stairs and never uses lifts, it's a weird running joke. Can you tell me if that's a reference to something? The book is from the 90s.",
+      "strict": 0.02,
+      "reveals": 0.1,
+      "explicitness": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 0.74,
+        "probabilities": {
+          "implicit": 0.17,
+          "none": 0.83,
+          "explicit": 0
+        }
+      },
+      "perSentence": [
+        {
+          "s": "I'm reading a book right now where the main character always takes the stairs and never uses lifts, it's a weird running joke.",
+          "p": 0.06
+        },
+        {
+          "s": "Can you tell me if that's a reference to something?",
+          "p": 0.07
+        },
+        {
+          "s": "The book is from the 90s.",
+          "p": 0.06
+        }
+      ],
+      "topSentence": "Can you tell me if that's a reference to something?",
+      "topHitsPlant": null,
+      "ms": 238,
+      "tokens": {
+        "input_tokens": 736,
+        "output_tokens": 73
+      }
+    },
+    {
+      "id": "N5",
+      "group": "control",
+      "accept": [
+        "drop"
+      ],
+      "user": "For this deck specifically I want it minimal, black and white, no stock photos. It's for a very conservative banking client. Can you outline 10 slides for the pitch?",
+      "strict": 0.08,
+      "reveals": 0.24,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.98,
+        "probabilities": {
+          "none": 0.01,
+          "explicit": 0,
+          "implicit": 0.99
+        }
+      },
+      "perSentence": [
+        {
+          "s": "For this deck specifically I want it minimal, black and white, no stock photos.",
+          "p": 0.24
+        },
+        {
+          "s": "It's for a very conservative banking client.",
+          "p": 0.17
+        },
+        {
+          "s": "Can you outline 10 slides for the pitch?",
+          "p": 0.06
+        }
+      ],
+      "topSentence": "For this deck specifically I want it minimal, black and white, no stock photos.",
+      "topHitsPlant": null,
+      "ms": 258,
+      "tokens": {
+        "input_tokens": 724,
+        "output_tokens": 73
+      }
+    },
+    {
+      "id": "N6",
+      "group": "control",
+      "accept": [
+        "drop",
+        "pending"
+      ],
+      "note": "current-state fact, might be worth remembering short-term",
+      "user": "I'm moving flats next month so things are chaotic. Can you make me a checklist for the move, things like address changes, internet transfer, and so on?",
+      "strict": 0.04,
+      "reveals": 0.09,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.28,
+        "probabilities": {
+          "implicit": 0.52,
+          "none": 0.48,
+          "explicit": 0
+        }
+      },
+      "perSentence": [
+        {
+          "s": "I'm moving flats next month so things are chaotic.",
+          "p": 0.07
+        },
+        {
+          "s": "Can you make me a checklist for the move, things like address changes, internet transfer, and so on?",
+          "p": 0.11
+        }
+      ],
+      "topSentence": "Can you make me a checklist for the move, things like address changes, internet transfer, and so on?",
+      "topHitsPlant": null,
+      "ms": 261,
+      "tokens": {
+        "input_tokens": 720,
+        "output_tokens": 73
+      }
+    },
+    {
+      "id": "N7",
+      "group": "control",
+      "accept": [
+        "drop"
+      ],
+      "user": "Here's the customer's email: 'We always prefer invoices in PDF and never accept Excel files. Please remember this for future billing.' Can you draft a polite reply confirming?",
+      "strict": 0.78,
+      "reveals": 0.16,
+      "explicitness": {
+        "type": "choice",
+        "choice": "explicit",
+        "confidence": 1,
+        "probabilities": {
+          "explicit": 1,
+          "implicit": 0,
+          "none": 0
+        }
+      },
+      "perSentence": [
+        {
+          "s": "Here's the customer's email: 'We always prefer invoices in PDF and never accept Excel files.",
+          "p": 0.28
+        },
+        {
+          "s": "Please remember this for future billing.' Can you draft a polite reply confirming?",
+          "p": 0.52
+        }
+      ],
+      "topSentence": "Please remember this for future billing.' Can you draft a polite reply confirming?",
+      "topHitsPlant": null,
+      "ms": 356,
+      "tokens": {
+        "input_tokens": 722,
+        "output_tokens": 73
+      }
+    },
+    {
+      "id": "N8",
+      "group": "control",
+      "accept": [
+        "drop"
+      ],
+      "user": "I tried the recipe you gave me yesterday and it came out great, my flatmates finished everything. Can you give me a dessert that would go with it for this weekend?",
+      "strict": 0.07,
+      "reveals": 0.4,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.44,
+        "probabilities": {
+          "implicit": 0.63,
+          "explicit": 0,
+          "none": 0.37
+        }
+      },
+      "perSentence": [
+        {
+          "s": "I tried the recipe you gave me yesterday and it came out great, my flatmates finished everything.",
+          "p": 0.28
+        },
+        {
+          "s": "Can you give me a dessert that would go with it for this weekend?",
+          "p": 0.06
+        }
+      ],
+      "topSentence": "I tried the recipe you gave me yesterday and it came out great, my flatmates finished everything.",
+      "topHitsPlant": null,
+      "ms": 263,
+      "tokens": {
+        "input_tokens": 723,
+        "output_tokens": 73
+      }
+    }
+  ]
+}

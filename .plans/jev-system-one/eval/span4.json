@@ -1,0 +1,122 @@
+[
+  {
+    "id": "L01",
+    "sentences": 8,
+    "rank": 1,
+    "plantP": 0.81,
+    "top": {
+      "s": "Personally I'm always happier somewhere up in the hills with a bit of a chill in the air, I just feel more awake there.",
+      "p": 0.81
+    }
+  },
+  {
+    "id": "L02",
+    "sentences": 9,
+    "rank": 1,
+    "plantP": 0.96,
+    "top": {
+      "s": "For what it's worth, I absorb stuff way better from diagrams than from walls of text, so wherever a picture would do, lean on that.",
+      "p": 0.96
+    }
+  },
+  {
+    "id": "L04",
+    "sentences": 8,
+    "rank": 1,
+    "plantP": 0.93,
+    "top": {
+      "s": "Our convention on this team is that every bug fix ships with a regression test first, no exceptions, so whatever we do needs to fit that.",
+      "p": 0.93
+    }
+  },
+  {
+    "id": "L05",
+    "sentences": 6,
+    "rank": 1,
+    "plantP": 0.69,
+    "top": {
+      "s": "Speeches make me incredibly nervous, so I'd rather keep it short — three minutes, tops — and something I can mostly read without sounding like I'm reading.",
+      "p": 0.69
+    }
+  },
+  {
+    "id": "L06",
+    "sentences": 7,
+    "rank": 2,
+    "plantP": 0.9,
+    "top": {
+      "s": "Our data team is two people, so anything that needs a dedicated platform engineer is a non-starter.",
+      "p": 0.92
+    }
+  },
+  {
+    "id": "L07",
+    "sentences": 7,
+    "rank": 1,
+    "plantP": 0.92,
+    "top": {
+      "s": "I've cut out red meat completely for about a year now and don't miss it, chicken and fish are fine.",
+      "p": 0.92
+    }
+  },
+  {
+    "id": "L08",
+    "sentences": 7,
+    "rank": 1,
+    "plantP": 0.92,
+    "top": {
+      "s": "I've read a bit about async reviews with Loom and about smaller \"design pairs.\" When I plan anything like this I like having two options to choose between rather than one recommendation, it helps me think.",
+      "p": 0.92
+    }
+  },
+  {
+    "id": "L09",
+    "sentences": 5,
+    "rank": 1,
+    "plantP": 0.84,
+    "top": {
+      "s": "I always write first drafts in present tense; it keeps me close to the character.",
+      "p": 0.84
+    }
+  },
+  {
+    "id": "L10",
+    "sentences": 8,
+    "rank": 1,
+    "plantP": 0.95,
+    "top": {
+      "s": "Heads up, I'm pretty new to Go (came from years of Java), so if something looks un-idiomatic, call it out and explain why instead of just rewriting it.",
+      "p": 0.95
+    }
+  },
+  {
+    "id": "L11",
+    "sentences": 5,
+    "rank": 1,
+    "plantP": 0.95,
+    "top": {
+      "s": "I went through it with the team this morning and it's mostly right, but I ended up rewriting the whole rollout section before I could share it — it assumed we'd do a big-bang cutover over a weekend, and we just don't do that here; everything goes out behind a gradual percentage rollout with a kill switch, which is the third time I've had to fix that in something you've drafted.",
+      "p": 0.95
+    }
+  },
+  {
+    "id": "L12",
+    "sentences": 6,
+    "rank": 1,
+    "plantP": 0.84,
+    "top": {
+      "s": "It was useful but I had to cut it down a lot before sending to the leadership group — they're not going to read eleven bullet points with sub-bullets, and honestly neither am I most days.",
+      "p": 0.84
+    }
+  },
+  {
+    "id": "L13",
+    "sentences": 6,
+    "rank": 1,
+    "plantP": 0.96,
+    "top": {
+      "s": "You wrote the examples in Java again — I've mentioned our stack is Kotlin and it's a bit annoying translating every snippet in my head, especially the null-handling bits which don't map one to one.",
+      "p": 0.96
+    }
+  }
+]

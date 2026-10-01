@@ -1,0 +1,1771 @@
+{
+  "AUTO": 0.85,
+  "PENDING": 0.5,
+  "results": [
+    {
+      "id": "A1",
+      "group": "explicit",
+      "user": "From now on, answer in bullet points.",
+      "accept": [
+        "auto"
+      ],
+      "kind": "preference",
+      "selfContained": true,
+      "p": 0.81,
+      "p2": 0.8,
+      "explicitness": {
+        "type": "choice",
+        "choice": "explicit",
+        "confidence": 1,
+        "probabilities": {
+          "explicit": 1,
+          "implicit": 0,
+          "none": 0
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "rule",
+        "confidence": 0.48,
+        "probabilities": {
+          "method": 0.01,
+          "decision": 0,
+          "preference": 0.4,
+          "none": 0,
+          "rule": 0.59
+        }
+      },
+      "selfP": 0.93,
+      "band": "pending",
+      "pass": false,
+      "regex": "auto",
+      "perSentence": [],
+      "ms": 676,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 797,
+        "output_tokens": 127
+      }
+    },
+    {
+      "id": "A2",
+      "group": "explicit",
+      "user": "Remember that I'm vegetarian.",
+      "accept": [
+        "auto"
+      ],
+      "kind": "preference",
+      "selfContained": true,
+      "p": 0.96,
+      "p2": 0.95,
+      "explicitness": {
+        "type": "choice",
+        "choice": "explicit",
+        "confidence": 1,
+        "probabilities": {
+          "explicit": 1,
+          "implicit": 0,
+          "none": 0
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "preference",
+        "confidence": 0.98,
+        "probabilities": {
+          "rule": 0.02,
+          "preference": 0.98,
+          "method": 0,
+          "decision": 0,
+          "none": 0
+        }
+      },
+      "selfP": 0.95,
+      "band": "auto",
+      "pass": true,
+      "regex": "auto",
+      "perSentence": [],
+      "ms": 359,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 794,
+        "output_tokens": 129
+      }
+    },
+    {
+      "id": "A3",
+      "group": "explicit",
+      "user": "Never use emojis in your replies to me.",
+      "accept": [
+        "auto"
+      ],
+      "kind": "rule",
+      "selfContained": true,
+      "p": 0.77,
+      "p2": 0.79,
+      "explicitness": {
+        "type": "choice",
+        "choice": "explicit",
+        "confidence": 0.99,
+        "probabilities": {
+          "explicit": 1,
+          "none": 0,
+          "implicit": 0
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "rule",
+        "confidence": 0.96,
+        "probabilities": {
+          "method": 0,
+          "decision": 0,
+          "none": 0,
+          "rule": 0.97,
+          "preference": 0.03
+        }
+      },
+      "selfP": 0.95,
+      "band": "pending",
+      "pass": false,
+      "regex": "auto",
+      "perSentence": [],
+      "ms": 238,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 797,
+        "output_tokens": 127
+      }
+    },
+    {
+      "id": "A4",
+      "group": "explicit",
+      "user": "When I say 'tldr', give me exactly 3 bullets and nothing else.",
+      "accept": [
+        "auto"
+      ],
+      "kind": "rule",
+      "selfContained": true,
+      "p": 0.68,
+      "p2": 0.67,
+      "explicitness": {
+        "type": "choice",
+        "choice": "explicit",
+        "confidence": 0.47,
+        "probabilities": {
+          "none": 0.01,
+          "implicit": 0.34,
+          "explicit": 0.65
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "rule",
+        "confidence": 0.98,
+        "probabilities": {
+          "preference": 0.01,
+          "decision": 0,
+          "none": 0,
+          "method": 0,
+          "rule": 0.99
+        }
+      },
+      "selfP": 0.9,
+      "band": "pending",
+      "pass": false,
+      "regex": "llm-decides",
+      "perSentence": [],
+      "ms": 409,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 805,
+        "output_tokens": 127
+      }
+    },
+    {
+      "id": "B1",
+      "group": "implicit",
+      "user": "I prefer dark mode screenshots in any docs you draft.",
+      "accept": [
+        "pending",
+        "auto"
+      ],
+      "kind": "preference",
+      "selfContained": true,
+      "p": 0.82,
+      "p2": 0.8,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.47,
+        "probabilities": {
+          "explicit": 0.35,
+          "implicit": 0.65,
+          "none": 0
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "preference",
+        "confidence": 0.98,
+        "probabilities": {
+          "method": 0,
+          "rule": 0.01,
+          "decision": 0,
+          "preference": 0.99,
+          "none": 0
+        }
+      },
+      "selfP": 0.93,
+      "band": "pending",
+      "pass": true,
+      "regex": "llm-decides",
+      "perSentence": [],
+      "ms": 246,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 799,
+        "output_tokens": 129
+      }
+    },
+    {
+      "id": "B2",
+      "group": "implicit",
+      "user": "fyi I'm on a Mac, so skip the Windows instructions.",
+      "accept": [
+        "pending",
+        "auto"
+      ],
+      "kind": "preference",
+      "selfContained": false,
+      "note": "durable fact + one-off instruction",
+      "p": 0.6,
+      "p2": 0.58,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.95,
+        "probabilities": {
+          "none": 0,
+          "explicit": 0.03,
+          "implicit": 0.97
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "rule",
+        "confidence": 0.35,
+        "probabilities": {
+          "none": 0.02,
+          "rule": 0.48,
+          "method": 0.01,
+          "preference": 0.41,
+          "decision": 0.08
+        }
+      },
+      "selfP": 0.82,
+      "band": "pending",
+      "pass": true,
+      "regex": "llm-decides",
+      "perSentence": [
+        {
+          "s": "fyi I'm on a Mac, so skip the Windows instructions.",
+          "p": 0.58
+        }
+      ],
+      "ms": 264,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 802,
+        "output_tokens": 127
+      }
+    },
+    {
+      "id": "B3",
+      "group": "implicit",
+      "user": "I really can't stand long intros. Get to the point.",
+      "accept": [
+        "pending",
+        "auto"
+      ],
+      "kind": "preference",
+      "selfContained": true,
+      "p": 0.55,
+      "p2": 0.53,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.97,
+        "probabilities": {
+          "implicit": 0.98,
+          "none": 0.01,
+          "explicit": 0.01
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "preference",
+        "confidence": 0.47,
+        "probabilities": {
+          "method": 0,
+          "decision": 0,
+          "preference": 0.58,
+          "rule": 0.4,
+          "none": 0.02
+        }
+      },
+      "selfP": 0.8,
+      "band": "pending",
+      "pass": true,
+      "regex": "llm-decides",
+      "perSentence": [
+        {
+          "s": "I really can't stand long intros.",
+          "p": 0.7
+        },
+        {
+          "s": "Get to the point.",
+          "p": 0.17
+        }
+      ],
+      "ms": 241,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 801,
+        "output_tokens": 129
+      }
+    },
+    {
+      "id": "B4",
+      "group": "implicit",
+      "user": "We decided to go with Postgres over Mongo for Syraa's storage.",
+      "accept": [
+        "pending",
+        "auto"
+      ],
+      "kind": "decision",
+      "selfContained": true,
+      "p": 0.85,
+      "p2": 0.86,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 1,
+        "probabilities": {
+          "implicit": 1,
+          "none": 0,
+          "explicit": 0
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "decision",
+        "confidence": 0.99,
+        "probabilities": {
+          "decision": 0.99,
+          "method": 0,
+          "none": 0.01,
+          "preference": 0,
+          "rule": 0
+        }
+      },
+      "selfP": 0.9,
+      "band": "pending",
+      "pass": true,
+      "regex": "llm-decides",
+      "perSentence": [],
+      "ms": 271,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 803,
+        "output_tokens": 127
+      }
+    },
+    {
+      "id": "B5",
+      "group": "implicit",
+      "user": "When we debug together, check the logs first before proposing code changes.",
+      "accept": [
+        "pending",
+        "auto"
+      ],
+      "kind": "method",
+      "selfContained": true,
+      "p": 0.78,
+      "p2": 0.81,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.33,
+        "probabilities": {
+          "explicit": 0.44,
+          "implicit": 0.55,
+          "none": 0.01
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "method",
+        "confidence": 0.82,
+        "probabilities": {
+          "method": 0.86,
+          "preference": 0,
+          "none": 0,
+          "rule": 0.14,
+          "decision": 0
+        }
+      },
+      "selfP": 0.94,
+      "band": "pending",
+      "pass": true,
+      "regex": "llm-decides",
+      "perSentence": [],
+      "ms": 278,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 802,
+        "output_tokens": 127
+      }
+    },
+    {
+      "id": "C1",
+      "group": "marker-trap",
+      "user": "Which airline always has the cheapest Delhi–Goa flights?",
+      "accept": [
+        "drop"
+      ],
+      "kind": "none",
+      "p": 0.02,
+      "p2": 0.02,
+      "explicitness": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 0.53,
+        "probabilities": {
+          "implicit": 0.31,
+          "none": 0.69,
+          "explicit": 0
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 0.99,
+        "probabilities": {
+          "rule": 0,
+          "decision": 0,
+          "none": 1,
+          "method": 0,
+          "preference": 0
+        }
+      },
+      "selfP": 0.63,
+      "band": "drop",
+      "pass": true,
+      "regex": "auto",
+      "perSentence": [],
+      "ms": 256,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 800,
+        "output_tokens": 127
+      }
+    },
+    {
+      "id": "C2",
+      "group": "marker-trap",
+      "user": "Find me laptops under 80k that never overheat.",
+      "accept": [
+        "drop"
+      ],
+      "kind": "none",
+      "p": 0.04,
+      "p2": 0.03,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.57,
+        "probabilities": {
+          "none": 0.28,
+          "implicit": 0.72,
+          "explicit": 0
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 0.7,
+        "probabilities": {
+          "rule": 0.18,
+          "none": 0.75,
+          "decision": 0.03,
+          "preference": 0.02,
+          "method": 0.02
+        }
+      },
+      "selfP": 0.71,
+      "band": "drop",
+      "pass": true,
+      "regex": "auto",
+      "perSentence": [],
+      "ms": 306,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 801,
+        "output_tokens": 127
+      }
+    },
+    {
+      "id": "C3",
+      "group": "marker-trap",
+      "user": "Remember that movie with the spinning top at the end? What was it called?",
+      "accept": [
+        "drop"
+      ],
+      "kind": "none",
+      "p": 0.04,
+      "p2": 0.04,
+      "explicitness": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 0.32,
+        "probabilities": {
+          "explicit": 0.1,
+          "none": 0.55,
+          "implicit": 0.35
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 0.98,
+        "probabilities": {
+          "method": 0,
+          "rule": 0,
+          "preference": 0.01,
+          "decision": 0,
+          "none": 0.99
+        }
+      },
+      "selfP": 0.37,
+      "band": "drop",
+      "pass": true,
+      "regex": "auto",
+      "perSentence": [
+        {
+          "s": "Remember that movie with the spinning top at the end?",
+          "p": 0.11
+        },
+        {
+          "s": "What was it called?",
+          "p": 0.02
+        }
+      ],
+      "ms": 248,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 804,
+        "output_tokens": 127
+      }
+    },
+    {
+      "id": "C4",
+      "group": "marker-trap",
+      "user": "Write a short poem that starts with 'From now on I will always love you'.",
+      "accept": [
+        "drop"
+      ],
+      "kind": "none",
+      "p": 0.02,
+      "p2": 0.02,
+      "explicitness": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 0.63,
+        "probabilities": {
+          "implicit": 0.17,
+          "none": 0.75,
+          "explicit": 0.08
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 0.93,
+        "probabilities": {
+          "method": 0.01,
+          "decision": 0,
+          "preference": 0.02,
+          "none": 0.94,
+          "rule": 0.03
+        }
+      },
+      "selfP": 0.16,
+      "band": "drop",
+      "pass": true,
+      "regex": "auto",
+      "perSentence": [],
+      "ms": 236,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 805,
+        "output_tokens": 127
+      }
+    },
+    {
+      "id": "C5",
+      "group": "marker-trap",
+      "user": "What does 'from now on' mean legally in a contract clause?",
+      "accept": [
+        "drop"
+      ],
+      "kind": "none",
+      "p": 0.01,
+      "p2": 0.02,
+      "explicitness": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 0.9,
+        "probabilities": {
+          "explicit": 0,
+          "none": 0.93,
+          "implicit": 0.07
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 0.94,
+        "probabilities": {
+          "method": 0,
+          "decision": 0,
+          "none": 0.96,
+          "rule": 0.04,
+          "preference": 0
+        }
+      },
+      "selfP": 0.55,
+      "band": "drop",
+      "pass": true,
+      "regex": "auto",
+      "perSentence": [],
+      "ms": 254,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 802,
+        "output_tokens": 127
+      }
+    },
+    {
+      "id": "C6",
+      "group": "marker-trap",
+      "user": "Fix this bug:\n```ts\n// always validate input\nfunction add(a, b) { return a - b }\n```",
+      "accept": [
+        "drop"
+      ],
+      "kind": "none",
+      "p": 0.05,
+      "p2": 0.06,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.16,
+        "probabilities": {
+          "implicit": 0.44,
+          "explicit": 0.37,
+          "none": 0.19
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "rule",
+        "confidence": 0.33,
+        "probabilities": {
+          "decision": 0.01,
+          "method": 0.11,
+          "preference": 0.01,
+          "rule": 0.46,
+          "none": 0.41
+        }
+      },
+      "selfP": 0.18,
+      "band": "drop",
+      "pass": true,
+      "regex": "auto",
+      "perSentence": [],
+      "ms": 245,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 813,
+        "output_tokens": 127
+      }
+    },
+    {
+      "id": "D1",
+      "group": "research",
+      "user": "Compare the best EVs under 20 lakh for city driving.",
+      "accept": [
+        "drop"
+      ],
+      "kind": "none",
+      "p": 0.02,
+      "p2": 0.02,
+      "explicitness": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 0.71,
+        "probabilities": {
+          "explicit": 0,
+          "implicit": 0.19,
+          "none": 0.81
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 0.92,
+        "probabilities": {
+          "method": 0.02,
+          "preference": 0.01,
+          "decision": 0.04,
+          "rule": 0,
+          "none": 0.9299999999999999
+        }
+      },
+      "selfP": 0.74,
+      "band": "drop",
+      "pass": true,
+      "regex": "drop",
+      "perSentence": [],
+      "ms": 243,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 802,
+        "output_tokens": 127
+      }
+    },
+    {
+      "id": "D2",
+      "group": "research",
+      "user": "Help me pick running shoes for flat feet.",
+      "accept": [
+        "drop"
+      ],
+      "kind": "none",
+      "p": 0.07,
+      "p2": 0.08,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.67,
+        "probabilities": {
+          "explicit": 0,
+          "none": 0.22,
+          "implicit": 0.78
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 0.95,
+        "probabilities": {
+          "method": 0.01,
+          "decision": 0.01,
+          "preference": 0.01,
+          "none": 0.97,
+          "rule": 0
+        }
+      },
+      "selfP": 0.83,
+      "band": "drop",
+      "pass": true,
+      "regex": "drop",
+      "perSentence": [],
+      "ms": 264,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 797,
+        "output_tokens": 127
+      }
+    },
+    {
+      "id": "D3",
+      "group": "research",
+      "user": "I'm really into Japanese woodworking lately — what are good beginner chisels?",
+      "accept": [
+        "drop",
+        "pending"
+      ],
+      "kind": "none",
+      "note": "interest stated, but ask is one-off; pending tolerable",
+      "p": 0.16,
+      "p2": 0.18,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.71,
+        "probabilities": {
+          "implicit": 0.81,
+          "none": 0.19,
+          "explicit": 0
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 0.88,
+        "probabilities": {
+          "decision": 0,
+          "method": 0.02,
+          "none": 0.91,
+          "preference": 0.07,
+          "rule": 0
+        }
+      },
+      "selfP": 0.67,
+      "band": "drop",
+      "pass": true,
+      "regex": "llm-decides",
+      "perSentence": [
+        {
+          "s": "I'm really into Japanese woodworking lately",
+          "p": 0.57
+        },
+        {
+          "s": "what are good beginner chisels?",
+          "p": 0.02
+        }
+      ],
+      "ms": 234,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 803,
+        "output_tokens": 127
+      }
+    },
+    {
+      "id": "E1",
+      "group": "referential",
+      "prev": "Want me to keep answers under 100 words going forward?",
+      "user": "yes please",
+      "accept": [
+        "auto",
+        "pending"
+      ],
+      "kind": "preference",
+      "selfContained": false,
+      "p": 0.79,
+      "p2": 0.77,
+      "explicitness": {
+        "type": "choice",
+        "choice": "explicit",
+        "confidence": 1,
+        "probabilities": {
+          "explicit": 1,
+          "none": 0,
+          "implicit": 0
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "preference",
+        "confidence": 0.75,
+        "probabilities": {
+          "none": 0.02,
+          "decision": 0,
+          "preference": 0.79,
+          "rule": 0.18,
+          "method": 0.01
+        }
+      },
+      "selfP": 0.17,
+      "band": "pending",
+      "pass": true,
+      "regex": "llm-decides",
+      "perSentence": [
+        {
+          "s": "yes please",
+          "p": 0.81
+        }
+      ],
+      "ms": 280,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 797,
+        "output_tokens": 129
+      }
+    },
+    {
+      "id": "E2",
+      "group": "referential",
+      "prev": "Should I format this comparison as a table?",
+      "user": "yes",
+      "accept": [
+        "drop"
+      ],
+      "kind": "none",
+      "note": "one-off yes",
+      "p": 0.08,
+      "p2": 0.08,
+      "explicitness": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 0.25,
+        "probabilities": {
+          "implicit": 0.48,
+          "none": 0.5,
+          "explicit": 0.02
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "preference",
+        "confidence": 0.73,
+        "probabilities": {
+          "rule": 0.01,
+          "none": 0.11,
+          "method": 0.06,
+          "decision": 0.04,
+          "preference": 0.78
+        }
+      },
+      "selfP": 0.07,
+      "band": "drop",
+      "pass": true,
+      "regex": "llm-decides",
+      "perSentence": [],
+      "ms": 338,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 791,
+        "output_tokens": 129
+      }
+    },
+    {
+      "id": "E3",
+      "group": "referential",
+      "prev": "Here's the summary in Hindi as you asked. Should I keep replying in Hindi?",
+      "user": "haan, hamesha",
+      "accept": [
+        "auto",
+        "pending"
+      ],
+      "kind": "preference",
+      "selfContained": false,
+      "p": 0.88,
+      "p2": 0.87,
+      "explicitness": {
+        "type": "choice",
+        "choice": "explicit",
+        "confidence": 1,
+        "probabilities": {
+          "implicit": 0,
+          "explicit": 1,
+          "none": 0
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "preference",
+        "confidence": 0.56,
+        "probabilities": {
+          "decision": 0,
+          "method": 0,
+          "preference": 0.65,
+          "rule": 0.35,
+          "none": 0
+        }
+      },
+      "selfP": 0.25,
+      "band": "auto",
+      "pass": true,
+      "regex": "llm-decides",
+      "perSentence": [
+        {
+          "s": "haan, hamesha",
+          "p": 0.89
+        }
+      ],
+      "ms": 243,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 806,
+        "output_tokens": 129
+      }
+    },
+    {
+      "id": "E4",
+      "group": "referential",
+      "prev": "I wrote the tests with Jest. Want me to switch to Vitest?",
+      "user": "yeah, and do that for every repo of mine",
+      "accept": [
+        "auto",
+        "pending"
+      ],
+      "kind": "preference",
+      "selfContained": false,
+      "p": 0.73,
+      "p2": 0.73,
+      "explicitness": {
+        "type": "choice",
+        "choice": "explicit",
+        "confidence": 0.89,
+        "probabilities": {
+          "none": 0.01,
+          "implicit": 0.06,
+          "explicit": 0.93
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "decision",
+        "confidence": 0.31,
+        "probabilities": {
+          "preference": 0.15,
+          "rule": 0.2,
+          "none": 0.05,
+          "method": 0.15,
+          "decision": 0.45
+        }
+      },
+      "selfP": 0.17,
+      "band": "pending",
+      "pass": true,
+      "regex": "llm-decides",
+      "perSentence": [
+        {
+          "s": "yeah, and do that for every repo of mine",
+          "p": 0.72
+        }
+      ],
+      "ms": 269,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 806,
+        "output_tokens": 127
+      }
+    },
+    {
+      "id": "F1",
+      "group": "mixed",
+      "user": "Remember I'm vegetarian — also find me a place for dinner tonight in Indiranagar.",
+      "accept": [
+        "auto",
+        "pending"
+      ],
+      "kind": "preference",
+      "selfContained": false,
+      "p": 0.91,
+      "p2": 0.92,
+      "explicitness": {
+        "type": "choice",
+        "choice": "explicit",
+        "confidence": 0.99,
+        "probabilities": {
+          "explicit": 1,
+          "implicit": 0,
+          "none": 0
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "preference",
+        "confidence": 0.99,
+        "probabilities": {
+          "method": 0,
+          "rule": 0.01,
+          "preference": 0.99,
+          "decision": 0,
+          "none": 0
+        }
+      },
+      "selfP": 0.12,
+      "band": "auto",
+      "pass": true,
+      "regex": "llm-decides",
+      "perSentence": [
+        {
+          "s": "Remember I'm vegetarian",
+          "p": 0.95
+        },
+        {
+          "s": "also find me a place for dinner tonight in Indiranagar.",
+          "p": 0.02
+        }
+      ],
+      "ms": 231,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 806,
+        "output_tokens": 129
+      }
+    },
+    {
+      "id": "F2",
+      "group": "mixed",
+      "user": "Book-wise I'm done with thrillers, never recommend them again. Anyway, what's the capital of Peru?",
+      "accept": [
+        "auto",
+        "pending"
+      ],
+      "kind": "preference",
+      "selfContained": false,
+      "p": 0.86,
+      "p2": 0.86,
+      "explicitness": {
+        "type": "choice",
+        "choice": "explicit",
+        "confidence": 0.71,
+        "probabilities": {
+          "none": 0,
+          "implicit": 0.19,
+          "explicit": 0.81
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "rule",
+        "confidence": 0.53,
+        "probabilities": {
+          "none": 0.05,
+          "method": 0,
+          "preference": 0.33,
+          "rule": 0.62,
+          "decision": 0
+        }
+      },
+      "selfP": 0.08,
+      "band": "auto",
+      "pass": true,
+      "regex": "auto",
+      "perSentence": [
+        {
+          "s": "Book-wise I'm done with thrillers, never recommend them again.",
+          "p": 0.91
+        },
+        {
+          "s": "Anyway, what's the capital of Peru?",
+          "p": 0.01
+        }
+      ],
+      "ms": 261,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 811,
+        "output_tokens": 127
+      }
+    },
+    {
+      "id": "G1",
+      "group": "temporary",
+      "user": "For this conversation only, reply in Spanish.",
+      "accept": [
+        "drop"
+      ],
+      "kind": "none",
+      "p": 0.02,
+      "p2": 0.02,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.49,
+        "probabilities": {
+          "implicit": 0.66,
+          "none": 0.24,
+          "explicit": 0.1
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "rule",
+        "confidence": 0.31,
+        "probabilities": {
+          "decision": 0,
+          "method": 0,
+          "none": 0.18,
+          "preference": 0.37,
+          "rule": 0.45
+        }
+      },
+      "selfP": 0.67,
+      "band": "drop",
+      "pass": true,
+      "regex": "llm-decides",
+      "perSentence": [],
+      "ms": 271,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 797,
+        "output_tokens": 127
+      }
+    },
+    {
+      "id": "G2",
+      "group": "temporary",
+      "user": "Today I'm working from Pune, so use IST for the meeting times.",
+      "accept": [
+        "drop"
+      ],
+      "kind": "none",
+      "p": 0.13,
+      "p2": 0.13,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.97,
+        "probabilities": {
+          "none": 0.02,
+          "implicit": 0.98,
+          "explicit": 0
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "rule",
+        "confidence": 0.21,
+        "probabilities": {
+          "method": 0.07,
+          "rule": 0.37,
+          "preference": 0.35,
+          "none": 0.18,
+          "decision": 0.03
+        }
+      },
+      "selfP": 0.73,
+      "band": "drop",
+      "pass": true,
+      "regex": "llm-decides",
+      "perSentence": [],
+      "ms": 246,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 803,
+        "output_tokens": 127
+      }
+    },
+    {
+      "id": "G3",
+      "group": "temporary",
+      "user": "Just this once, give me the long version.",
+      "accept": [
+        "drop"
+      ],
+      "kind": "none",
+      "p": 0.03,
+      "p2": 0.03,
+      "explicitness": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 0.29,
+        "probabilities": {
+          "none": 0.53,
+          "explicit": 0.01,
+          "implicit": 0.46
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "preference",
+        "confidence": 0.33,
+        "probabilities": {
+          "rule": 0.09,
+          "preference": 0.47000000000000003,
+          "decision": 0,
+          "none": 0.42,
+          "method": 0.02
+        }
+      },
+      "selfP": 0.08,
+      "band": "drop",
+      "pass": true,
+      "regex": "llm-decides",
+      "perSentence": [],
+      "ms": 234,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 798,
+        "output_tokens": 129
+      }
+    },
+    {
+      "id": "H1",
+      "group": "meta",
+      "user": "Forget what I said about bullet points.",
+      "accept": [
+        "drop"
+      ],
+      "kind": "none",
+      "note": "memory op, not a new lesson",
+      "p": 0.22,
+      "p2": 0.23,
+      "explicitness": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 0.51,
+        "probabilities": {
+          "implicit": 0.21,
+          "explicit": 0.11,
+          "none": 0.68
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "rule",
+        "confidence": 0.28,
+        "probabilities": {
+          "rule": 0.43,
+          "method": 0.01,
+          "preference": 0.29,
+          "decision": 0,
+          "none": 0.27
+        }
+      },
+      "selfP": 0.18,
+      "band": "drop",
+      "pass": true,
+      "regex": "llm-decides",
+      "perSentence": [],
+      "ms": 216,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 796,
+        "output_tokens": 127
+      }
+    },
+    {
+      "id": "H2",
+      "group": "meta",
+      "user": "Don't remember this, but I'm really stressed today.",
+      "accept": [
+        "drop"
+      ],
+      "kind": "none",
+      "p": 0.06,
+      "p2": 0.06,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.51,
+        "probabilities": {
+          "none": 0.32,
+          "implicit": 0.67,
+          "explicit": 0.01
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 0.99,
+        "probabilities": {
+          "method": 0,
+          "none": 1,
+          "rule": 0,
+          "preference": 0,
+          "decision": 0
+        }
+      },
+      "selfP": 0.55,
+      "band": "drop",
+      "pass": true,
+      "regex": "llm-decides",
+      "perSentence": [],
+      "ms": 287,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 800,
+        "output_tokens": 127
+      }
+    },
+    {
+      "id": "H3",
+      "group": "meta",
+      "user": "What do you remember about me?",
+      "accept": [
+        "drop"
+      ],
+      "kind": "none",
+      "p": 0.02,
+      "p2": 0.02,
+      "explicitness": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 0.91,
+        "probabilities": {
+          "implicit": 0.06,
+          "none": 0.94,
+          "explicit": 0
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 0.99,
+        "probabilities": {
+          "method": 0,
+          "none": 0.99,
+          "preference": 0.01,
+          "rule": 0,
+          "decision": 0
+        }
+      },
+      "selfP": 0.19,
+      "band": "drop",
+      "pass": true,
+      "regex": "llm-decides",
+      "perSentence": [],
+      "ms": 463,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 795,
+        "output_tokens": 127
+      }
+    },
+    {
+      "id": "H4",
+      "group": "meta",
+      "user": "If I told you 'always use tabs', would you actually remember it?",
+      "accept": [
+        "drop"
+      ],
+      "kind": "none",
+      "p": 0.23,
+      "p2": 0.22,
+      "explicitness": {
+        "type": "choice",
+        "choice": "explicit",
+        "confidence": 0.74,
+        "probabilities": {
+          "none": 0.02,
+          "implicit": 0.16,
+          "explicit": 0.82
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "rule",
+        "confidence": 0.63,
+        "probabilities": {
+          "none": 0.01,
+          "method": 0.01,
+          "rule": 0.7,
+          "preference": 0.28,
+          "decision": 0
+        }
+      },
+      "selfP": 0.41,
+      "band": "drop",
+      "pass": true,
+      "regex": "auto",
+      "perSentence": [],
+      "ms": 225,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 803,
+        "output_tokens": 127
+      }
+    },
+    {
+      "id": "I1",
+      "group": "third-party",
+      "user": "My boss always wants reports as PDFs, can you convert this one?",
+      "accept": [
+        "pending",
+        "drop"
+      ],
+      "kind": "preference",
+      "note": "arguably durable context about user's work",
+      "p": 0.26,
+      "p2": 0.29,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 0.98,
+        "probabilities": {
+          "implicit": 0.99,
+          "explicit": 0,
+          "none": 0.01
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "preference",
+        "confidence": 0.43,
+        "probabilities": {
+          "none": 0.34,
+          "method": 0.06,
+          "preference": 0.54,
+          "rule": 0.02,
+          "decision": 0.03
+        }
+      },
+      "selfP": 0.18,
+      "band": "drop",
+      "pass": true,
+      "regex": "auto",
+      "perSentence": [],
+      "ms": 271,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 802,
+        "output_tokens": 129
+      }
+    },
+    {
+      "id": "I2",
+      "group": "third-party",
+      "user": "My friend never eats pork. Suggest a menu for her birthday dinner.",
+      "accept": [
+        "drop"
+      ],
+      "kind": "none",
+      "p": 0.2,
+      "p2": 0.17,
+      "explicitness": {
+        "type": "choice",
+        "choice": "implicit",
+        "confidence": 1,
+        "probabilities": {
+          "none": 0,
+          "implicit": 1,
+          "explicit": 0
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "preference",
+        "confidence": 0.73,
+        "probabilities": {
+          "method": 0,
+          "rule": 0.1,
+          "none": 0.12,
+          "preference": 0.78,
+          "decision": 0
+        }
+      },
+      "selfP": 0.54,
+      "band": "drop",
+      "pass": true,
+      "regex": "auto",
+      "perSentence": [
+        {
+          "s": "My friend never eats pork.",
+          "p": 0.36
+        },
+        {
+          "s": "Suggest a menu for her birthday dinner.",
+          "p": 0.02
+        }
+      ],
+      "ms": 295,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 803,
+        "output_tokens": 129
+      }
+    },
+    {
+      "id": "J1",
+      "group": "noisy",
+      "user": "pls dnt use emojis evr again",
+      "accept": [
+        "auto",
+        "pending"
+      ],
+      "kind": "rule",
+      "selfContained": true,
+      "p": 0.85,
+      "p2": 0.84,
+      "explicitness": {
+        "type": "choice",
+        "choice": "explicit",
+        "confidence": 1,
+        "probabilities": {
+          "implicit": 0,
+          "none": 0,
+          "explicit": 1
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "rule",
+        "confidence": 0.89,
+        "probabilities": {
+          "method": 0,
+          "decision": 0,
+          "preference": 0.09,
+          "rule": 0.91,
+          "none": 0
+        }
+      },
+      "selfP": 0.92,
+      "band": "auto",
+      "pass": true,
+      "regex": "llm-decides",
+      "perSentence": [],
+      "ms": 268,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 796,
+        "output_tokens": 127
+      }
+    },
+    {
+      "id": "J2",
+      "group": "noisy",
+      "user": "yaar hamesha hindi me reply karna",
+      "accept": [
+        "auto",
+        "pending"
+      ],
+      "kind": "preference",
+      "selfContained": true,
+      "p": 0.85,
+      "p2": 0.84,
+      "explicitness": {
+        "type": "choice",
+        "choice": "explicit",
+        "confidence": 1,
+        "probabilities": {
+          "none": 0,
+          "implicit": 0,
+          "explicit": 1
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "rule",
+        "confidence": 0.55,
+        "probabilities": {
+          "rule": 0.64,
+          "none": 0,
+          "decision": 0,
+          "preference": 0.36,
+          "method": 0
+        }
+      },
+      "selfP": 0.9,
+      "band": "auto",
+      "pass": true,
+      "regex": "llm-decides",
+      "perSentence": [],
+      "ms": 273,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 798,
+        "output_tokens": 127
+      }
+    },
+    {
+      "id": "J3",
+      "group": "noisy",
+      "prev": "(a 1,800-word answer)",
+      "user": "oh great, another essay. love that for me.",
+      "accept": [
+        "pending",
+        "drop"
+      ],
+      "kind": "preference",
+      "note": "sarcastic implicit pref for brevity",
+      "p": 0.21,
+      "p2": 0.22,
+      "explicitness": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 0.59,
+        "probabilities": {
+          "explicit": 0,
+          "none": 0.73,
+          "implicit": 0.27
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 0.36,
+        "probabilities": {
+          "preference": 0.48,
+          "method": 0.01,
+          "decision": 0,
+          "none": 0.48,
+          "rule": 0.03
+        }
+      },
+      "selfP": 0.09,
+      "band": "drop",
+      "pass": true,
+      "regex": "llm-decides",
+      "perSentence": [
+        {
+          "s": "oh great, another essay.",
+          "p": 0.21
+        },
+        {
+          "s": "love that for me.",
+          "p": 0.12
+        }
+      ],
+      "ms": 270,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 803,
+        "output_tokens": 127
+      }
+    },
+    {
+      "id": "J4",
+      "group": "noisy",
+      "user": "ok so I need to plan the offsite for 40 people in Nov, budget is around 6L, somewhere 3-4h from Bangalore, and btw going forward always give me costs in INR not USD, and make sure there's a vegetarian-friendly venue option.",
+      "accept": [
+        "auto",
+        "pending"
+      ],
+      "kind": "preference",
+      "selfContained": false,
+      "note": "durable pref buried in long task",
+      "p": 0.95,
+      "p2": 0.95,
+      "explicitness": {
+        "type": "choice",
+        "choice": "explicit",
+        "confidence": 1,
+        "probabilities": {
+          "implicit": 0,
+          "explicit": 1,
+          "none": 0
+        }
+      },
+      "kindAns": {
+        "type": "choice",
+        "choice": "rule",
+        "confidence": 0.72,
+        "probabilities": {
+          "decision": 0,
+          "preference": 0.22,
+          "method": 0,
+          "rule": 0.78,
+          "none": 0
+        }
+      },
+      "selfP": 0.64,
+      "band": "auto",
+      "pass": true,
+      "regex": "auto",
+      "perSentence": [
+        {
+          "s": "ok so I need to plan the offsite for 40 people in Nov, budget is around 6L, somewhere 3-4h from Bangalore",
+          "p": 0.04
+        },
+        {
+          "s": "going forward always give me costs in INR not USD, and make sure there's a vegetarian-friendly venue option.",
+          "p": 0.96
+        }
+      ],
+      "ms": 244,
+      "model": "jev-1.13.0",
+      "tokens": {
+        "input_tokens": 845,
+        "output_tokens": 127
+      }
+    }
+  ]
+}

@@ -1,0 +1,671 @@
+[
+  {
+    "id": "A1",
+    "user": "From now on, answer in bullet points.",
+    "accept": [
+      "auto"
+    ],
+    "strict": 0.81,
+    "explicit": "explicit",
+    "reveals2": 0.94
+  },
+  {
+    "id": "A2",
+    "user": "Remember that I'm vegetarian.",
+    "accept": [
+      "auto"
+    ],
+    "strict": 0.96,
+    "explicit": "explicit",
+    "reveals2": 0.97
+  },
+  {
+    "id": "A3",
+    "user": "Never use emojis in your replies to me.",
+    "accept": [
+      "auto"
+    ],
+    "strict": 0.77,
+    "explicit": "explicit",
+    "reveals2": 0.96
+  },
+  {
+    "id": "A4",
+    "user": "When I say 'tldr', give me exactly 3 bullets and nothing else.",
+    "accept": [
+      "auto"
+    ],
+    "strict": 0.68,
+    "explicit": "explicit",
+    "reveals2": 0.85
+  },
+  {
+    "id": "B1",
+    "user": "I prefer dark mode screenshots in any docs you draft.",
+    "accept": [
+      "pending",
+      "auto"
+    ],
+    "strict": 0.82,
+    "explicit": "implicit",
+    "reveals2": 0.9
+  },
+  {
+    "id": "B2",
+    "user": "fyi I'm on a Mac, so skip the Windows instructions.",
+    "accept": [
+      "pending",
+      "auto"
+    ],
+    "strict": 0.6,
+    "explicit": "implicit",
+    "reveals2": 0.91
+  },
+  {
+    "id": "B3",
+    "user": "I really can't stand long intros. Get to the point.",
+    "accept": [
+      "pending",
+      "auto"
+    ],
+    "strict": 0.55,
+    "explicit": "implicit",
+    "reveals2": 0.93
+  },
+  {
+    "id": "B4",
+    "user": "We decided to go with Postgres over Mongo for Syraa's storage.",
+    "accept": [
+      "pending",
+      "auto"
+    ],
+    "strict": 0.85,
+    "explicit": "implicit",
+    "reveals2": 0.82
+  },
+  {
+    "id": "B5",
+    "user": "When we debug together, check the logs first before proposing code changes.",
+    "accept": [
+      "pending",
+      "auto"
+    ],
+    "strict": 0.78,
+    "explicit": "implicit",
+    "reveals2": 0.89
+  },
+  {
+    "id": "C1",
+    "user": "Which airline always has the cheapest Delhi–Goa flights?",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.02,
+    "explicit": "none",
+    "reveals2": 0.05
+  },
+  {
+    "id": "C2",
+    "user": "Find me laptops under 80k that never overheat.",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.04,
+    "explicit": "implicit",
+    "reveals2": 0.22
+  },
+  {
+    "id": "C3",
+    "user": "Remember that movie with the spinning top at the end? What was it called?",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.04,
+    "explicit": "none",
+    "reveals2": 0.05
+  },
+  {
+    "id": "C4",
+    "user": "Write a short poem that starts with 'From now on I will always love you'.",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.02,
+    "explicit": "none",
+    "reveals2": 0.04
+  },
+  {
+    "id": "C5",
+    "user": "What does 'from now on' mean legally in a contract clause?",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.01,
+    "explicit": "none",
+    "reveals2": 0.04
+  },
+  {
+    "id": "C6",
+    "user": "Fix this bug:\n```ts\n// always validate input\nfunction add(a, b) { return a - b }\n```",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.05,
+    "explicit": "implicit",
+    "reveals2": 0.19
+  },
+  {
+    "id": "D1",
+    "user": "Compare the best EVs under 20 lakh for city driving.",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.02,
+    "explicit": "none",
+    "reveals2": 0.16
+  },
+  {
+    "id": "D2",
+    "user": "Help me pick running shoes for flat feet.",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.07,
+    "explicit": "implicit",
+    "reveals2": 0.5
+  },
+  {
+    "id": "D3",
+    "user": "I'm really into Japanese woodworking lately — what are good beginner chisels?",
+    "accept": [
+      "drop",
+      "pending"
+    ],
+    "strict": 0.16,
+    "explicit": "implicit",
+    "reveals2": 0.71
+  },
+  {
+    "id": "E1",
+    "prev": "Want me to keep answers under 100 words going forward?",
+    "user": "yes please",
+    "accept": [
+      "auto",
+      "pending"
+    ],
+    "strict": 0.79,
+    "explicit": "explicit",
+    "reveals2": 0.94
+  },
+  {
+    "id": "E2",
+    "prev": "Should I format this comparison as a table?",
+    "user": "yes",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.08,
+    "explicit": "none",
+    "reveals2": 0.35
+  },
+  {
+    "id": "E3",
+    "prev": "Here's the summary in Hindi as you asked. Should I keep replying in Hindi?",
+    "user": "haan, hamesha",
+    "accept": [
+      "auto",
+      "pending"
+    ],
+    "strict": 0.88,
+    "explicit": "explicit",
+    "reveals2": 0.95
+  },
+  {
+    "id": "E4",
+    "prev": "I wrote the tests with Jest. Want me to switch to Vitest?",
+    "user": "yeah, and do that for every repo of mine",
+    "accept": [
+      "auto",
+      "pending"
+    ],
+    "strict": 0.73,
+    "explicit": "explicit",
+    "reveals2": 0.92
+  },
+  {
+    "id": "F1",
+    "user": "Remember I'm vegetarian — also find me a place for dinner tonight in Indiranagar.",
+    "accept": [
+      "auto",
+      "pending"
+    ],
+    "strict": 0.91,
+    "explicit": "explicit",
+    "reveals2": 0.95
+  },
+  {
+    "id": "F2",
+    "user": "Book-wise I'm done with thrillers, never recommend them again. Anyway, what's the capital of Peru?",
+    "accept": [
+      "auto",
+      "pending"
+    ],
+    "strict": 0.86,
+    "explicit": "explicit",
+    "reveals2": 0.85
+  },
+  {
+    "id": "G1",
+    "user": "For this conversation only, reply in Spanish.",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.02,
+    "explicit": "implicit",
+    "reveals2": 0.06
+  },
+  {
+    "id": "G2",
+    "user": "Today I'm working from Pune, so use IST for the meeting times.",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.13,
+    "explicit": "implicit",
+    "reveals2": 0.28
+  },
+  {
+    "id": "G3",
+    "user": "Just this once, give me the long version.",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.03,
+    "explicit": "none",
+    "reveals2": 0.23
+  },
+  {
+    "id": "H1",
+    "user": "Forget what I said about bullet points.",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.22,
+    "explicit": "none",
+    "reveals2": 0.42
+  },
+  {
+    "id": "H2",
+    "user": "Don't remember this, but I'm really stressed today.",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.06,
+    "explicit": "implicit",
+    "reveals2": 0.07
+  },
+  {
+    "id": "H3",
+    "user": "What do you remember about me?",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.02,
+    "explicit": "none",
+    "reveals2": 0.06
+  },
+  {
+    "id": "H4",
+    "user": "If I told you 'always use tabs', would you actually remember it?",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.23,
+    "explicit": "explicit",
+    "reveals2": 0.42
+  },
+  {
+    "id": "I1",
+    "user": "My boss always wants reports as PDFs, can you convert this one?",
+    "accept": [
+      "pending",
+      "drop"
+    ],
+    "strict": 0.26,
+    "explicit": "implicit",
+    "reveals2": 0.6
+  },
+  {
+    "id": "I2",
+    "user": "My friend never eats pork. Suggest a menu for her birthday dinner.",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.2,
+    "explicit": "implicit",
+    "reveals2": 0.06
+  },
+  {
+    "id": "J1",
+    "user": "pls dnt use emojis evr again",
+    "accept": [
+      "auto",
+      "pending"
+    ],
+    "strict": 0.85,
+    "explicit": "explicit",
+    "reveals2": 0.96
+  },
+  {
+    "id": "J2",
+    "user": "yaar hamesha hindi me reply karna",
+    "accept": [
+      "auto",
+      "pending"
+    ],
+    "strict": 0.85,
+    "explicit": "explicit",
+    "reveals2": 0.96
+  },
+  {
+    "id": "J3",
+    "prev": "(a 1,800-word answer)",
+    "user": "oh great, another essay. love that for me.",
+    "accept": [
+      "pending",
+      "drop"
+    ],
+    "strict": 0.21,
+    "explicit": "none",
+    "reveals2": 0.77
+  },
+  {
+    "id": "J4",
+    "user": "ok so I need to plan the offsite for 40 people in Nov, budget is around 6L, somewhere 3-4h from Bangalore, and btw going forward always give me costs in INR not USD, and make sure there's a vegetarian-friendly venue option.",
+    "accept": [
+      "auto",
+      "pending"
+    ],
+    "strict": 0.95,
+    "explicit": "explicit",
+    "reveals2": 0.96
+  },
+  {
+    "id": "S1",
+    "user": "Planning a long weekend in late October, probably Thursday to Sunday. Budget is flexible but I don't want to spend more than half a day travelling each way. I usually end up in the hills anyway, beaches just aren't my thing. Can you suggest three options from Bangalore with a rough plan for each?",
+    "accept": [
+      "pending",
+      "auto"
+    ],
+    "strict": 0.33,
+    "explicit": "implicit",
+    "reveals2": 0.79
+  },
+  {
+    "id": "S2",
+    "user": "Can you draft a one-page summary of the Q3 infra costs from the notes I pasted earlier? Keep the tables narrow, I read everything on my phone during the commute. Highlight anything that went up more than 20% month on month.",
+    "accept": [
+      "pending",
+      "auto"
+    ],
+    "strict": 0.15,
+    "explicit": "implicit",
+    "reveals2": 0.8
+  },
+  {
+    "id": "S3",
+    "user": "Need a quick dinner idea for tonight, something under 30 minutes. I've got chicken thighs, spinach, some rice and the usual spices. I'm lactose intolerant so the creamy stuff is out. Nothing too fancy.",
+    "accept": [
+      "pending",
+      "auto"
+    ],
+    "strict": 0.42,
+    "explicit": "implicit",
+    "reveals2": 0.9
+  },
+  {
+    "id": "S4",
+    "user": "I'm trying to understand how rate limiting with a token bucket actually works under concurrency. Could you walk me through it with a small example? I think in TypeScript, Python examples take me twice as long to follow. Also mention what breaks when you run multiple instances.",
+    "accept": [
+      "pending",
+      "auto"
+    ],
+    "strict": 0.33,
+    "explicit": "implicit",
+    "reveals2": 0.89
+  },
+  {
+    "id": "S5",
+    "user": "Help me restructure my week. I have about 12 hours of deep work to fit in around standups at 10 and a lot of meetings on Tuesday and Thursday. I'm a morning person, my brain is mush after 4pm. Give me a simple block schedule.",
+    "accept": [
+      "pending",
+      "auto"
+    ],
+    "strict": 0.33,
+    "explicit": "implicit",
+    "reveals2": 0.81
+  },
+  {
+    "id": "S6",
+    "user": "The CI job for the web app is taking almost 9 minutes and I want it under 4. It installs deps, typechecks, runs unit tests and builds. Since we moved everything to Bun last month the install step is fast, so it's mostly the tests and the build. What would you cut or parallelise first?",
+    "accept": [
+      "pending",
+      "auto"
+    ],
+    "strict": 0.06,
+    "explicit": "implicit",
+    "reveals2": 0.86
+  },
+  {
+    "id": "S7",
+    "user": "Can you look at this flight search and tell me whether the 6am or the 11pm option makes more sense for a Delhi meeting at 2pm? I'm based in Kolkata so either way it's a short hop. I don't mind early starts but I hate red-eyes.",
+    "accept": [
+      "pending",
+      "auto"
+    ],
+    "strict": 0.29,
+    "explicit": "implicit",
+    "reveals2": 0.71
+  },
+  {
+    "id": "S8",
+    "user": "I just finished the second season of Severance and loved it. What should I watch next that has a similar slow-burn mystery vibe? Please keep the descriptions vague, spoilers ruin it for me even small ones.",
+    "accept": [
+      "pending",
+      "auto"
+    ],
+    "strict": 0.23,
+    "explicit": "implicit",
+    "reveals2": 0.84
+  },
+  {
+    "id": "S9",
+    "user": "The date parser returns the wrong day for timestamps near midnight in IST. Before you jump to a fix, I like seeing the failing test first, then the change. Here's the function and two example inputs that break it.",
+    "accept": [
+      "pending",
+      "auto"
+    ],
+    "strict": 0.39,
+    "explicit": "implicit",
+    "reveals2": 0.89
+  },
+  {
+    "id": "S10",
+    "user": "Thinking about which credit card to get for travel. I spend maybe 2 lakh a year on flights and hotels, mostly domestic. I go to Goa every December with the same group of friends, so hotel points would actually get used. Which cards should I look at?",
+    "accept": [
+      "pending",
+      "auto"
+    ],
+    "strict": 0.35,
+    "explicit": "implicit",
+    "reveals2": 0.68
+  },
+  {
+    "id": "S11",
+    "user": "Can you pick a colour palette for the dashboard charts? Five categories, needs to work on a dark background. Worth knowing I'm colour-blind, red-green specifically, so I've been burned by default palettes before.",
+    "accept": [
+      "pending",
+      "auto"
+    ],
+    "strict": 0.66,
+    "explicit": "implicit",
+    "reveals2": 0.94
+  },
+  {
+    "id": "S12",
+    "user": "My grandmother sent a voice note that I transcribed below and I can only half understand it. Can you translate it to English and explain any idioms? Honestly my Hindi is much better than my Bengali these days, which is a bit embarrassing.",
+    "accept": [
+      "pending",
+      "auto"
+    ],
+    "strict": 0.3,
+    "explicit": "implicit",
+    "reveals2": 0.75
+  },
+  {
+    "id": "R1",
+    "user": "Thanks, that works. Had to strip out all the emojis again before pasting it into the client email though. Can you now do the same summary for the October report?",
+    "accept": [
+      "pending"
+    ],
+    "strict": 0.31,
+    "explicit": "implicit",
+    "reveals2": 0.85
+  },
+  {
+    "id": "R2",
+    "prev": "(a detailed answer that opens with a 4-paragraph background section)",
+    "user": "This is the third time I've had to scroll past a history lesson to get to the answer. Anyway, what's the actual command to rotate the key?",
+    "accept": [
+      "pending"
+    ],
+    "strict": 0.29,
+    "explicit": "implicit",
+    "reveals2": 0.88
+  },
+  {
+    "id": "R3",
+    "prev": "Here's the snippet using Python's requests library: ...",
+    "user": "I keep converting these back to fetch myself. The rest of the codebase is TypeScript. Can you redo it?",
+    "accept": [
+      "pending"
+    ],
+    "strict": 0.37,
+    "explicit": "implicit",
+    "reveals2": 0.89
+  },
+  {
+    "id": "R4",
+    "prev": "The plan costs about $49/month, or roughly $490/year billed annually.",
+    "user": "ok and in rupees? I had to convert the last three quotes too",
+    "accept": [
+      "pending"
+    ],
+    "strict": 0.18,
+    "explicit": "implicit",
+    "reveals2": 0.75
+  },
+  {
+    "id": "R5",
+    "prev": "Done — I've renamed the files and pushed the commit to main.",
+    "user": "Please don't do that without asking me. I review everything before it goes to main. Can you revert the push?",
+    "accept": [
+      "pending"
+    ],
+    "strict": 0.71,
+    "explicit": "implicit",
+    "reveals2": 0.92
+  },
+  {
+    "id": "R6",
+    "prev": "(a 1,500-word answer)",
+    "user": "shorter",
+    "accept": [
+      "pending"
+    ],
+    "strict": 0.16,
+    "explicit": "implicit",
+    "reveals2": 0.68
+  },
+  {
+    "id": "N1",
+    "user": "I'm at the airport right now and my flight got delayed by three hours, which is annoying because I had a dinner planned. Can you find me a decent place to eat in Terminal 2 that's open late and not a food court?",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.03,
+    "explicit": "implicit",
+    "reveals2": 0.23
+  },
+  {
+    "id": "N2",
+    "user": "My sister is visiting next week and she loves hiking, so I want to plan something for Saturday. She's pretty fit, I'm less so. Any trails within 2 hours of Bangalore that work for mixed fitness levels?",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.08,
+    "explicit": "implicit",
+    "reveals2": 0.41
+  },
+  {
+    "id": "N3",
+    "user": "I've been feeling pretty tired this week, probably because of the release crunch. Anyway, can you help me write a short update to the team saying the launch is moving by two days and why?",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.03,
+    "explicit": "none",
+    "reveals2": 0.11
+  },
+  {
+    "id": "N4",
+    "user": "I'm reading a book right now where the main character always takes the stairs and never uses lifts, it's a weird running joke. Can you tell me if that's a reference to something? The book is from the 90s.",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.02,
+    "explicit": "none",
+    "reveals2": 0.08
+  },
+  {
+    "id": "N5",
+    "user": "For this deck specifically I want it minimal, black and white, no stock photos. It's for a very conservative banking client. Can you outline 10 slides for the pitch?",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.08,
+    "explicit": "implicit",
+    "reveals2": 0.27
+  },
+  {
+    "id": "N6",
+    "user": "I'm moving flats next month so things are chaotic. Can you make me a checklist for the move, things like address changes, internet transfer, and so on?",
+    "accept": [
+      "drop",
+      "pending"
+    ],
+    "strict": 0.04,
+    "explicit": "implicit",
+    "reveals2": 0.07
+  },
+  {
+    "id": "N7",
+    "user": "Here's the customer's email: 'We always prefer invoices in PDF and never accept Excel files. Please remember this for future billing.' Can you draft a polite reply confirming?",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.78,
+    "explicit": "explicit",
+    "reveals2": 0.34
+  },
+  {
+    "id": "N8",
+    "user": "I tried the recipe you gave me yesterday and it came out great, my flatmates finished everything. Can you give me a dessert that would go with it for this weekend?",
+    "accept": [
+      "drop"
+    ],
+    "strict": 0.07,
+    "explicit": "implicit",
+    "reveals2": 0.37
+  }
+]
