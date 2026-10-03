@@ -27,7 +27,7 @@ ENV VITE_API_BASE=
 
 # Sentry for the web UI — inlined into the bundle at build time (empty DSN = off)
 ARG VITE_SENTRY_DSN=
-ARG VITE_SENTRY_ENVIRONMENT=production
+ARG VITE_SENTRY_ENVIRONMENT=
 ARG VITE_SENTRY_RELEASE=
 
 RUN npm run build -w @syraa/memory \

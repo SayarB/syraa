@@ -74,7 +74,7 @@ services:
       args:
         # Web UI Sentry — baked into the bundle, so changing these needs a rebuild
         VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
-        VITE_SENTRY_ENVIRONMENT: ${VITE_SENTRY_ENVIRONMENT:-production}
+        VITE_SENTRY_ENVIRONMENT: ${VITE_SENTRY_ENVIRONMENT:-}
         VITE_SENTRY_RELEASE: ${VITE_SENTRY_RELEASE:-}
     restart: unless-stopped
     depends_on:

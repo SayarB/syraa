@@ -16,8 +16,12 @@ if (dsn) {
     // Low traffic: keep every trace. Lower this if the free-tier span quota gets tight.
     tracesSampleRate: 1.0,
     // Same-origin API calls carry trace headers, so frontend traces can join backend ones later.
+    // Not a cross-origin VITE_API_BASE: the API's CORS allows only Content-Type, so the extra
+    // headers would fail the preflight.
     tracePropagationTargets: [/^\/api\//],
-    // Don't attach users' IP addresses to events. A user ID set via Sentry.setUser is still sent.
+    // Don't attach users' IP addresses to events. The user ID set via Sentry.setUser is still sent.
     dataCollection: { userInfo: false },
+    // Keep fetch error messages as the browser wrote them — the UI shows them to users.
+    enhanceFetchErrorMessages: "report-only",
   });
 }
