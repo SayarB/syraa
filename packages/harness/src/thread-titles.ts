@@ -14,8 +14,8 @@ import {
 
 // Reasoning models think before answering (~50–100 tokens for a title); the budget covers that.
 const TITLE_MAX_OUTPUT_TOKENS = 1024;
-const TITLE_TIMEOUT_MS = 10_000;
-const TITLE_MAX_CHARS = 80;
+// The turn's final event waits for the title, so a slow model must not hold it for long.
+const TITLE_TIMEOUT_MS = 8_000;
 /** Each message is cut to this many characters in the title prompt. */
 const PROMPT_MESSAGE_CHARS = 1500;
 
@@ -34,7 +34,7 @@ export function cleanGeneratedTitle(raw: string): string | null {
     .replace(/\s+/g, " ")
     .trim();
   if (!title) return null;
-  return title.length <= TITLE_MAX_CHARS ? title : truncateThreadTitle(title, TITLE_MAX_CHARS);
+  return truncateThreadTitle(title);
 }
 
 function titlePrompt(messages: ThreadTextMessage[]): string {
@@ -109,7 +109,8 @@ export async function titleForFirstMessage(opts: {
 
 /**
  * Name a thread after its first turn: the generated title when there is one, else the first
- * message shortened. Only touches threads that are still untitled. Returns the saved title.
+ * message shortened. Replaces only a missing or fallback title (a list request may have shown the
+ * shortened message meanwhile), never a generated or user one. Returns the saved title.
  */
 export async function nameNewThread(opts: {
   userId: string;
@@ -124,7 +125,7 @@ export async function nameNewThread(opts: {
     threadId: opts.threadId,
     title,
     source: generated ? "generated" : "fallback",
-    onlyIfUntitled: true,
+    onlyIfFallbackTitle: true,
   });
   return saved ? truncateThreadTitle(title) : null;
 }
@@ -182,12 +183,19 @@ export async function backfillThreadTitles(
       }
 
       if (!opts.dryRun) {
-        await saveThreadTitle({
+        const saved = await saveThreadTitle({
           userId: thread.resourceId,
           threadId: thread.id,
           title,
           source: "generated",
+          onlyIfFallbackTitle: true,
         });
+        if (!saved) {
+          // Renamed, retitled or deleted while the model was running.
+          result.skipped++;
+          log(`${thread.id}: changed meanwhile, left alone`);
+          continue;
+        }
       }
       result.retitled++;
       log(`${thread.id}: "${thread.title ?? ""}" → "${title}"`);

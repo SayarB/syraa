@@ -1,4 +1,5 @@
 import type { MastraDBMessage } from "@mastra/core/agent";
+import { getHarnessPool } from "./db.js";
 import { getSyraaMemory } from "./mastra/memory.js";
 import { ValidationError } from "./schemas.js";
 import { mastraThreadToUiMessages, type ThreadUiMessageDto } from "./thread-ui-messages.js";
@@ -69,7 +70,7 @@ export function titleSourceOf(metadata?: Record<string, unknown>): TitleSource {
   return source === "generated" || source === "user" ? source : "fallback";
 }
 
-export function truncateThreadTitle(text: string, max = 72): string {
+export function truncateThreadTitle(text: string, max = THREAD_TITLE_MAX_CHARS): string {
   const cleaned = text.trim().replace(/\s+/g, " ");
   if (cleaned.length <= max) return cleaned;
   return `${cleaned.slice(0, max - 1).trimEnd()}…`;
@@ -244,21 +245,8 @@ export async function listChatThreads(opts: {
   for (const thread of result.threads) {
     let title = thread.title?.trim() ?? "";
     if (isUntitledThread(title)) {
-      const derived = await firstUserMessageTitle(thread.id, thread.resourceId);
-      title = derived ?? "Chat";
-      if (derived) {
-        try {
-          await memory.saveThread({
-            thread: {
-              ...thread,
-              title: derived,
-              metadata: { ...thread.metadata, titleSource: "fallback" },
-            },
-          });
-        } catch {
-          // listing still shows derived title even if persist fails
-        }
-      }
+      // Display only: saving here could beat the turn's generated title, which is still on its way.
+      title = (await firstUserMessageTitle(thread.id, thread.resourceId)) ?? "Chat";
     }
     threads.push(toThreadDto({ ...thread, title }));
   }
@@ -266,34 +254,74 @@ export async function listChatThreads(opts: {
   return threads;
 }
 
+export const THREAD_TITLE_MAX_CHARS = 72;
+
+type ThreadRow = {
+  id: string;
+  resourceId: string;
+  title: string;
+  metadata: Record<string, unknown> | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+};
+
 /**
- * Save a thread title and where it came from. Keeps `updatedAt`, so retitling does not move the
- * thread in the sidebar. With `onlyIfUntitled`, a thread that already has a title is left alone
- * (returns false).
+ * Patch a thread row in place with one UPDATE on Mastra's `mastra_threads` table. Unlike Mastra's
+ * `saveThread` (a full-row upsert from a possibly stale read) it never recreates a deleted thread
+ * or reverts concurrent changes, and unlike `updateThread` it leaves `updatedAt` alone, so the
+ * thread keeps its place in the list. Returns the updated row, or null when no row matched.
+ */
+export async function patchThreadRow(opts: {
+  userId: string;
+  threadId: string;
+  title?: string;
+  /** Metadata keys to set (merged into the existing metadata). */
+  set?: Record<string, unknown>;
+  /** Metadata keys to remove. */
+  unset?: string[];
+  /** Only patch while the title is missing or a fallback, never a generated or user title. */
+  onlyIfFallbackTitle?: boolean;
+}): Promise<ThreadRow | null> {
+  const result = await getHarnessPool().query<ThreadRow>(
+    `UPDATE mastra_threads
+        SET title = COALESCE($3, title),
+            metadata = (COALESCE(metadata, '{}'::jsonb) - $5::text[]) || $4::jsonb
+      WHERE id = $1 AND "resourceId" = $2
+        ${opts.onlyIfFallbackTitle ? `AND COALESCE(metadata->>'titleSource', 'fallback') = 'fallback'` : ""}
+      RETURNING id, "resourceId", title, metadata,
+                COALESCE("createdAtZ", "createdAt") AS "createdAt",
+                COALESCE("updatedAtZ", "updatedAt") AS "updatedAt"`,
+    [
+      opts.threadId,
+      opts.userId,
+      opts.title ?? null,
+      JSON.stringify(opts.set ?? {}),
+      opts.unset ?? [],
+    ],
+  );
+  return result.rows[0] ?? null;
+}
+
+/**
+ * Save a thread title and where it came from, keeping `updatedAt`. With `onlyIfFallbackTitle`,
+ * a generated or user-set title is left alone (returns false); the check and the write are one
+ * statement, so a rename made meanwhile is never overwritten.
  */
 export async function saveThreadTitle(opts: {
   userId: string;
   threadId: string;
   title: string;
   source: TitleSource;
-  onlyIfUntitled?: boolean;
+  onlyIfFallbackTitle?: boolean;
 }): Promise<boolean> {
-  const memory = getSyraaMemory();
-  const thread = await memory.getThreadById({
+  const row = await patchThreadRow({
+    userId: opts.userId,
     threadId: opts.threadId,
-    resourceId: opts.userId,
+    title: truncateThreadTitle(opts.title) || "Chat",
+    set: { titleSource: opts.source },
+    onlyIfFallbackTitle: opts.onlyIfFallbackTitle,
   });
-  if (!thread || (thread.resourceId && thread.resourceId !== opts.userId)) return false;
-  if (opts.onlyIfUntitled && !isUntitledThread(thread.title)) return false;
-
-  await memory.saveThread({
-    thread: {
-      ...thread,
-      title: truncateThreadTitle(opts.title) || "Chat",
-      metadata: { ...thread.metadata, titleSource: opts.source },
-    },
-  });
-  return true;
+  return row !== null;
 }
 
 function extractDisplayText(message: MastraDBMessage): string | null {

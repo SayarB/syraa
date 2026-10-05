@@ -9,12 +9,13 @@ vi.mock("../src/mastra/index.js", () => ({
 const { titleModelConfig } = await import("../src/mastra/agents/title-writer.js");
 const { getSyraaMemory } = await import("../src/mastra/memory.js");
 const { closeMastraStorage, ensureMastraStorageReady } = await import("../src/mastra/storage.js");
-const { closeSettingsStore, ensureSettingsReady, updateUserSettings } = await import(
-  "../src/settings.js"
-);
+const { closeHarnessPool, getHarnessPool } = await import("../src/db.js");
+const { ensureSettingsReady, updateUserSettings } = await import("../src/settings.js");
 const { backfillThreadTitles, cleanGeneratedTitle, generateThreadTitle, nameNewThread } =
   await import("../src/thread-titles.js");
-const { isUntitledThread, titleSourceOf } = await import("../src/threads.js");
+const { isUntitledThread, listChatThreads, saveThreadTitle, titleSourceOf } = await import(
+  "../src/threads.js"
+);
 
 const GLM_FLASH = "accounts/fireworks/models/glm-5p3-flash";
 
@@ -150,8 +151,9 @@ describe.skipIf(!process.env.DATABASE_URL)("thread titles (Postgres)", () => {
   afterAll(async () => {
     const memory = getSyraaMemory();
     for (const threadId of createdThreadIds) await memory.deleteThread(threadId);
+    await getHarnessPool().query("DELETE FROM user_settings WHERE user_id = $1", [userId]);
     vi.unstubAllEnvs();
-    await closeSettingsStore();
+    await closeHarnessPool();
     await closeMastraStorage();
   });
 
@@ -180,6 +182,29 @@ describe.skipIf(!process.env.DATABASE_URL)("thread titles (Postgres)", () => {
     const rerun = await backfillThreadTitles({ userId });
     expect(rerun.retitled).toBe(0);
     expect(generate).not.toHaveBeenCalled();
+  });
+
+  it("backfill leaves a thread renamed while the model was running", async () => {
+    const legacy = await makeThread("help with my cv");
+    generate.mockImplementation(async () => {
+      await saveThreadTitle({ userId, threadId: legacy.id, title: "My CV", source: "user" });
+      return { text: "Resume help" };
+    });
+
+    const result = await backfillThreadTitles({ userId });
+
+    expect(result.retitled).toBe(0);
+    expect(result.skipped).toBeGreaterThan(0);
+    expect((await getSyraaMemory().getThreadById({ threadId: legacy.id }))?.title).toBe("My CV");
+  });
+
+  it("never recreates a deleted thread when saving a title", async () => {
+    const thread = await makeThread("soon gone");
+    await getSyraaMemory().deleteThread(thread.id);
+    expect(
+      await saveThreadTitle({ userId, threadId: thread.id, title: "Ghost", source: "generated" }),
+    ).toBe(false);
+    expect(await getSyraaMemory().getThreadById({ threadId: thread.id })).toBeNull();
   });
 
   it("dry run changes nothing", async () => {
@@ -216,6 +241,23 @@ describe.skipIf(!process.env.DATABASE_URL)("thread titles (Postgres)", () => {
     expect(fallback).toBe("what's a good recipe for dal");
     const secondAfter = await memory.getThreadById({ threadId: second.id });
     expect(titleSourceOf(secondAfter?.metadata)).toBe("fallback");
+
+    // A list request showed (but no longer saves) the shortened message: the generated title lands.
+    const third = await makeThread(undefined);
+    const listed = (await listChatThreads({ userId })).find((t) => t.id === third.id);
+    expect(listed?.title).toBe("first message of undefined");
+    expect(isUntitledThread((await memory.getThreadById({ threadId: third.id }))?.title)).toBe(
+      true,
+    );
+    await saveThreadTitle({ userId, threadId: third.id, title: "short msg", source: "fallback" });
+    expect(
+      await nameNewThread({
+        userId,
+        threadId: third.id,
+        userMessage: "x",
+        generated: Promise.resolve("Generated after fallback"),
+      }),
+    ).toBe("Generated after fallback");
 
     // Already titled: left alone.
     const again = await nameNewThread({
