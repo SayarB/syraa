@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { createPgPool, resolveDatabaseUrl } from "@syraa/memory";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { closeHarnessPool } from "../src/db.js";
 import { ValidationError } from "../src/schemas.js";
 import {
-  closeSettingsStore,
   DEFAULT_USER_SETTINGS,
   ensureSettingsReady,
   getUserSettings,
@@ -77,10 +77,16 @@ describe.skipIf(!process.env.DATABASE_URL)("user settings store (Postgres)", () 
 
   afterAll(async () => {
     vi.unstubAllEnvs();
-    await closeSettingsStore();
+    await closeHarnessPool();
     const pool = createPgPool(resolveDatabaseUrl(), { max: 1 });
     await pool.query("DELETE FROM user_settings WHERE user_id = $1", [userId]);
     await pool.end();
+  });
+
+  it("tolerates concurrent table creation", async () => {
+    await expect(
+      Promise.all(Array.from({ length: 4 }, () => ensureSettingsReady())),
+    ).resolves.toBeDefined();
   });
 
   it("returns defaults for a user with no row", async () => {

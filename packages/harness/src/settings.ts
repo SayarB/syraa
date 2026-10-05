@@ -1,6 +1,6 @@
 import { createPgPool, resolveDatabaseUrl } from "@syraa/memory";
-import type { Pool } from "pg";
 import { z } from "zod";
+import { getHarnessPool } from "./db.js";
 import { resolveChatProvider } from "./mastra/model.js";
 import { ValidationError } from "./schemas.js";
 
@@ -66,32 +66,27 @@ const CREATE_USER_SETTINGS_TABLE = `
   )
 `;
 
-let pool: Pool | null = null;
-
-function getPool(): Pool {
-  if (!pool) pool = createPgPool(resolveDatabaseUrl(), { max: 2 });
-  return pool;
-}
+/**
+ * Postgres errors from two `CREATE TABLE IF NOT EXISTS` racing (e.g. two processes booting at
+ * once): the loser fails on the catalog's unique index even though the table now exists.
+ */
+const CONCURRENT_CREATE_CODES = new Set(["23505", "42P07"]);
 
 /** Create the `user_settings` table if missing (idempotent; runs at boot). */
 export async function ensureSettingsReady(connectionString?: string): Promise<void> {
   const setupPool = createPgPool(resolveDatabaseUrl(connectionString), { max: 1 });
   try {
     await setupPool.query(CREATE_USER_SETTINGS_TABLE);
+  } catch (error) {
+    const code = (error as { code?: string }).code;
+    if (!code || !CONCURRENT_CREATE_CODES.has(code)) throw error;
   } finally {
     await setupPool.end();
   }
 }
 
-export async function closeSettingsStore(): Promise<void> {
-  if (!pool) return;
-  const current = pool;
-  pool = null;
-  await current.end();
-}
-
 export async function getUserSettings(userId: string): Promise<UserSettings> {
-  const result = await getPool().query<{ settings: unknown }>(
+  const result = await getHarnessPool().query<{ settings: unknown }>(
     "SELECT settings FROM user_settings WHERE user_id = $1",
     [userId],
   );
@@ -122,7 +117,7 @@ export async function updateUserSettings(
     throw new ValidationError(`unknown title model: ${patch.titleModel}`);
   }
 
-  const result = await getPool().query<{ settings: unknown }>(
+  const result = await getHarnessPool().query<{ settings: unknown }>(
     `INSERT INTO user_settings (user_id, settings, updated_at)
      VALUES ($1, $2::jsonb, now())
      ON CONFLICT (user_id)
