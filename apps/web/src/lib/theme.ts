@@ -106,6 +106,8 @@ export function useTheme(saveToAccount: boolean) {
     [theme, update],
   );
 
+  const setMode = useCallback((mode: ThemeMode) => update({ ...theme, mode }), [theme, update]);
+
   const toggleMode = useCallback(
     () => update({ ...theme, mode: theme.mode === "dark" ? "light" : "dark" }),
     [theme, update],
@@ -119,5 +121,5 @@ export function useTheme(saveToAccount: boolean) {
     }));
   }, []);
 
-  return { theme, setPalette, toggleMode, adoptSaved };
+  return { theme, setPalette, setMode, toggleMode, adoptSaved };
 }

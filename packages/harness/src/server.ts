@@ -22,6 +22,7 @@ import {
   parseJsonBody,
   ValidationError,
 } from "./schemas.js";
+import { getSettingsResponse, settingsPatchSchema, updateUserSettings } from "./settings.js";
 import { createChatThread, listChatThreads, listThreadMessages } from "./threads.js";
 import { getIngestJobStatus, handleIngestUpload } from "./upload.js";
 
@@ -177,6 +178,17 @@ async function handleApi(
       }
       throw err;
     }
+    return;
+  }
+
+  if (req.method === "GET" && pathname === "/api/settings") {
+    sendJson(res, 200, await getSettingsResponse(userId));
+    return;
+  }
+
+  if (req.method === "PATCH" && pathname === "/api/settings") {
+    const body = await parseJsonBody(await readBody(req), settingsPatchSchema);
+    sendJson(res, 200, await updateUserSettings(userId, body));
     return;
   }
 

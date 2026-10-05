@@ -42,6 +42,23 @@ export {
 } from "./schemas.js";
 export type { HarnessServerOptions } from "./server.js";
 export { createHarnessServer } from "./server.js";
+export type {
+  ModelOption,
+  SettingsOptions,
+  SettingsPatch,
+  SettingsResponse,
+  UserSettings,
+} from "./settings.js";
+export {
+  DEFAULT_USER_SETTINGS,
+  ensureSettingsReady,
+  getSettingsResponse,
+  getUserSettings,
+  SAME_AS_CHAT_MODEL,
+  settingsPatchSchema,
+  titleModelOptions,
+  updateUserSettings,
+} from "./settings.js";
 export type { ThreadDto, ThreadMessageDto, ThreadWorksMetadata } from "./threads.js";
 export {
   buildThreadWorksMetadata,

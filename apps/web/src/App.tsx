@@ -22,6 +22,7 @@ import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AuthShell, SignInCard } from "@/components/auth-screen";
 import { type ChatEventLine, ChatMessages } from "@/components/chat-messages";
+import { SettingsDialog } from "@/components/settings-dialog";
 import { ThemeModeToggle } from "@/components/theme-mode-toggle";
 import { TopicTreeDialog } from "@/components/topic-tree-dialog";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -125,7 +126,10 @@ export default function App() {
   const [authBusy, setAuthBusy] = useState(false);
   const [authSent, setAuthSent] = useState(false);
   const [googleAuthEnabled, setGoogleAuthEnabled] = useState(false);
-  const { theme, setPalette, toggleMode, adoptSaved } = useTheme(authStatus === "signed_in");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const { theme, setPalette, setMode, toggleMode, adoptSaved } = useTheme(
+    authStatus === "signed_in",
+  );
 
   const transport = useMemo(
     () =>
@@ -462,6 +466,7 @@ export default function App() {
       console.error(err);
     }
     setAuthStatus("signed_out");
+    setSettingsOpen(false);
     setUserId(null);
     setUserEmail(null);
     setThreadId(null);
@@ -584,8 +589,7 @@ export default function App() {
           onRefreshResources={() => void refreshResources()}
           onOpenResource={(id) => void openResourceTree(id)}
           displayName={displayName}
-          palette={theme.palette}
-          onPaletteChange={setPalette}
+          onOpenSettings={() => setSettingsOpen(true)}
           onSignOut={() => void signOut()}
         />
 
@@ -684,6 +688,14 @@ export default function App() {
             </PromptInput>
           </div>
         </SidebarInset>
+
+        <SettingsDialog
+          open={settingsOpen}
+          onOpenChange={setSettingsOpen}
+          theme={theme}
+          onPaletteChange={setPalette}
+          onModeChange={setMode}
+        />
 
         <TopicTreeDialog
           open={treeOpen}
