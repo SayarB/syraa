@@ -352,14 +352,17 @@ function rememberDeleted(threadId: string): void {
   deletedThreads.set(threadId, now + DELETED_THREAD_TTL_MS);
 }
 
-/** Delete again a thread the user deleted that a finished turn recreated. True if it was deleted. */
-export async function purgeIfDeleted(threadId: string): Promise<boolean> {
+function wasRecentlyDeleted(threadId: string): boolean {
   const expires = deletedThreads.get(threadId);
   if (expires === undefined) return false;
-  if (expires < Date.now()) {
-    deletedThreads.delete(threadId);
-    return false;
-  }
+  if (expires >= Date.now()) return true;
+  deletedThreads.delete(threadId);
+  return false;
+}
+
+/** Delete again a thread the user deleted that a finished turn recreated. True if it was deleted. */
+export async function purgeIfDeleted(threadId: string): Promise<boolean> {
+  if (!wasRecentlyDeleted(threadId)) return false;
   await getSyraaMemory().deleteThread(threadId);
   return true;
 }
@@ -391,7 +394,7 @@ export async function updateChatThread(opts: {
     set,
     unset,
   });
-  if (!row || deletedThreads.has(opts.threadId)) throw new ThreadNotFoundError();
+  if (!row || wasRecentlyDeleted(opts.threadId)) throw new ThreadNotFoundError();
   return toThreadDto({ ...row, metadata: row.metadata ?? undefined });
 }
 

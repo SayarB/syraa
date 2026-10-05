@@ -349,21 +349,26 @@ export default function App() {
   }
 
   async function openThread(nextThreadId: string) {
+    threadIdRef.current = nextThreadId;
     setThreadId(nextThreadId);
     if (userId) storeThreadId(userId, nextThreadId);
     setMemoryOpen(false);
     setEventLines([]);
+    // Another chat may be opened before this one loads; then this response is dropped.
+    const stillOpen = () => threadIdRef.current === nextThreadId;
     try {
       const res = await apiFetch(`/api/threads/${encodeURIComponent(nextThreadId)}`);
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
+        // Only a 404 means the chat is gone; keep it for other errors so a retry still works.
+        if (res.status === 404 && stillOpen()) forgetThread();
         throw new Error(err.error ?? `HTTP ${res.status}`);
       }
       const data = (await res.json()) as { messages: ThreadMessage[] };
-      setChatMessages(toUiMessages(data.messages));
+      if (stillOpen()) setChatMessages(toUiMessages(data.messages));
     } catch (err) {
       console.error(err);
-      forgetThread();
+      if (!stillOpen()) return;
       setChatMessages([]);
       setEventLines([
         {

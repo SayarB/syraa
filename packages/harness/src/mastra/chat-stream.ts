@@ -23,6 +23,8 @@ export async function createSyraaUIMessageStream(opts: {
   /** Langfuse `chat-turn` span; the caller ends it once the turn is complete. */
   turnSpan?: AnySpan;
   onTurnComplete: (turn: SyraaTurnMeta) => Promise<Record<string, unknown> | undefined>;
+  /** Runs once the turn is over, whether it completed or failed. Its errors are ignored. */
+  onSettled?: () => Promise<void>;
 }) {
   return runWithChatContext({ userId: opts.userId, threadId: opts.threadId }, async () => {
     const agent = getSyraaAgent();
@@ -56,6 +58,8 @@ export async function createSyraaUIMessageStream(opts: {
         } catch (error) {
           failSpan(opts.turnSpan, error);
           throw error;
+        } finally {
+          await opts.onSettled?.().catch(() => undefined);
         }
       },
     });
