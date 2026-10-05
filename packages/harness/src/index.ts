@@ -38,6 +38,7 @@ export {
   lessonKindSchema,
   memoryItemPatchSchema,
   parseJsonBody,
+  threadPatchSchema,
   ValidationError,
 } from "./schemas.js";
 export type { HarnessServerOptions } from "./server.js";
@@ -74,10 +75,12 @@ export type {
 export {
   buildThreadWorksMetadata,
   createChatThread,
+  deleteChatThread,
   ensureChatThread,
   listChatThreads,
   listThreadMessages,
   saveThreadTitle,
+  updateChatThread,
 } from "./threads.js";
 export type { UploadIngestResult } from "./upload.js";
 export { getIngestJobStatus, handleIngestUpload } from "./upload.js";

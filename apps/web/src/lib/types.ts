@@ -46,6 +46,7 @@ export type ChatThread = {
   title: string;
   createdAt: string;
   updatedAt: string;
+  archived: boolean;
   placement: "global" | "attached";
   projectId: string | null;
   subprojectId: string | null;
