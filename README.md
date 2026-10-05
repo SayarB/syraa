@@ -89,3 +89,4 @@ Tests live next to code:
 - `GET /api/resources`, `GET /api/resources/:id/tree`
 - `GET|POST /api/auth/*` (Better Auth)
 - `GET /api/me`
+- `GET|PATCH /api/settings` (per-user settings: title model)
