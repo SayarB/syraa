@@ -8,7 +8,7 @@ import { createStaticUIMessageStream, createSyraaUIMessageStream } from "./mastr
 import { failSpan, startChatTurnSpan } from "./mastra/observability.js";
 import { getMemory, listMemoryForUser, parseSaveCommand, saveMemoryItem } from "./memory.js";
 import { nameNewThread, titleForFirstMessage } from "./thread-titles.js";
-import { ensureChatThread } from "./threads.js";
+import { ensureChatThread, purgeIfDeleted } from "./threads.js";
 
 export type ChatRequest = {
   userId: string;
@@ -59,6 +59,8 @@ export async function handleChat(request: ChatRequest): Promise<ChatResponse> {
 
   const { memoryItems, lessons, threadTitle } = await finishTurn(request, prepared);
   prepared.turnSpan?.end({ output: turn.message });
+  // Deleted while the reply ran: saving the reply recreated the thread.
+  await purgeIfDeleted(prepared.threadId);
 
   return {
     role: "assistant",
@@ -217,6 +219,8 @@ export async function pipeChatStream(request: ChatRequest, res: ServerResponse):
       onTurnComplete: async (turn) => {
         const { memoryItems, lessons, threadTitle } = await finishTurn(request, prepared);
         prepared.turnSpan?.end({ output: turn.message });
+        // Deleted while the reply ran: saving the reply recreated the thread.
+        await purgeIfDeleted(prepared.threadId);
 
         return {
           threadId: prepared.threadId,

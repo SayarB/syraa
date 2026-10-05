@@ -182,28 +182,20 @@ async function handleApi(
       sendJson(res, 400, { error: "thread id required" });
       return;
     }
-    try {
-      if (req.method === "GET") {
-        sendJson(res, 200, await listThreadMessages({ userId, threadId }));
-        return;
-      }
-      if (req.method === "PATCH") {
-        const body = await parseJsonBody(await readBody(req), threadPatchSchema);
-        const thread = await updateChatThread({ userId, threadId, ...body });
-        sendJson(res, 200, { thread });
-        return;
-      }
-      if (req.method === "DELETE") {
-        await deleteChatThread({ userId, threadId });
-        sendJson(res, 200, { deleted: threadId });
-        return;
-      }
-    } catch (err) {
-      if (err instanceof ThreadNotFoundError) {
-        sendJson(res, 404, { error: err.message });
-        return;
-      }
-      throw err;
+    if (req.method === "GET") {
+      sendJson(res, 200, await listThreadMessages({ userId, threadId }));
+      return;
+    }
+    if (req.method === "PATCH") {
+      const body = await parseJsonBody(await readBody(req), threadPatchSchema);
+      const thread = await updateChatThread({ userId, threadId, ...body });
+      sendJson(res, 200, { thread });
+      return;
+    }
+    if (req.method === "DELETE") {
+      await deleteChatThread({ userId, threadId });
+      sendJson(res, 200, { deleted: threadId });
+      return;
     }
   }
 
@@ -252,6 +244,10 @@ async function handleApi(
         res,
       );
     } catch (err) {
+      if (err instanceof ThreadNotFoundError) {
+        sendJson(res, 404, { error: err.message });
+        return;
+      }
       const message = formatHarnessError(err);
       sendJson(res, 500, { error: message });
     }
@@ -367,6 +363,10 @@ export function createHarnessServer(options: HarnessServerOptions = {}) {
     } catch (err) {
       if (err instanceof UnauthorizedError) {
         sendJson(res, 401, { error: err.message });
+        return;
+      }
+      if (err instanceof ThreadNotFoundError) {
+        sendJson(res, 404, { error: err.message });
         return;
       }
       if (err instanceof ValidationError) {

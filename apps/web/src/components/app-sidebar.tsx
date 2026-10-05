@@ -148,7 +148,9 @@ export function AppSidebar(props: Props) {
             ) : null}
             {!props.threadsLoading && props.threads.length === 0 ? (
               <p className="px-2 py-1.5 text-muted-foreground text-xs">
-                No chats yet — send a message to start
+                {props.archivedThreads.length > 0
+                  ? "No active chats — send a message to start"
+                  : "No chats yet — send a message to start"}
               </p>
             ) : null}
             <SidebarMenu>

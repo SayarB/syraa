@@ -6,7 +6,9 @@ import { closeMastraStorage, ensureMastraStorageReady } from "../src/mastra/stor
 import { threadPatchSchema } from "../src/schemas.js";
 import {
   deleteChatThread,
+  ensureChatThread,
   listChatThreads,
+  listThreadMessages,
   ThreadNotFoundError,
   titleSourceOf,
   updateChatThread,
@@ -111,6 +113,62 @@ describe.skipIf(!process.env.DATABASE_URL)("thread actions (Postgres)", () => {
     } finally {
       await pool.end();
     }
+  });
+
+  it("purges a deleted thread that a still-running reply recreated", async () => {
+    const thread = await makeThread("deleted mid-reply");
+    await deleteChatThread({ userId, threadId: thread.id });
+
+    // What Mastra does when it saves a reply into a thread that no longer exists.
+    const memory = getSyraaMemory();
+    const recreate = () =>
+      memory.saveThread({
+        thread: {
+          id: thread.id,
+          resourceId: userId,
+          title: "",
+          metadata: {},
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      });
+
+    await recreate();
+    expect((await listChatThreads({ userId })).map((t) => t.id)).not.toContain(thread.id);
+    expect(await memory.getThreadById({ threadId: thread.id })).toBeNull();
+
+    await recreate();
+    await expect(listThreadMessages({ userId, threadId: thread.id })).rejects.toBeInstanceOf(
+      ThreadNotFoundError,
+    );
+    expect(await memory.getThreadById({ threadId: thread.id })).toBeNull();
+
+    await recreate();
+    await expect(ensureChatThread({ userId, threadId: thread.id })).rejects.toBeInstanceOf(
+      ThreadNotFoundError,
+    );
+    expect(await memory.getThreadById({ threadId: thread.id })).toBeNull();
+  });
+
+  it("does not recreate a deleted thread on rename or archive", async () => {
+    const thread = await makeThread("gone");
+    await deleteChatThread({ userId, threadId: thread.id });
+    await expect(
+      updateChatThread({ userId, threadId: thread.id, archived: true }),
+    ).rejects.toBeInstanceOf(ThreadNotFoundError);
+    expect(await getSyraaMemory().getThreadById({ threadId: thread.id })).toBeNull();
+  });
+
+  it("rejects chat turns for thread ids the server never issued", async () => {
+    await expect(
+      ensureChatThread({ userId, threadId: `made-up-${randomUUID()}` }),
+    ).rejects.toBeInstanceOf(ThreadNotFoundError);
+  });
+
+  it("keeps updatedAt on archive", async () => {
+    const thread = await makeThread("order");
+    const archived = await updateChatThread({ userId, threadId: thread.id, archived: true });
+    expect(archived.updatedAt).toBe(new Date(thread.updatedAt).toISOString());
   });
 
   it("refuses another user's thread", async () => {

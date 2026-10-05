@@ -113,6 +113,7 @@ export default function App() {
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [archivedThreads, setArchivedThreads] = useState<ChatThread[]>([]);
   const [threadToDelete, setThreadToDelete] = useState<ChatThread | null>(null);
+  const latestThreadsRefresh = useRef(0);
   const [threadsLoading, setThreadsLoading] = useState(false);
   const [items, setItems] = useState<MemoryItem[]>([]);
   const [memoryMeta, setMemoryMeta] = useState("—");
@@ -172,6 +173,12 @@ export default function App() {
     transport,
     onError: (error) => {
       pendingDisplayMessage.current = null;
+      if (error.message.includes("thread not found")) {
+        // Deleted elsewhere (another tab): the next message starts a new chat.
+        forgetThread();
+        pushSystem("This chat was deleted. Your next message starts a new chat.");
+        return;
+      }
       pushSystem(`Chat error: ${error.message}`);
     },
     onData: (part) => {
@@ -216,6 +223,14 @@ export default function App() {
   // Read by async handlers (upload, memory) so a line lands after the latest message, not a stale one.
   const lastMessageIdRef = useRef<string | null>(null);
   lastMessageIdRef.current = chatMessages.at(-1)?.id ?? null;
+  const threadIdRef = useRef<string | null>(null);
+  threadIdRef.current = threadId;
+
+  /** Drop the current thread id (it no longer exists), so the next message starts a new chat. */
+  function forgetThread() {
+    setThreadId(null);
+    if (userId) storeThreadId(userId, null);
+  }
 
   function pushEventLine(line: NewEventLine) {
     const afterMessageId = lastMessageIdRef.current;
@@ -252,20 +267,24 @@ export default function App() {
   }
 
   async function refreshThreads() {
+    // Refreshes can overlap (an action's refresh vs the end of a turn); only the newest one lands.
+    const refresh = ++latestThreadsRefresh.current;
     setThreadsLoading(true);
     try {
       const [active, archived] = await Promise.all([
         fetchThreads("/api/threads"),
         fetchThreads("/api/threads?archived=true"),
       ]);
+      if (refresh !== latestThreadsRefresh.current) return;
       setThreads(active);
       setArchivedThreads(archived);
     } catch (err) {
       console.error(err);
+      if (refresh !== latestThreadsRefresh.current) return;
       setThreads([]);
       setArchivedThreads([]);
     } finally {
-      setThreadsLoading(false);
+      if (refresh === latestThreadsRefresh.current) setThreadsLoading(false);
     }
   }
 
@@ -279,7 +298,8 @@ export default function App() {
 
   /** Leave the open chat when it is archived or deleted. */
   function leaveThread(id: string) {
-    if (id !== threadId) return;
+    // Read through the ref: the user may have opened another chat while the request ran.
+    if (id !== threadIdRef.current) return;
     if (streaming) void stop();
     startNewChat();
   }
@@ -343,6 +363,8 @@ export default function App() {
       setChatMessages(toUiMessages(data.messages));
     } catch (err) {
       console.error(err);
+      forgetThread();
+      setChatMessages([]);
       setEventLines([
         {
           id: nextId("system"),
@@ -432,6 +454,10 @@ export default function App() {
           if (res.ok) {
             const threadData = (await res.json()) as { messages: ThreadMessage[] };
             setChatMessages(toUiMessages(threadData.messages));
+          } else if (res.status === 404) {
+            // Deleted since the last visit.
+            setThreadId(null);
+            storeThreadId(data.userId, null);
           }
         } catch (err) {
           console.error(err);
