@@ -1,5 +1,6 @@
 import { CheckIcon, MoonIcon, SlidersHorizontalIcon, SunIcon } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -41,6 +42,7 @@ function SettingsSection({ title, children }: { title: string; children: ReactNo
   );
 }
 
+/** A label + description beside a control. Without `htmlFor`, the control names itself (e.g. a fieldset legend). */
 function SettingRow(props: {
   label: string;
   description: string;
@@ -50,7 +52,13 @@ function SettingRow(props: {
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
       <div className="grid gap-0.5">
-        <Label htmlFor={props.htmlFor}>{props.label}</Label>
+        {props.htmlFor ? (
+          <Label htmlFor={props.htmlFor}>{props.label}</Label>
+        ) : (
+          <p aria-hidden="true" className="font-medium text-sm leading-none">
+            {props.label}
+          </p>
+        )}
         <p className="text-muted-foreground text-xs">{props.description}</p>
       </div>
       <div className="shrink-0">{props.children}</div>
@@ -64,7 +72,7 @@ const MODES = [
 ] as const;
 
 function GeneralSettings(props: Omit<Props, "open" | "onOpenChange">) {
-  const { settings, options, error, load, update } = useUserSettings();
+  const { settings, options, loadError, saveError, load, update } = useUserSettings();
 
   useEffect(() => {
     void load();
@@ -136,12 +144,12 @@ function GeneralSettings(props: Omit<Props, "open" | "onOpenChange">) {
           htmlFor="settings-title-model"
         >
           <Select
-            value={settings?.titleModel}
+            value={settings?.titleModel ?? ""}
             onValueChange={(titleModel) => void update({ titleModel })}
             disabled={!settings || !options}
           >
             <SelectTrigger id="settings-title-model" className="w-56">
-              <SelectValue placeholder="Loading…" />
+              <SelectValue placeholder={loadError ? "Unavailable" : "Loading…"} />
             </SelectTrigger>
             <SelectContent>
               {options?.titleModels.map((model) => (
@@ -152,8 +160,16 @@ function GeneralSettings(props: Omit<Props, "open" | "onOpenChange">) {
             </SelectContent>
           </Select>
         </SettingRow>
-        {error ? (
-          <p className="text-destructive text-xs">Could not save settings: {error}</p>
+        {loadError ? (
+          <p className="flex items-center gap-2 text-destructive text-xs">
+            Could not load settings: {loadError}
+            <Button variant="outline" size="xs" onClick={() => void load()}>
+              Retry
+            </Button>
+          </p>
+        ) : null}
+        {saveError ? (
+          <p className="text-destructive text-xs">Could not save settings: {saveError}</p>
         ) : null}
       </SettingsSection>
     </div>

@@ -89,4 +89,4 @@ Tests live next to code:
 - `GET /api/resources`, `GET /api/resources/:id/tree`
 - `GET|POST /api/auth/*` (Better Auth)
 - `GET /api/me`
-- `GET|PATCH /api/settings` (per-user settings: title model)
+- `GET|PATCH /api/settings` (per-user settings: title model). Stored in `user_settings` (one JSON row per user), which the API creates at boot (`ensureSettingsReady`) rather than through a migration file — anything else that reads it must call that first.

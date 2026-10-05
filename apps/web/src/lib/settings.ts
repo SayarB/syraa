@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { apiFetch } from "./api";
 
 export type ModelOption = { id: string; label: string };
@@ -25,6 +25,10 @@ async function readSettingsResponse(res: Response): Promise<SettingsResponse> {
   return (await res.json()) as SettingsResponse;
 }
 
+function errorText(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
 /**
  * Account settings stored by the harness (`/api/settings`). Theme is not here — it lives on the
  * auth user and is handled by `useTheme`.
@@ -32,40 +36,54 @@ async function readSettingsResponse(res: Response): Promise<SettingsResponse> {
 export function useUserSettings() {
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [options, setOptions] = useState<SettingsOptions | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  // Saves run one at a time, in order, so the last change is also the last one stored; only the
+  // newest save's response is shown.
+  const saveQueue = useRef<Promise<void>>(Promise.resolve());
+  const latestSave = useRef(0);
 
   const apply = useCallback((data: SettingsResponse) => {
     setSettings(data.settings);
     setOptions(data.options);
-    setError(null);
   }, []);
 
   const load = useCallback(async () => {
+    setLoadError(null);
     try {
       apply(await readSettingsResponse(await apiFetch("/api/settings")));
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setLoadError(errorText(err));
     }
   }, [apply]);
 
   const update = useCallback(
-    async (patch: Partial<UserSettings>) => {
-      const previous = settings;
-      if (previous) setSettings({ ...previous, ...patch });
-      try {
-        const res = await apiFetch("/api/settings", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(patch),
-        });
-        apply(await readSettingsResponse(res));
-      } catch (err) {
-        setSettings(previous);
-        setError(err instanceof Error ? err.message : String(err));
-      }
+    (patch: Partial<UserSettings>) => {
+      const save = ++latestSave.current;
+      setSaveError(null);
+      setSettings((current) => (current ? { ...current, ...patch } : current));
+
+      const run = async () => {
+        try {
+          const res = await apiFetch("/api/settings", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(patch),
+          });
+          const data = await readSettingsResponse(res);
+          if (save === latestSave.current) apply(data);
+        } catch (err) {
+          if (save !== latestSave.current) return;
+          setSaveError(errorText(err));
+          // Show what is actually stored instead of the failed optimistic value.
+          await load();
+        }
+      };
+      saveQueue.current = saveQueue.current.then(run);
+      return saveQueue.current;
     },
-    [settings, apply],
+    [apply, load],
   );
 
-  return { settings, options, error, load, update };
+  return { settings, options, loadError, saveError, load, update };
 }
