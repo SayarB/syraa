@@ -69,6 +69,8 @@ Upload PDFs from the web composer. Flow: drive → Redis → worker (bookmarks �
 
 Each upload also gets a short AI summary (from its top-level headings and opening text, one model call). The chat prompt lists documents by name + summary instead of every section title. For documents uploaded before summaries existed, run the backfill once (in Docker: `docker exec <ingest-worker> python services/ingest-worker/backfill_summaries.py`; add `--dry-run` first to preview).
 
+Chat titles: the first message of a new chat is sent to the title model (Settings → General → Chat titles) alongside the reply, and the thread gets a 3–6 word title; if that fails it falls back to the shortened first message. To retitle older threads (whose title is the shortened first message), run the backfill once: `npm run titles:backfill -w @syraa/harness -- --dry-run` to preview, then without `--dry-run` (in Docker: `docker exec <api> node packages/harness/dist/backfill-titles.js`). Add `--user <id>` for one account. Re-running only touches threads that still have a fallback title.
+
 ## Quality
 
 ```bash

@@ -7,7 +7,8 @@ import { runChatTurn } from "./llm.js";
 import { createStaticUIMessageStream, createSyraaUIMessageStream } from "./mastra/chat-stream.js";
 import { failSpan, startChatTurnSpan } from "./mastra/observability.js";
 import { getMemory, listMemoryForUser, parseSaveCommand, saveMemoryItem } from "./memory.js";
-import { ensureChatThread, maybeSetThreadTitle } from "./threads.js";
+import { nameNewThread, titleForFirstMessage } from "./thread-titles.js";
+import { ensureChatThread } from "./threads.js";
 
 export type ChatRequest = {
   userId: string;
@@ -24,6 +25,8 @@ export type ChatResponse = {
   threadId: string;
   model?: string;
   provider?: string;
+  /** Set on the turn that named the thread. */
+  threadTitle?: string;
   memoryItems?: Awaited<ReturnType<typeof applyLessons>>;
   lessons?: GatedLesson[];
 };
@@ -54,12 +57,13 @@ export async function handleChat(request: ChatRequest): Promise<ChatResponse> {
     throw error;
   }
 
-  const { memoryItems, lessons } = await finishTurn(request, prepared);
+  const { memoryItems, lessons, threadTitle } = await finishTurn(request, prepared);
   prepared.turnSpan?.end({ output: turn.message });
 
   return {
     role: "assistant",
     threadId: prepared.threadId,
+    ...(threadTitle ? { threadTitle } : {}),
     content: turn.message,
     model: turn.model,
     provider: turn.provider,
@@ -75,15 +79,20 @@ export async function handleChat(request: ChatRequest): Promise<ChatResponse> {
 async function finishTurn(
   request: ChatRequest,
   prepared: Extract<Awaited<ReturnType<typeof prepareChatTurn>>, { kind: "turn" }>,
-): Promise<{ memoryItems: MemoryItem[]; lessons: GatedLesson[] }> {
-  try {
-    await maybeSetThreadTitle({
-      userId: request.userId,
-      threadId: prepared.threadId,
-      title: prepared.message,
-    });
-  } catch (error) {
-    console.warn("[chat] thread title not set:", error instanceof Error ? error.message : error);
+): Promise<{ memoryItems: MemoryItem[]; lessons: GatedLesson[]; threadTitle?: string }> {
+  let threadTitle: string | undefined;
+  if (prepared.titleGeneration) {
+    try {
+      threadTitle =
+        (await nameNewThread({
+          userId: request.userId,
+          threadId: prepared.threadId,
+          userMessage: prepared.message,
+          generated: prepared.titleGeneration,
+        })) ?? undefined;
+    } catch (error) {
+      console.warn("[chat] thread title not set:", error instanceof Error ? error.message : error);
+    }
   }
 
   const lessons = await prepared.lessonGate;
@@ -95,10 +104,10 @@ async function finishTurn(
       messageId: request.messageId,
       existingItems: prepared.dedupItems,
     });
-    return { memoryItems, lessons };
+    return { memoryItems, lessons, threadTitle };
   } catch (error) {
     console.warn("[chat] lessons not saved:", error instanceof Error ? error.message : error);
-    return { memoryItems: [], lessons };
+    return { memoryItems: [], lessons, threadTitle };
   }
 }
 
@@ -106,7 +115,7 @@ async function prepareChatTurn(request: ChatRequest, mode: "stream" | "generate"
   const { service } = await getMemory();
   const message = request.message.trim();
 
-  const { threadId } = await ensureChatThread({
+  const { threadId, needsTitle } = await ensureChatThread({
     userId: request.userId,
     threadId: request.threadId,
     projectId: request.projectId,
@@ -163,8 +172,19 @@ async function prepareChatTurn(request: ChatRequest, mode: "stream" | "generate"
     parentSpan: turnSpan,
   });
 
+  // Also started now, so the title is usually ready by the time the reply is. Never rejects.
+  const titleGeneration = needsTitle
+    ? titleForFirstMessage({
+        userId: request.userId,
+        threadId,
+        userMessage: message,
+        parentSpan: turnSpan,
+      })
+    : null;
+
   return {
     kind: "turn" as const,
+    titleGeneration,
     service,
     threadId,
     message,
@@ -195,11 +215,12 @@ export async function pipeChatStream(request: ChatRequest, res: ServerResponse):
       memoryItems: prepared.activeItems,
       turnSpan: prepared.turnSpan,
       onTurnComplete: async (turn) => {
-        const { memoryItems, lessons } = await finishTurn(request, prepared);
+        const { memoryItems, lessons, threadTitle } = await finishTurn(request, prepared);
         prepared.turnSpan?.end({ output: turn.message });
 
         return {
           threadId: prepared.threadId,
+          ...(threadTitle ? { threadTitle } : {}),
           memoryItems,
           lessons,
           displayMessage: turn.message,
