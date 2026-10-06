@@ -38,7 +38,7 @@ export type ResolvedChatModel = {
   mastraModelId: `${string}/${string}`;
 };
 
-function toMastraModelId(provider: ChatProvider, model: string): `${string}/${string}` {
+export function toMastraModelId(provider: ChatProvider, model: string): `${string}/${string}` {
   if (model.includes("/")) {
     const [prefix] = model.split("/", 1);
     if (

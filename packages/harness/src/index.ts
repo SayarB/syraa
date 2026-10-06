@@ -59,14 +59,25 @@ export {
   titleModelOptions,
   updateUserSettings,
 } from "./settings.js";
-export type { ThreadDto, ThreadMessageDto, ThreadWorksMetadata } from "./threads.js";
+export type { BackfillResult } from "./thread-titles.js";
+export {
+  backfillThreadTitles,
+  cleanGeneratedTitle,
+  generateThreadTitle,
+} from "./thread-titles.js";
+export type {
+  ThreadDto,
+  ThreadMessageDto,
+  ThreadWorksMetadata,
+  TitleSource,
+} from "./threads.js";
 export {
   buildThreadWorksMetadata,
   createChatThread,
   ensureChatThread,
   listChatThreads,
   listThreadMessages,
-  maybeSetThreadTitle,
+  saveThreadTitle,
 } from "./threads.js";
 export type { UploadIngestResult } from "./upload.js";
 export { getIngestJobStatus, handleIngestUpload } from "./upload.js";

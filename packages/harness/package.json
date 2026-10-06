@@ -20,7 +20,9 @@
     "eval:lesson-gate": "tsx evals/lesson-gate/run.ts",
     "eval:tool-calls": "tsx evals/tool-calls/run.ts",
     "auth:migrate": "tsx src/auth/migrate.ts",
-    "auth:migrate:dist": "node dist/auth/migrate.js"
+    "auth:migrate:dist": "node dist/auth/migrate.js",
+    "titles:backfill": "tsx src/backfill-titles.ts",
+    "titles:backfill:dist": "node dist/backfill-titles.js"
   },
   "dependencies": {
     "@mastra/ai-sdk": "^1.10.0",
