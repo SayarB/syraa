@@ -1,4 +1,5 @@
 import { useChat } from "@ai-sdk/react";
+import * as Sentry from "@sentry/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { PaperclipIcon } from "lucide-react";
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
@@ -165,6 +166,7 @@ export default function App() {
     transport,
     onError: (error) => {
       pendingDisplayMessage.current = null;
+      Sentry.captureException(error);
       pushSystem(`Chat error: ${error.message}`);
     },
     onData: (part) => {
@@ -268,6 +270,7 @@ export default function App() {
       setChatMessages(toUiMessages(data.messages));
     } catch (err) {
       console.error(err);
+      Sentry.captureException(err);
       setEventLines([
         {
           id: nextId("system"),
@@ -345,6 +348,7 @@ export default function App() {
       adoptSaved(data.theme);
       setUserId(data.userId);
       setUserEmail(data.email);
+      Sentry.setUser({ id: data.userId });
       setAuthStatus("signed_in");
       await refreshMemory();
       await refreshResources();
@@ -421,6 +425,7 @@ export default function App() {
       }
       await refreshResources();
     } catch (err) {
+      Sentry.captureException(err);
       pushSystem(`Upload error: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setUploading(false);
@@ -439,6 +444,7 @@ export default function App() {
       pendingDisplayMessage.current = null;
       await sendMessage({ text: message });
     } catch (err) {
+      Sentry.captureException(err);
       pushSystem(`Error: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setSending(false);
@@ -463,6 +469,7 @@ export default function App() {
     }
     setAuthStatus("signed_out");
     setUserId(null);
+    Sentry.setUser(null);
     setUserEmail(null);
     setThreadId(null);
     setChatMessages([]);
