@@ -1,4 +1,12 @@
-import { getToolName, isToolUIPart, type UIMessage } from "ai";
+import {
+  type DynamicToolUIPart,
+  getToolName,
+  isToolUIPart,
+  type ToolUIPart,
+  type UIMessage,
+} from "ai";
+
+type ToolPart = ToolUIPart | DynamicToolUIPart;
 
 export type ToolActivity = {
   toolName: string;
@@ -32,24 +40,40 @@ function joinPhrases(phrases: string[]): string {
   return `${phrases.slice(0, -1).join(", ")} and ${phrases.at(-1)}`;
 }
 
+export type ToolRunOutcome = "done" | "failed" | "unfinished";
+
+/** Where a tool call ended up once its reply is over (stopped replies leave calls mid-flight). */
+export function toolRunOutcome(state: ToolPart["state"]): ToolRunOutcome {
+  if (state === "output-available") return "done";
+  if (state === "output-error" || state === "output-denied") return "failed";
+  return "unfinished";
+}
+
 /**
- * One line for a run of finished tool calls, in first-use order:
- * "Searched the web 5 times and read 2 pages".
+ * One line for a run of tool calls in a finished reply, in first-use order:
+ * "Searched the web 5 times and read 2 pages (1 failed)".
  */
-export function summarizeToolRun(calls: Array<{ toolName: string; failed: boolean }>): string {
+export function summarizeToolRun(
+  calls: Array<{ toolName: string; outcome: ToolRunOutcome }>,
+): string {
   const counts = new Map<string, number>();
   for (const call of calls) counts.set(call.toolName, (counts.get(call.toolName) ?? 0) + 1);
 
   const phrases = [...counts].map(([name, count]) => {
-    const phrase = TOOL_RUN_PHRASES[name];
-    if (phrase) return phrase(count);
+    // Tool names can come from the model, so don't let "__proto__" and friends hit the prototype.
+    if (Object.hasOwn(TOOL_RUN_PHRASES, name)) return TOOL_RUN_PHRASES[name](count);
     const base = `used ${name.replaceAll("_", " ")}`;
     return count === 1 ? base : `${base} ${count} times`;
   });
   const sentence = joinPhrases(phrases);
-  const failed = calls.filter((call) => call.failed).length;
-  const failedNote = failed > 0 ? ` (${failed} failed)` : "";
-  return `${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}${failedNote}`;
+  const failed = calls.filter((call) => call.outcome === "failed").length;
+  const unfinished = calls.filter((call) => call.outcome === "unfinished").length;
+  const notes = [
+    failed > 0 ? `${failed} failed` : null,
+    unfinished > 0 ? `${unfinished} didn't finish` : null,
+  ].filter(Boolean);
+  const note = notes.length > 0 ? ` (${notes.join(", ")})` : "";
+  return `${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}${note}`;
 }
 
 function toolTitle(name: string, active: boolean): string {

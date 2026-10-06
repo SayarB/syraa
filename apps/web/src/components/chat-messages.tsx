@@ -11,6 +11,7 @@ import { pickThinkingPhrase } from "@/lib/thinking-status";
 import {
   formatToolActivity,
   summarizeToolRun,
+  toolRunOutcome,
   type WebSource,
   webSourcesFromPart,
 } from "@/lib/tool-activity";
@@ -163,7 +164,7 @@ function flattenMessages(
         summary: summarizeToolRun(
           toolRun.map((tool) => ({
             toolName: tool.toolName,
-            failed: tool.part.state === "output-error",
+            outcome: toolRunOutcome(tool.part.state),
           })),
         ),
         tools: toolRun,
