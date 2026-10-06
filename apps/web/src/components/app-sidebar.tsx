@@ -3,9 +3,9 @@ import {
   ChevronsUpDownIcon,
   FileTextIcon,
   LogOutIcon,
-  PaletteIcon,
   PlusIcon,
   RefreshCwIcon,
+  SettingsIcon,
 } from "lucide-react";
 import { MemoryPanel } from "@/components/memory-panel";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -14,9 +14,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -35,7 +32,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { THEME_PALETTES, type ThemePalette } from "@/lib/theme";
 import type { ChatThread, ContextResource, MemoryItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -74,8 +70,7 @@ type Props = {
   onOpenResource: (resourceId: string) => void;
 
   displayName: string;
-  palette: ThemePalette;
-  onPaletteChange: (palette: ThemePalette) => void;
+  onOpenSettings: () => void;
   onSignOut: () => void;
 };
 
@@ -216,25 +211,10 @@ export function AppSidebar(props: Props) {
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" align="start" className="w-60">
-                <DropdownMenuLabel className="flex items-center gap-2">
-                  <PaletteIcon className="size-4" />
-                  Palette
-                </DropdownMenuLabel>
-                <DropdownMenuRadioGroup
-                  value={props.palette}
-                  onValueChange={(value) => props.onPaletteChange(value as ThemePalette)}
-                >
-                  {THEME_PALETTES.map((palette) => (
-                    <DropdownMenuRadioItem key={palette.id} value={palette.id}>
-                      <span
-                        aria-hidden="true"
-                        className="size-3 rounded-full ring-1 ring-border"
-                        style={{ backgroundColor: palette.swatch }}
-                      />
-                      {palette.label}
-                    </DropdownMenuRadioItem>
-                  ))}
-                </DropdownMenuRadioGroup>
+                <DropdownMenuItem onSelect={props.onOpenSettings}>
+                  <SettingsIcon />
+                  Settings
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={props.onSignOut}>
                   <LogOutIcon />

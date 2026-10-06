@@ -218,9 +218,11 @@ export async function closeHarness(): Promise<void> {
   const { shutdownObservability } = await import("./mastra/index.js");
   const { closeMastraStorage } = await import("./mastra/storage.js");
   const { closeContextAndQueue } = await import("./context.js");
+  const { closeHarnessPool } = await import("./db.js");
   const handle = await getMemory().catch(() => null);
   if (handle) await handle.close();
   await closeContextAndQueue();
   await shutdownObservability();
   await closeMastraStorage();
+  await closeHarnessPool();
 }
