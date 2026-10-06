@@ -16,6 +16,42 @@ const TOOL_LABELS: Record<string, string> = {
   web_fetch: "Read page",
 };
 
+/** How a run of calls to one tool reads in a summary line: [once, n times]. */
+const TOOL_RUN_PHRASES: Record<string, (count: number) => string> = {
+  search_materials: (n) => (n === 1 ? "searched materials" : `searched materials ${n} times`),
+  list_materials: (n) => (n === 1 ? "listed materials" : `listed materials ${n} times`),
+  read_materials_section: (n) =>
+    n === 1 ? "read a document section" : `read ${n} document sections`,
+  get_my_memory: (n) => (n === 1 ? "checked memory" : `checked memory ${n} times`),
+  web_search: (n) => (n === 1 ? "searched the web" : `searched the web ${n} times`),
+  web_fetch: (n) => (n === 1 ? "read a page" : `read ${n} pages`),
+};
+
+function joinPhrases(phrases: string[]): string {
+  if (phrases.length <= 1) return phrases.join("");
+  return `${phrases.slice(0, -1).join(", ")} and ${phrases.at(-1)}`;
+}
+
+/**
+ * One line for a run of finished tool calls, in first-use order:
+ * "Searched the web 5 times and read 2 pages".
+ */
+export function summarizeToolRun(calls: Array<{ toolName: string; failed: boolean }>): string {
+  const counts = new Map<string, number>();
+  for (const call of calls) counts.set(call.toolName, (counts.get(call.toolName) ?? 0) + 1);
+
+  const phrases = [...counts].map(([name, count]) => {
+    const phrase = TOOL_RUN_PHRASES[name];
+    if (phrase) return phrase(count);
+    const base = `used ${name.replaceAll("_", " ")}`;
+    return count === 1 ? base : `${base} ${count} times`;
+  });
+  const sentence = joinPhrases(phrases);
+  const failed = calls.filter((call) => call.failed).length;
+  const failedNote = failed > 0 ? ` (${failed} failed)` : "";
+  return `${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}${failedNote}`;
+}
+
 function toolTitle(name: string, active: boolean): string {
   const base = TOOL_LABELS[name] ?? name.replaceAll("_", " ");
   if (active) return `${base}…`;
