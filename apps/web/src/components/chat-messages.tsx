@@ -1,13 +1,20 @@
 import { isTextUIPart, isToolUIPart, type UIMessage } from "ai";
-import { BrainIcon, CheckIcon } from "lucide-react";
+import { BrainIcon, CheckIcon, ChevronRightIcon, WrenchIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Source, Sources, SourcesContent, SourcesTrigger } from "@/components/ai-elements/sources";
 import { Tool, ToolContent, ToolHeader, type ToolPart } from "@/components/ai-elements/tool";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { formatMemoryDraftNotice } from "@/lib/memory-notice";
 import { pickThinkingPhrase } from "@/lib/thinking-status";
-import { formatToolActivity, type WebSource, webSourcesFromPart } from "@/lib/tool-activity";
+import {
+  formatToolActivity,
+  summarizeToolRun,
+  toolRunOutcome,
+  type WebSource,
+  webSourcesFromPart,
+} from "@/lib/tool-activity";
 import { extractTurnMessage } from "@/lib/turn-message";
 import type { MemoryItem } from "@/lib/types";
 
@@ -21,9 +28,20 @@ export type ChatEventLine = {
   text: string;
 } & ({ kind: "system" } | { kind: "memory"; variant: "draft" | "saved" });
 
+type ToolBlockData = {
+  kind: "tool";
+  id: string;
+  part: ToolPart;
+  toolName: string;
+  label: string;
+  summary: string;
+  detail: string;
+};
+
 type ChatBlock =
   | { kind: "user"; id: string; text: string }
-  | { kind: "tool"; id: string; part: ToolPart; label: string; summary: string; detail: string }
+  | ToolBlockData
+  | { kind: "tools"; id: string; summary: string; tools: ToolBlockData[] }
   | { kind: "assistant"; id: string; text: string; streaming: boolean }
   | { kind: "sources"; id: string; sources: WebSource[] }
   | { kind: "memory"; id: string; text: string; variant: "draft" | "saved" }
@@ -135,6 +153,24 @@ function flattenMessages(
     const isLastMessage = message.id === lastMessageId;
     const textIndex = lastTextPartIndex(message.parts);
     const sources = new Map<string, WebSource>();
+    // Once the reply is finished, each run of back-to-back tool calls folds into one summary line.
+    const foldTools = !(streaming && isLastMessage);
+    let toolRun: ToolBlockData[] = [];
+    const flushToolRun = () => {
+      if (toolRun.length === 0) return;
+      blocks.push({
+        kind: "tools",
+        id: `${toolRun[0].id}-run`,
+        summary: summarizeToolRun(
+          toolRun.map((tool) => ({
+            toolName: tool.toolName,
+            outcome: toolRunOutcome(tool.part.state),
+          })),
+        ),
+        tools: toolRun,
+      });
+      toolRun = [];
+    };
 
     message.parts.forEach((part, index) => {
       if (part.type === "step-start") return;
@@ -146,14 +182,17 @@ function flattenMessages(
         const done = part.state === "output-available" || part.state === "output-error";
         const activity = formatToolActivity(part, !done && streaming && isLastMessage);
         if (!activity) return;
-        blocks.push({
+        const tool: ToolBlockData = {
           kind: "tool",
           id: `${message.id}-tool-${index}`,
           part,
+          toolName: activity.toolName,
           label: activity.label,
           summary: activity.summary,
           detail: activity.detail,
-        });
+        };
+        if (foldTools) toolRun.push(tool);
+        else blocks.push(tool);
         return;
       }
 
@@ -161,6 +200,7 @@ function flattenMessages(
         const data = part.data as { memoryItems?: MemoryItem[] };
         const text = formatMemoryDraftNotice(data.memoryItems ?? []);
         if (!text) return;
+        flushToolRun();
         blocks.push({
           kind: "memory",
           id: `${message.id}-memory-${index}`,
@@ -177,6 +217,7 @@ function flattenMessages(
         streaming && isLastMessage && index === textIndex && part.state === "streaming";
       if (!text && !isStreamingText) return;
 
+      flushToolRun();
       blocks.push({
         kind: "assistant",
         id: `${message.id}-text-${index}`,
@@ -184,6 +225,7 @@ function flattenMessages(
         streaming: isStreamingText,
       });
     });
+    flushToolRun();
 
     if (sources.size > 0) {
       blocks.push({
@@ -195,7 +237,7 @@ function flattenMessages(
   }
 }
 
-function ToolBlock({ block }: { block: Extract<ChatBlock, { kind: "tool" }> }) {
+function ToolBlock({ block }: { block: ToolBlockData }) {
   const { part } = block;
   const header =
     part.type === "dynamic-tool" ? (
@@ -221,6 +263,24 @@ function ToolBlock({ block }: { block: Extract<ChatBlock, { kind: "tool" }> }) {
         ) : null}
       </ToolContent>
     </Tool>
+  );
+}
+
+/** A finished run of tool calls: one summary line that opens to the individual calls. */
+function ToolRunBlock({ block }: { block: Extract<ChatBlock, { kind: "tools" }> }) {
+  return (
+    <Collapsible className="group/run not-prose w-full">
+      <CollapsibleTrigger className="flex items-center gap-2 text-muted-foreground text-sm transition-colors hover:text-foreground">
+        <WrenchIcon className="size-4 shrink-0" />
+        <span className="text-left">{block.summary}</span>
+        <ChevronRightIcon className="size-4 shrink-0 transition-transform group-data-[state=open]/run:rotate-90" />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 mt-2 flex flex-col gap-2 data-[state=closed]:animate-out data-[state=open]:animate-in">
+        {block.tools.map((tool) => (
+          <ToolBlock key={tool.id} block={tool} />
+        ))}
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 
@@ -286,6 +346,7 @@ export function ChatMessages({
         }
 
         if (block.kind === "tool") return <ToolBlock key={block.id} block={block} />;
+        if (block.kind === "tools") return <ToolRunBlock key={block.id} block={block} />;
 
         if (block.kind === "sources") {
           return (
