@@ -8,7 +8,7 @@ import { createStaticUIMessageStream, createSyraaUIMessageStream } from "./mastr
 import { failSpan, startChatTurnSpan } from "./mastra/observability.js";
 import { getMemory, listMemoryForUser, parseSaveCommand, saveMemoryItem } from "./memory.js";
 import { nameNewThread, titleForFirstMessage } from "./thread-titles.js";
-import { ensureChatThread } from "./threads.js";
+import { ensureChatThread, purgeIfDeleted } from "./threads.js";
 
 export type ChatRequest = {
   userId: string;
@@ -44,20 +44,26 @@ export async function handleChat(request: ChatRequest): Promise<ChatResponse> {
   }
 
   let turn: Awaited<ReturnType<typeof runChatTurn>>;
+  let finished: Awaited<ReturnType<typeof finishTurn>>;
   try {
-    turn = await runChatTurn({
-      userId: request.userId,
-      threadId: prepared.threadId,
-      userMessage: prepared.message,
-      memoryItems: prepared.activeItems,
-      turnSpan: prepared.turnSpan,
-    });
-  } catch (error) {
-    failSpan(prepared.turnSpan, error);
-    throw error;
+    try {
+      turn = await runChatTurn({
+        userId: request.userId,
+        threadId: prepared.threadId,
+        userMessage: prepared.message,
+        memoryItems: prepared.activeItems,
+        turnSpan: prepared.turnSpan,
+      });
+    } catch (error) {
+      failSpan(prepared.turnSpan, error);
+      throw error;
+    }
+    finished = await finishTurn(request, prepared);
+  } finally {
+    // Deleted while the reply ran (even if the turn then failed): saving it recreated the thread.
+    await purgeIfDeleted(prepared.threadId).catch(() => undefined);
   }
-
-  const { memoryItems, lessons, threadTitle } = await finishTurn(request, prepared);
+  const { memoryItems, lessons, threadTitle } = finished;
   prepared.turnSpan?.end({ output: turn.message });
 
   return {
@@ -214,6 +220,8 @@ export async function pipeChatStream(request: ChatRequest, res: ServerResponse):
       userMessage: prepared.message,
       memoryItems: prepared.activeItems,
       turnSpan: prepared.turnSpan,
+      // Deleted while the reply ran (even if the turn then failed): saving it recreated the thread.
+      onSettled: () => purgeIfDeleted(prepared.threadId).then(() => undefined),
       onTurnComplete: async (turn) => {
         const { memoryItems, lessons, threadTitle } = await finishTurn(request, prepared);
         prepared.turnSpan?.end({ output: turn.message });

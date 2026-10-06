@@ -34,6 +34,16 @@ export const createThreadRequestSchema = z.object({
   subprojectId: z.string().trim().min(1).nullable().optional(),
 });
 
+export const threadPatchSchema = z
+  .object({
+    title: z.string().trim().min(1).max(120).optional(),
+    archived: z.boolean().optional(),
+  })
+  .strict()
+  .refine((patch) => patch.title !== undefined || patch.archived !== undefined, {
+    message: "nothing to update (send title and/or archived)",
+  });
+
 export const memoryItemPatchSchema = z.object({
   status: z.enum(["active", "pending", "dismissed", "superseded", "deleted"]),
 });

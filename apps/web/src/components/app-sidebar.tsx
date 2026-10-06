@@ -1,5 +1,6 @@
 import {
   BrainIcon,
+  ChevronRightIcon,
   ChevronsUpDownIcon,
   FileTextIcon,
   LogOutIcon,
@@ -8,8 +9,10 @@ import {
   SettingsIcon,
 } from "lucide-react";
 import { MemoryPanel } from "@/components/memory-panel";
+import { ThreadMenuItem } from "@/components/thread-menu-item";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -61,9 +64,13 @@ type Props = {
   };
 
   threads: ChatThread[];
+  archivedThreads: ChatThread[];
   threadsLoading: boolean;
   activeThreadId: string | null;
   onOpenThread: (threadId: string) => void;
+  onRenameThread: (threadId: string, title: string) => void;
+  onArchiveThread: (threadId: string, archived: boolean) => void;
+  onDeleteThread: (thread: ChatThread) => void;
 
   resources: ContextResource[];
   onRefreshResources: () => void;
@@ -77,6 +84,14 @@ type Props = {
 export function AppSidebar(props: Props) {
   const { memory } = props;
   const initial = props.displayName.slice(0, 1).toUpperCase() || "S";
+
+  const threadActions = (thread: ChatThread) => ({
+    active: thread.id === props.activeThreadId,
+    onOpen: () => props.onOpenThread(thread.id),
+    onRename: (title: string) => props.onRenameThread(thread.id, title),
+    onArchiveChange: (archived: boolean) => props.onArchiveThread(thread.id, archived),
+    onDelete: () => props.onDeleteThread(thread),
+  });
 
   return (
     <Sidebar variant="inset">
@@ -133,25 +148,41 @@ export function AppSidebar(props: Props) {
             ) : null}
             {!props.threadsLoading && props.threads.length === 0 ? (
               <p className="px-2 py-1.5 text-muted-foreground text-xs">
-                No chats yet — send a message to start
+                {props.archivedThreads.length > 0
+                  ? "No active chats — send a message to start"
+                  : "No chats yet — send a message to start"}
               </p>
             ) : null}
             <SidebarMenu>
               {props.threads.map((thread) => (
-                <SidebarMenuItem key={thread.id}>
-                  <SidebarMenuButton
-                    isActive={thread.id === props.activeThreadId}
-                    onClick={() => props.onOpenThread(thread.id)}
-                    title={thread.title}
-                    className="data-[active=true]:shadow-soft"
-                  >
-                    <span>{thread.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <ThreadMenuItem key={thread.id} thread={thread} {...threadActions(thread)} />
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {props.archivedThreads.length > 0 ? (
+          <Collapsible className="group/archived">
+            <SidebarGroup>
+              <SidebarGroupLabel asChild>
+                <CollapsibleTrigger className="w-full gap-1 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                  <ChevronRightIcon className="transition-transform group-data-[state=open]/archived:rotate-90" />
+                  Archived
+                  <span className="ml-auto tabular-nums">{props.archivedThreads.length}</span>
+                </CollapsibleTrigger>
+              </SidebarGroupLabel>
+              <CollapsibleContent>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {props.archivedThreads.map((thread) => (
+                      <ThreadMenuItem key={thread.id} thread={thread} {...threadActions(thread)} />
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </CollapsibleContent>
+            </SidebarGroup>
+          </Collapsible>
+        ) : null}
 
         <SidebarGroup>
           <SidebarGroupLabel>Materials</SidebarGroupLabel>

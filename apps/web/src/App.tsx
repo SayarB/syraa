@@ -22,6 +22,7 @@ import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AuthShell, SignInCard } from "@/components/auth-screen";
 import { type ChatEventLine, ChatMessages } from "@/components/chat-messages";
+import { DeleteThreadDialog } from "@/components/delete-thread-dialog";
 import { SettingsDialog } from "@/components/settings-dialog";
 import { ThemeModeToggle } from "@/components/theme-mode-toggle";
 import { TopicTreeDialog } from "@/components/topic-tree-dialog";
@@ -110,6 +111,9 @@ export default function App() {
   const [eventLines, setEventLines] = useState<ChatEventLine[]>([]);
   const [threadId, setThreadId] = useState<string | null>(null);
   const [threads, setThreads] = useState<ChatThread[]>([]);
+  const [archivedThreads, setArchivedThreads] = useState<ChatThread[]>([]);
+  const [threadToDelete, setThreadToDelete] = useState<ChatThread | null>(null);
+  const latestThreadsRefresh = useRef(0);
   const [threadsLoading, setThreadsLoading] = useState(false);
   const [items, setItems] = useState<MemoryItem[]>([]);
   const [memoryMeta, setMemoryMeta] = useState("—");
@@ -169,6 +173,12 @@ export default function App() {
     transport,
     onError: (error) => {
       pendingDisplayMessage.current = null;
+      if (error.message.includes("thread not found")) {
+        // Deleted elsewhere (another tab): the next message starts a new chat.
+        forgetThread();
+        pushSystem("This chat was deleted. Your next message starts a new chat.");
+        return;
+      }
       pushSystem(`Chat error: ${error.message}`);
     },
     onData: (part) => {
@@ -213,6 +223,14 @@ export default function App() {
   // Read by async handlers (upload, memory) so a line lands after the latest message, not a stale one.
   const lastMessageIdRef = useRef<string | null>(null);
   lastMessageIdRef.current = chatMessages.at(-1)?.id ?? null;
+  const threadIdRef = useRef<string | null>(null);
+  threadIdRef.current = threadId;
+
+  /** Drop the current thread id (it no longer exists), so the next message starts a new chat. */
+  function forgetThread() {
+    setThreadId(null);
+    if (userId) storeThreadId(userId, null);
+  }
 
   function pushEventLine(line: NewEventLine) {
     const afterMessageId = lastMessageIdRef.current;
@@ -239,39 +257,119 @@ export default function App() {
     }
   }
 
+  async function fetchThreads(path: string): Promise<ChatThread[]> {
+    const res = await apiFetch(path);
+    if (!res.ok) {
+      const err = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(err.error ?? `HTTP ${res.status}`);
+    }
+    return ((await res.json()) as { threads: ChatThread[] }).threads;
+  }
+
   async function refreshThreads() {
+    // Refreshes can overlap (an action's refresh vs the end of a turn); only the newest one lands.
+    const refresh = ++latestThreadsRefresh.current;
     setThreadsLoading(true);
     try {
-      const res = await apiFetch("/api/threads");
-      if (!res.ok) {
-        const err = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(err.error ?? `HTTP ${res.status}`);
-      }
-      const data = (await res.json()) as { threads: ChatThread[] };
-      setThreads(data.threads);
+      const [active, archived] = await Promise.all([
+        fetchThreads("/api/threads"),
+        fetchThreads("/api/threads?archived=true"),
+      ]);
+      if (refresh !== latestThreadsRefresh.current) return;
+      setThreads(active);
+      setArchivedThreads(archived);
     } catch (err) {
       console.error(err);
+      if (refresh !== latestThreadsRefresh.current) return;
       setThreads([]);
+      setArchivedThreads([]);
     } finally {
-      setThreadsLoading(false);
+      if (refresh === latestThreadsRefresh.current) setThreadsLoading(false);
     }
   }
 
+  async function threadRequest(id: string, init: RequestInit): Promise<void> {
+    const res = await apiFetch(`/api/threads/${encodeURIComponent(id)}`, init);
+    if (!res.ok) {
+      const err = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(err.error ?? `HTTP ${res.status}`);
+    }
+  }
+
+  /** Leave the open chat when it is archived or deleted. */
+  function leaveThread(id: string) {
+    // Read through the ref: the user may have opened another chat while the request ran.
+    if (id !== threadIdRef.current) return;
+    if (streaming) void stop();
+    startNewChat();
+  }
+
+  async function renameThread(id: string, title: string) {
+    const rename = (list: ChatThread[]) =>
+      list.map((thread) => (thread.id === id ? { ...thread, title } : thread));
+    setThreads(rename);
+    setArchivedThreads(rename);
+    try {
+      await threadRequest(id, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title }),
+      });
+    } catch (err) {
+      pushSystem(`Rename failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+    await refreshThreads();
+  }
+
+  async function archiveThread(id: string, archived: boolean) {
+    try {
+      await threadRequest(id, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ archived }),
+      });
+      if (archived) leaveThread(id);
+    } catch (err) {
+      pushSystem(
+        `${archived ? "Archive" : "Unarchive"} failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+    await refreshThreads();
+  }
+
+  async function deleteThread(thread: ChatThread) {
+    try {
+      await threadRequest(thread.id, { method: "DELETE" });
+      leaveThread(thread.id);
+    } catch (err) {
+      pushSystem(`Delete failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+    setThreadToDelete(null);
+    await refreshThreads();
+  }
+
   async function openThread(nextThreadId: string) {
+    threadIdRef.current = nextThreadId;
     setThreadId(nextThreadId);
     if (userId) storeThreadId(userId, nextThreadId);
     setMemoryOpen(false);
     setEventLines([]);
+    // Another chat may be opened before this one loads; then this response is dropped.
+    const stillOpen = () => threadIdRef.current === nextThreadId;
     try {
       const res = await apiFetch(`/api/threads/${encodeURIComponent(nextThreadId)}`);
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
+        // Only a 404 means the chat is gone; keep it for other errors so a retry still works.
+        if (res.status === 404 && stillOpen()) forgetThread();
         throw new Error(err.error ?? `HTTP ${res.status}`);
       }
       const data = (await res.json()) as { messages: ThreadMessage[] };
-      setChatMessages(toUiMessages(data.messages));
+      if (stillOpen()) setChatMessages(toUiMessages(data.messages));
     } catch (err) {
       console.error(err);
+      if (!stillOpen()) return;
+      setChatMessages([]);
       setEventLines([
         {
           id: nextId("system"),
@@ -361,6 +459,10 @@ export default function App() {
           if (res.ok) {
             const threadData = (await res.json()) as { messages: ThreadMessage[] };
             setChatMessages(toUiMessages(threadData.messages));
+          } else if (res.status === 404) {
+            // Deleted since the last visit.
+            setThreadId(null);
+            storeThreadId(data.userId, null);
           }
         } catch (err) {
           console.error(err);
@@ -472,6 +574,8 @@ export default function App() {
     setThreadId(null);
     setChatMessages([]);
     setThreads([]);
+    setArchivedThreads([]);
+    setThreadToDelete(null);
     setItems([]);
     setResources([]);
   }
@@ -563,7 +667,8 @@ export default function App() {
   }
 
   const displayName = userEmail ?? userId ?? "there";
-  const activeThreadTitle = threads.find((thread) => thread.id === threadId)?.title ?? "New chat";
+  const activeThreadTitle =
+    [...threads, ...archivedThreads].find((thread) => thread.id === threadId)?.title ?? "New chat";
 
   return (
     <TooltipProvider>
@@ -582,9 +687,13 @@ export default function App() {
             onDismiss: (id) => void patchItem(id, "dismissed"),
           }}
           threads={threads}
+          archivedThreads={archivedThreads}
           threadsLoading={threadsLoading}
           activeThreadId={threadId}
           onOpenThread={(id) => void openThread(id)}
+          onRenameThread={(id, title) => void renameThread(id, title)}
+          onArchiveThread={(id, archived) => void archiveThread(id, archived)}
+          onDeleteThread={setThreadToDelete}
           resources={resources}
           onRefreshResources={() => void refreshResources()}
           onOpenResource={(id) => void openResourceTree(id)}
@@ -688,6 +797,12 @@ export default function App() {
             </PromptInput>
           </div>
         </SidebarInset>
+
+        <DeleteThreadDialog
+          thread={threadToDelete}
+          onCancel={() => setThreadToDelete(null)}
+          onConfirm={deleteThread}
+        />
 
         <SettingsDialog
           open={settingsOpen}

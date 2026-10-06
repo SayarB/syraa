@@ -20,10 +20,18 @@ import {
   createThreadRequestSchema,
   memoryItemPatchSchema,
   parseJsonBody,
+  threadPatchSchema,
   ValidationError,
 } from "./schemas.js";
 import { getSettingsResponse, settingsPatchSchema, updateUserSettings } from "./settings.js";
-import { createChatThread, listChatThreads, listThreadMessages } from "./threads.js";
+import {
+  createChatThread,
+  deleteChatThread,
+  listChatThreads,
+  listThreadMessages,
+  ThreadNotFoundError,
+  updateChatThread,
+} from "./threads.js";
 import { getIngestJobStatus, handleIngestUpload } from "./upload.js";
 
 const MIME: Record<string, string> = {
@@ -62,7 +70,7 @@ function applyCors(req: IncomingMessage, res: ServerResponse): boolean {
       res.setHeader("Access-Control-Allow-Origin", origin);
       res.setHeader("Access-Control-Allow-Credentials", "true");
       res.setHeader("Vary", "Origin");
-      res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,OPTIONS");
+      res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
       res.setHeader("Access-Control-Allow-Headers", "Content-Type");
     }
   }
@@ -145,6 +153,7 @@ async function handleApi(
       userId,
       projectId: url.searchParams.get("projectId"),
       subprojectId: url.searchParams.get("subprojectId"),
+      archived: url.searchParams.get("archived") === "true",
     });
     sendJson(res, 200, { threads });
     return;
@@ -162,23 +171,32 @@ async function handleApi(
     return;
   }
 
-  if (req.method === "GET" && pathname.startsWith("/api/threads/")) {
-    const threadId = pathname.slice("/api/threads/".length);
+  if (pathname.startsWith("/api/threads/")) {
+    let threadId: string;
+    try {
+      threadId = decodeURIComponent(pathname.slice("/api/threads/".length));
+    } catch {
+      threadId = "";
+    }
     if (!threadId || threadId.includes("/")) {
       sendJson(res, 400, { error: "thread id required" });
       return;
     }
-    try {
-      const result = await listThreadMessages({ userId, threadId });
-      sendJson(res, 200, result);
-    } catch (err) {
-      if (err instanceof ValidationError) {
-        sendJson(res, 404, { error: err.message });
-        return;
-      }
-      throw err;
+    if (req.method === "GET") {
+      sendJson(res, 200, await listThreadMessages({ userId, threadId }));
+      return;
     }
-    return;
+    if (req.method === "PATCH") {
+      const body = await parseJsonBody(await readBody(req), threadPatchSchema);
+      const thread = await updateChatThread({ userId, threadId, ...body });
+      sendJson(res, 200, { thread });
+      return;
+    }
+    if (req.method === "DELETE") {
+      await deleteChatThread({ userId, threadId });
+      sendJson(res, 200, { deleted: threadId });
+      return;
+    }
   }
 
   if (req.method === "GET" && pathname === "/api/settings") {
@@ -226,6 +244,10 @@ async function handleApi(
         res,
       );
     } catch (err) {
+      if (err instanceof ThreadNotFoundError) {
+        sendJson(res, 404, { error: err.message });
+        return;
+      }
       const message = formatHarnessError(err);
       sendJson(res, 500, { error: message });
     }
@@ -341,6 +363,10 @@ export function createHarnessServer(options: HarnessServerOptions = {}) {
     } catch (err) {
       if (err instanceof UnauthorizedError) {
         sendJson(res, 401, { error: err.message });
+        return;
+      }
+      if (err instanceof ThreadNotFoundError) {
+        sendJson(res, 404, { error: err.message });
         return;
       }
       if (err instanceof ValidationError) {

@@ -86,6 +86,7 @@ Tests live next to code:
 ## API surface
 
 - `POST /api/chat`
+- `GET /api/threads` (`?archived=true` for archived), `GET|PATCH|DELETE /api/threads/:id` (rename / archive; delete removes the thread and its messages permanently)
 - `GET|PATCH /api/memory…`
 - `POST /api/ingest/upload`, `GET /api/ingest/jobs/:id`
 - `GET /api/resources`, `GET /api/resources/:id/tree`

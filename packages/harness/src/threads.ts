@@ -16,12 +16,21 @@ export type ThreadDto = {
   title: string;
   createdAt: string;
   updatedAt: string;
+  archived: boolean;
   placement: "global" | "attached";
   projectId: string | null;
   subprojectId: string | null;
 };
 
 export type ThreadMessageDto = ThreadUiMessageDto;
+
+/** The thread does not exist or belongs to someone else (HTTP 404). */
+export class ThreadNotFoundError extends ValidationError {
+  constructor() {
+    super("thread not found");
+    this.name = "ThreadNotFoundError";
+  }
+}
 
 export function buildThreadWorksMetadata(opts?: {
   projectId?: string | null;
@@ -76,6 +85,10 @@ export function truncateThreadTitle(text: string, max = THREAD_TITLE_MAX_CHARS):
   return `${cleaned.slice(0, max - 1).trimEnd()}…`;
 }
 
+function isArchived(metadata?: Record<string, unknown>): boolean {
+  return metadata?.archived === true;
+}
+
 function toThreadDto(thread: {
   id: string;
   title?: string;
@@ -89,6 +102,7 @@ function toThreadDto(thread: {
     title: isUntitledThread(thread.title) ? "Chat" : (thread.title as string).trim(),
     createdAt: toIso(thread.createdAt),
     updatedAt: toIso(thread.updatedAt),
+    archived: isArchived(thread.metadata),
     ...meta,
   };
 }
@@ -116,28 +130,23 @@ export async function ensureChatThread(opts: {
   });
 
   if (opts.threadId) {
+    // Thread ids come from the server, so an unknown one is a deleted thread (another tab, a
+    // stale client) — never create it again.
+    if (await purgeIfDeleted(opts.threadId)) throw new ThreadNotFoundError();
     const existing = await memory.getThreadById({
       threadId: opts.threadId,
       resourceId: opts.userId,
     });
-    if (existing) {
-      if (existing.resourceId && existing.resourceId !== opts.userId) {
-        throw new ValidationError("thread does not belong to this user");
-      }
-      return {
-        threadId: existing.id,
-        created: false,
-        needsTitle: isUntitledThread(existing.title),
-        metadata: metadataFromThread(existing.metadata),
-      };
+    if (!existing) throw new ThreadNotFoundError();
+    if (existing.resourceId && existing.resourceId !== opts.userId) {
+      throw new ValidationError("thread does not belong to this user");
     }
-
-    const created = await memory.createThread({
-      threadId: opts.threadId,
-      resourceId: opts.userId,
-      metadata,
-    });
-    return { threadId: created.id, created: true, needsTitle: true, metadata };
+    return {
+      threadId: existing.id,
+      created: false,
+      needsTitle: isUntitledThread(existing.title),
+      metadata: metadataFromThread(existing.metadata),
+    };
   }
 
   const created = await memory.createThread({
@@ -222,10 +231,12 @@ export async function lastAssistantMessageText(opts: {
   return null;
 }
 
+/** Active threads by default; `archived: true` lists only archived ones. */
 export async function listChatThreads(opts: {
   userId: string;
   projectId?: string | null;
   subprojectId?: string | null;
+  archived?: boolean;
 }): Promise<ThreadDto[]> {
   const memory = getSyraaMemory();
   const metadataFilter: Record<string, unknown> = {};
@@ -242,7 +253,10 @@ export async function listChatThreads(opts: {
   });
 
   const threads: ThreadDto[] = [];
+  const wantArchived = opts.archived === true;
   for (const thread of result.threads) {
+    if (await purgeIfDeleted(thread.id)) continue;
+    if (isArchived(thread.metadata) !== wantArchived) continue;
     let title = thread.title?.trim() ?? "";
     if (isUntitledThread(title)) {
       // Display only: saving here could beat the turn's generated title, which is still on its way.
@@ -324,6 +338,79 @@ export async function saveThreadTitle(opts: {
   return row !== null;
 }
 
+/**
+ * Threads deleted by this process, remembered for a while. A reply still running when its thread
+ * is deleted makes Mastra recreate the thread to save the reply; the turn, listing and reads then
+ * delete it again. In-process only: with several API instances, use a shared store instead.
+ */
+const DELETED_THREAD_TTL_MS = 30 * 60_000;
+const deletedThreads = new Map<string, number>();
+
+function rememberDeleted(threadId: string): void {
+  const now = Date.now();
+  for (const [id, expires] of deletedThreads) if (expires < now) deletedThreads.delete(id);
+  deletedThreads.set(threadId, now + DELETED_THREAD_TTL_MS);
+}
+
+function wasRecentlyDeleted(threadId: string): boolean {
+  const expires = deletedThreads.get(threadId);
+  if (expires === undefined) return false;
+  if (expires >= Date.now()) return true;
+  deletedThreads.delete(threadId);
+  return false;
+}
+
+/** Delete again a thread the user deleted that a finished turn recreated. True if it was deleted. */
+export async function purgeIfDeleted(threadId: string): Promise<boolean> {
+  if (!wasRecentlyDeleted(threadId)) return false;
+  await getSyraaMemory().deleteThread(threadId);
+  return true;
+}
+
+/**
+ * Rename and/or archive a thread. A rename is marked `titleSource: "user"`, so title generation
+ * and the backfill never replace it. Keeps `updatedAt`, so the thread stays where it was in the list.
+ */
+export async function updateChatThread(opts: {
+  userId: string;
+  threadId: string;
+  title?: string;
+  archived?: boolean;
+}): Promise<ThreadDto> {
+  const set: Record<string, unknown> = {};
+  const unset: string[] = [];
+  if (opts.title !== undefined) set.titleSource = "user";
+  if (opts.archived === true) {
+    set.archived = true;
+    set.archivedAt = new Date().toISOString();
+  } else if (opts.archived === false) {
+    unset.push("archived", "archivedAt");
+  }
+
+  const row = await patchThreadRow({
+    userId: opts.userId,
+    threadId: opts.threadId,
+    title: opts.title === undefined ? undefined : truncateThreadTitle(opts.title, 120),
+    set,
+    unset,
+  });
+  if (!row || wasRecentlyDeleted(opts.threadId)) throw new ThreadNotFoundError();
+  return toThreadDto({ ...row, metadata: row.metadata ?? undefined });
+}
+
+/** Permanently delete a thread and every message in it. */
+export async function deleteChatThread(opts: { userId: string; threadId: string }): Promise<void> {
+  const thread = await getSyraaMemory().getThreadById({
+    threadId: opts.threadId,
+    resourceId: opts.userId,
+  });
+  if (!thread || (thread.resourceId && thread.resourceId !== opts.userId)) {
+    throw new ThreadNotFoundError();
+  }
+  rememberDeleted(opts.threadId);
+  await getSyraaMemory().deleteThread(opts.threadId);
+}
+
 function extractDisplayText(message: MastraDBMessage): string | null {
   if (message.role !== "user" && message.role !== "assistant") return null;
 
@@ -370,13 +457,14 @@ export async function listThreadMessages(opts: {
   userId: string;
   threadId: string;
 }): Promise<{ thread: ThreadDto; messages: ThreadMessageDto[] }> {
+  if (await purgeIfDeleted(opts.threadId)) throw new ThreadNotFoundError();
   const memory = getSyraaMemory();
   const thread = await memory.getThreadById({
     threadId: opts.threadId,
     resourceId: opts.userId,
   });
   if (!thread || (thread.resourceId && thread.resourceId !== opts.userId)) {
-    throw new ValidationError("thread not found");
+    throw new ThreadNotFoundError();
   }
 
   const recalled = await memory.recall({
