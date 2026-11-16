@@ -1,19 +1,16 @@
 import { Agent } from "@mastra/core/agent";
 import type { MastraModelConfig } from "@mastra/core/llm";
 import { CHUNK_SUMMARY_INSTRUCTIONS } from "@syraa/history";
-import { SAME_AS_CHAT_MODEL } from "../../settings.js";
-import { requireChatModel, toMastraModelId } from "../model.js";
+import { selectModel } from "../../providers/index.js";
 
 export const HISTORY_SUMMARIZER_AGENT_ID = "history-summarizer";
 
-/** Request-context key holding the user's `historySummaryModel` setting. */
+/** Request-context key holding the model ref the summaries are written with. */
 export const HISTORY_SUMMARY_MODEL_CONTEXT_KEY = "historySummaryModel";
 
-/** The chat model, or the user's chosen model on the same provider. */
-export function historySummaryModelConfig(slug: string | undefined): MastraModelConfig {
-  const chat = requireChatModel();
-  if (!slug || slug === SAME_AS_CHAT_MODEL) return chat.mastraModel;
-  return { id: toMastraModelId(chat.provider, slug), url: chat.baseUrl, apiKey: chat.apiKey };
+/** Model config for a summary model ref (see `selectModel`): the model it names, or the server's default for "chat". */
+export function historySummaryModelConfig(ref: string | undefined): MastraModelConfig {
+  return selectModel(ref).config;
 }
 
 /**

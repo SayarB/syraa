@@ -10,7 +10,7 @@ export function resolveChatProvider(): ChatProvider {
   return "fireworks";
 }
 
-const DEFAULTS: Record<
+export const PROVIDER_DEFAULTS: Record<
   ChatProvider,
   { model: string; baseUrl: string; apiKeyEnv: string; modelEnv: string; baseUrlEnv: string }
 > = {
@@ -75,13 +75,13 @@ export function toMastraModelId(provider: ChatProvider, model: string): `${strin
 
 /** Base URL of the Vercel AI Gateway (its public `/models` list lives under it). */
 export function gatewayBaseUrl(): string {
-  const { baseUrlEnv, baseUrl } = DEFAULTS.gateway;
+  const { baseUrlEnv, baseUrl } = PROVIDER_DEFAULTS.gateway;
   return (process.env[baseUrlEnv]?.trim() || baseUrl).replace(/\/$/, "");
 }
 
 export function resolveChatModel(): ResolvedChatModel | null {
   const provider = resolveChatProvider();
-  const defaults = DEFAULTS[provider];
+  const defaults = PROVIDER_DEFAULTS[provider];
   const apiKey = process.env[defaults.apiKeyEnv]?.trim();
   if (!apiKey) return null;
 
@@ -103,7 +103,7 @@ export function requireChatModel(): ResolvedChatModel {
   const chat = resolveChatModel();
   if (!chat) {
     const provider = resolveChatProvider();
-    const keyEnv = DEFAULTS[provider].apiKeyEnv;
+    const keyEnv = PROVIDER_DEFAULTS[provider].apiKeyEnv;
     throw new Error(`Set ${keyEnv} in .env to use chat`);
   }
   return chat;

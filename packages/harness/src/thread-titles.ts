@@ -3,7 +3,8 @@ import { RequestContext } from "@mastra/core/request-context";
 import { TITLE_MODEL_CONTEXT_KEY } from "./mastra/agents/title-writer.js";
 import { getTitleWriterAgent } from "./mastra/index.js";
 import { getSyraaMemory } from "./mastra/memory.js";
-import { getUserSettings } from "./settings.js";
+import { usableModelRef } from "./model-options.js";
+import { effectiveModelRef, getUserSettings } from "./settings.js";
 import {
   openingThreadMessages,
   saveThreadTitle,
@@ -49,7 +50,7 @@ function titlePrompt(messages: ThreadTextMessage[]): string {
     .join("\n\n");
 }
 
-/** Ask the title model (the user's `titleModel` setting) for a title. Null on empty output. */
+/** Ask the title model (a model ref, e.g. from the user's `titleModel` setting) for a title. Null on empty output. */
 export async function generateThreadTitle(opts: {
   messages: ThreadTextMessage[];
   titleModel: string;
@@ -74,10 +75,15 @@ export async function generateThreadTitle(opts: {
   return cleanGeneratedTitle(output.text ?? "");
 }
 
-/** The user's title model; the default if settings can't be read. */
+/**
+ * The model that should write this user's titles: their title model setting ("same as chat model"
+ * follows the chat model they chose), or the default if that model has left the provider's list or
+ * settings can't be read.
+ */
 async function titleModelFor(userId: string): Promise<string | undefined> {
   try {
-    return (await getUserSettings(userId)).titleModel;
+    const settings = await getUserSettings(userId);
+    return await usableModelRef(effectiveModelRef(settings.titleModel, settings));
   } catch (error) {
     console.warn("[titles] settings not read:", error instanceof Error ? error.message : error);
     return undefined;

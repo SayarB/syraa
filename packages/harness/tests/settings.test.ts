@@ -1,11 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { createPgPool, resolveDatabaseUrl } from "@syraa/memory";
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { closeHarnessPool } from "../src/db.js";
-import { getModelOptions } from "../src/model-options.js";
+import { resetModelCatalogs } from "../src/model-options.js";
 import { ValidationError } from "../src/schemas.js";
 import {
   DEFAULT_USER_SETTINGS,
+  effectiveModelRef,
   ensureSettingsReady,
   getUserSettings,
   resolveUserSettings,
@@ -16,29 +17,16 @@ import {
 
 const GLM_FLASH = "accounts/fireworks/models/glm-5p3-flash";
 
-describe("getModelOptions", () => {
+describe("resolveUserSettings", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
   });
 
-  it("offers the short Fireworks list on Fireworks", async () => {
-    vi.stubEnv("CHAT_PROVIDER", "fireworks");
-    const { provider, models } = await getModelOptions();
-    expect(provider).toBe("fireworks");
-    expect(models.map((model) => model.id)).toContain(GLM_FLASH);
-  });
-
-  it("offers nothing besides the chat model on OpenAI", async () => {
-    vi.stubEnv("CHAT_PROVIDER", "openai");
-    expect((await getModelOptions()).models).toEqual([]);
-  });
-});
-
-describe("resolveUserSettings", () => {
   it("fills defaults for missing or empty settings", () => {
     expect(resolveUserSettings(undefined)).toEqual(DEFAULT_USER_SETTINGS);
     expect(resolveUserSettings({})).toEqual(DEFAULT_USER_SETTINGS);
     expect(DEFAULT_USER_SETTINGS).toEqual({
+      chatModel: SAME_AS_CHAT_MODEL,
       titleModel: SAME_AS_CHAT_MODEL,
       historyCompaction: true,
       historySummaryModel: SAME_AS_CHAT_MODEL,
@@ -48,26 +36,54 @@ describe("resolveUserSettings", () => {
   it("keeps what was saved, including turning compaction off", () => {
     expect(
       resolveUserSettings({
-        titleModel: GLM_FLASH,
+        chatModel: "gateway:anthropic/claude-haiku-x",
+        titleModel: "openai:gpt-4o-mini",
         historyCompaction: false,
-        historySummaryModel: "openai/gpt-5-mini",
+        historySummaryModel: "gateway:openai/gpt-5-mini",
       }),
     ).toEqual({
-      titleModel: GLM_FLASH,
+      chatModel: "gateway:anthropic/claude-haiku-x",
+      titleModel: "openai:gpt-4o-mini",
       historyCompaction: false,
-      historySummaryModel: "openai/gpt-5-mini",
+      historySummaryModel: "gateway:openai/gpt-5-mini",
+    });
+  });
+
+  it("gives a model saved before providers had names the default provider", () => {
+    vi.stubEnv("CHAT_PROVIDER", "fireworks");
+    expect(resolveUserSettings({ titleModel: GLM_FLASH }).titleModel).toBe(
+      `fireworks:${GLM_FLASH}`,
+    );
+    vi.stubEnv("CHAT_PROVIDER", "gateway");
+    expect(resolveUserSettings({ historySummaryModel: "openai/gpt-5-mini" })).toMatchObject({
+      historySummaryModel: "gateway:openai/gpt-5-mini",
     });
   });
 
   it("falls back to the default for a malformed field, without losing the others", () => {
     expect(
-      resolveUserSettings({ titleModel: 42, historyCompaction: "no", historySummaryModel: "" }),
+      resolveUserSettings({
+        chatModel: 7,
+        titleModel: 42,
+        historyCompaction: "no",
+        historySummaryModel: "",
+      }),
     ).toEqual(DEFAULT_USER_SETTINGS);
     expect(resolveUserSettings({ historyCompaction: false, titleModel: 42 })).toEqual({
       ...DEFAULT_USER_SETTINGS,
       historyCompaction: false,
     });
     expect(resolveUserSettings("not an object")).toEqual(DEFAULT_USER_SETTINGS);
+  });
+});
+
+describe("effectiveModelRef", () => {
+  it("makes 'same as chat model' follow the model the user chose to chat with", () => {
+    const settings = { ...DEFAULT_USER_SETTINGS, chatModel: "gateway:openai/gpt-5-mini" };
+    expect(effectiveModelRef(SAME_AS_CHAT_MODEL, settings)).toBe("gateway:openai/gpt-5-mini");
+    expect(effectiveModelRef("gateway:x/y", settings)).toBe("gateway:x/y");
+    // no chat model chosen: still "chat", meaning the server default
+    expect(effectiveModelRef(SAME_AS_CHAT_MODEL, DEFAULT_USER_SETTINGS)).toBe(SAME_AS_CHAT_MODEL);
   });
 });
 
@@ -80,6 +96,7 @@ describe("settingsPatchSchema", () => {
     expect(settingsPatchSchema.safeParse({ titleModel: GLM_FLASH }).success).toBe(true);
     expect(
       settingsPatchSchema.safeParse({
+        chatModel: "gateway:openai/gpt-5-mini",
         historyCompaction: false,
         historySummaryModel: "openai/gpt-5-mini",
       }).success,
@@ -93,19 +110,74 @@ describe("settingsPatchSchema", () => {
 });
 
 describe("updateUserSettings validation", () => {
+  const gatewayList = {
+    data: [
+      {
+        id: "openai/gpt-5-mini",
+        name: "GPT-5 mini",
+        type: "language",
+        owned_by: "openai",
+        context_window: 400000,
+        tags: ["tool-use"],
+        supported_parameters: ["tools"],
+        pricing: { input: "0.00000025", output: "0.000002" },
+      },
+      {
+        id: "acme/no-tools",
+        name: "No Tools",
+        type: "language",
+        owned_by: "acme",
+        context_window: 128000,
+        tags: [],
+        supported_parameters: [],
+        pricing: { input: "0.000001", output: "0.000002" },
+      },
+    ],
+  };
+
+  beforeEach(() => {
+    resetModelCatalogs();
+    vi.stubEnv("CHAT_PROVIDER", "gateway");
+    vi.stubEnv("AI_GATEWAY_API_KEY", "gw-key");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify(gatewayList))),
+    );
+  });
+
   afterEach(() => {
     vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
   });
 
   // The model is checked before anything is written, so none of this needs a database.
-  it("rejects a model the provider does not offer, for either model setting", async () => {
-    vi.stubEnv("CHAT_PROVIDER", "fireworks");
+  it("rejects a model the provider does not offer, for every model setting", async () => {
+    for (const field of ["chatModel", "titleModel", "historySummaryModel"] as const) {
+      await expect(updateUserSettings("u", { [field]: "gateway:evil/model" })).rejects.toThrow(
+        "unknown model: gateway:evil/model",
+      );
+    }
     await expect(updateUserSettings("u", { titleModel: "evil/model" })).rejects.toBeInstanceOf(
       ValidationError,
     );
-    await expect(updateUserSettings("u", { historySummaryModel: "evil/model" })).rejects.toThrow(
-      "unknown model: evil/model",
+  });
+
+  it("will not let a model that can't call tools be the chat model", async () => {
+    await expect(updateUserSettings("u", { chatModel: "gateway:acme/no-tools" })).rejects.toThrow(
+      "No Tools can't run the assistant",
     );
+  });
+
+  it("says so, rather than 'unknown model', when the list can't be loaded", async () => {
+    resetModelCatalogs();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("{}", { status: 503 })),
+    );
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    await expect(
+      updateUserSettings("u", { chatModel: "gateway:openai/gpt-5-mini" }),
+    ).rejects.toThrow("model list unavailable");
   });
 });
 

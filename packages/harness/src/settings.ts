@@ -1,16 +1,20 @@
 import { createPgPool, resolveDatabaseUrl } from "@syraa/memory";
 import { z } from "zod";
 import { getHarnessPool } from "./db.js";
-import { getModelOptions, isModelAvailable, type ModelOptions } from "./model-options.js";
+import { findModelOption, getModelOptions, type ModelOptions } from "./model-options.js";
+import { normaliseModelRef, SAME_AS_CHAT_MODEL } from "./providers/index.js";
 import { ValidationError } from "./schemas.js";
 
-/** Model setting value meaning "reuse the chat model". */
-export const SAME_AS_CHAT_MODEL = "chat";
-
 export type { ModelOption, ModelOptions } from "./model-options.js";
+export { SAME_AS_CHAT_MODEL };
 
 /** Per-user settings. Every field has a default, so adding one needs no migration. */
 export type UserSettings = {
+  /**
+   * The model that answers in chat: `provider:slug`, or "chat" for the server's default model.
+   * "Same as chat model" in the other two model settings means whatever this is.
+   */
+  chatModel: string;
   /** Model that writes a short title for each new chat. */
   titleModel: string;
   /** Replace older turns of a long chat with short summaries (see @syraa/history). */
@@ -20,6 +24,7 @@ export type UserSettings = {
 };
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {
+  chatModel: SAME_AS_CHAT_MODEL,
   titleModel: SAME_AS_CHAT_MODEL,
   historyCompaction: true,
   historySummaryModel: SAME_AS_CHAT_MODEL,
@@ -35,6 +40,7 @@ export type SettingsResponse = {
  * checked when saved, and again when used.
  */
 const storedSettingsSchema = z.object({
+  chatModel: z.string().trim().min(1).optional().catch(undefined),
   titleModel: z.string().trim().min(1).optional().catch(undefined),
   historyCompaction: z.boolean().optional().catch(undefined),
   historySummaryModel: z.string().trim().min(1).optional().catch(undefined),
@@ -43,11 +49,23 @@ const storedSettingsSchema = z.object({
 export function resolveUserSettings(stored: unknown): UserSettings {
   const parsed = storedSettingsSchema.safeParse(stored ?? {});
   const raw = parsed.success ? parsed.data : {};
+  // A model saved before providers were named has no prefix; it gets the default provider.
+  const model = (value: string | undefined, fallback: string) =>
+    value === undefined ? fallback : normaliseModelRef(value);
   return {
-    titleModel: raw.titleModel ?? DEFAULT_USER_SETTINGS.titleModel,
+    chatModel: model(raw.chatModel, DEFAULT_USER_SETTINGS.chatModel),
+    titleModel: model(raw.titleModel, DEFAULT_USER_SETTINGS.titleModel),
     historyCompaction: raw.historyCompaction ?? DEFAULT_USER_SETTINGS.historyCompaction,
-    historySummaryModel: raw.historySummaryModel ?? DEFAULT_USER_SETTINGS.historySummaryModel,
+    historySummaryModel: model(raw.historySummaryModel, DEFAULT_USER_SETTINGS.historySummaryModel),
   };
+}
+
+/**
+ * The model a title or summary should use: the user's pick, or, for "same as chat model", the model
+ * they chose to chat with (which is the server's default if they chose none).
+ */
+export function effectiveModelRef(setting: string, settings: UserSettings): string {
+  return setting === SAME_AS_CHAT_MODEL ? settings.chatModel : setting;
 }
 
 const CREATE_USER_SETTINGS_TABLE = `
@@ -102,6 +120,7 @@ export async function getModelOptionsResponse(): Promise<ModelOptions> {
 
 export const settingsPatchSchema = z
   .object({
+    chatModel: z.string().trim().min(1).optional(),
     titleModel: z.string().trim().min(1).optional(),
     historyCompaction: z.boolean().optional(),
     historySummaryModel: z.string().trim().min(1).optional(),
@@ -111,19 +130,39 @@ export const settingsPatchSchema = z
 export type SettingsPatch = z.infer<typeof settingsPatchSchema>;
 
 /** Merge `patch` into the user's stored settings. Rejects values this server does not offer. */
+/** The patch with its model values in the current `provider:slug` format. */
+function normalisedPatch(patch: SettingsPatch): SettingsPatch {
+  const next = { ...patch };
+  for (const field of ["chatModel", "titleModel", "historySummaryModel"] as const) {
+    const value = next[field];
+    if (value !== undefined) next[field] = normaliseModelRef(value);
+  }
+  return next;
+}
+
 export async function updateUserSettings(
   userId: string,
   patch: SettingsPatch,
 ): Promise<SettingsResponse> {
-  for (const slug of [patch.titleModel, patch.historySummaryModel]) {
-    if (slug === undefined || slug === SAME_AS_CHAT_MODEL) continue;
-    let available: boolean;
+  const modelFields = [
+    ["chatModel", patch.chatModel],
+    ["titleModel", patch.titleModel],
+    ["historySummaryModel", patch.historySummaryModel],
+  ] as const;
+  for (const [field, value] of modelFields) {
+    if (value === undefined || value === SAME_AS_CHAT_MODEL) continue;
+    const ref = normaliseModelRef(value);
+    let option: Awaited<ReturnType<typeof findModelOption>>;
     try {
-      available = await isModelAvailable(slug);
+      option = await findModelOption(ref);
     } catch {
       throw new ValidationError("model list unavailable right now; try again in a moment");
     }
-    if (!available) throw new ValidationError(`unknown model: ${slug}`);
+    if (!option) throw new ValidationError(`unknown model: ${value}`);
+    // The title and summary writers only produce text. The assistant must be able to call tools.
+    if (field === "chatModel" && !option.chatCapable) {
+      throw new ValidationError(`${option.label} can't run the assistant: it needs tool calling`);
+    }
   }
 
   const result = await getHarnessPool().query<{ settings: unknown }>(
@@ -132,7 +171,7 @@ export async function updateUserSettings(
      ON CONFLICT (user_id)
      DO UPDATE SET settings = user_settings.settings || EXCLUDED.settings, updated_at = now()
      RETURNING settings`,
-    [userId, JSON.stringify(patch)],
+    [userId, JSON.stringify(normalisedPatch(patch))],
   );
   return { settings: resolveUserSettings(result.rows[0]?.settings) };
 }

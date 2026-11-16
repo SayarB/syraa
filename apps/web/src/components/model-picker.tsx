@@ -25,10 +25,27 @@ export function formatModelPrice(model: ModelOption): string {
   return `${parts.join(" · ")} per 1M tokens`;
 }
 
+/** "128k context", "1M context", or nothing when unknown. */
+export function formatContext(model: ModelOption): string {
+  const tokens = model.contextWindow;
+  if (!tokens) return "";
+  if (tokens >= 1_000_000) return `${Number((tokens / 1_000_000).toFixed(1))}M context`;
+  return `${Math.round(tokens / 1000)}k context`;
+}
+
+/** What to show under a model's name: its price and context size, or its id if neither is known. */
+function modelDetails(model: ModelOption): string {
+  return [formatModelPrice(model), formatContext(model)].filter(Boolean).join(" · ") || model.slug;
+}
+
 type Props = {
   id: string;
   value: string;
   models: ModelOption[] | null;
+  /** What the "chat" value is called here: the server default, or "same as chat model". */
+  defaultLabel: string;
+  /** Offer only some models (e.g. those that can run the assistant). A saved model outside it still shows. */
+  filter?: (model: ModelOption) => boolean;
   /** Shown instead of the list when the models could not be loaded. */
   error?: string | null;
   disabled?: boolean;
@@ -37,24 +54,34 @@ type Props = {
 
 /**
  * A searchable list of models, grouped by who makes them. Hundreds of models are offered, so a plain
- * dropdown would be unusable. "Same as chat model" is always first.
+ * dropdown would be unusable. The default is always first.
  */
-export function ModelPicker({ id, value, models, error, disabled, onSelect }: Props) {
+export function ModelPicker({
+  id,
+  value,
+  models,
+  defaultLabel,
+  filter,
+  error,
+  disabled,
+  onSelect,
+}: Props) {
   const [open, setOpen] = useState(false);
 
   const groups = useMemo(() => {
-    const byProvider = new Map<string, ModelOption[]>();
+    const byGroup = new Map<string, ModelOption[]>();
     for (const model of models ?? []) {
-      const provider = model.provider ?? "other";
-      byProvider.set(provider, [...(byProvider.get(provider) ?? []), model]);
+      if (filter && !filter(model)) continue;
+      byGroup.set(model.group, [...(byGroup.get(model.group) ?? []), model]);
     }
-    return [...byProvider.entries()];
-  }, [models]);
+    return [...byGroup.entries()];
+  }, [models, filter]);
 
+  // Look the saved value up in every model, not only the offered ones: it may predate the filter.
   const selected = models?.find((model) => model.id === value);
   const triggerText =
     value === SAME_AS_CHAT_MODEL
-      ? "Same as chat model"
+      ? defaultLabel
       : (selected?.label ?? (models ? `${value} (no longer offered)` : value));
 
   const choose = (modelId: string) => {
@@ -87,26 +114,26 @@ export function ModelPicker({ id, value, models, error, disabled, onSelect }: Pr
             </CommandEmpty>
             <CommandGroup>
               <CommandItem
-                value="same as chat model default"
+                value={`${defaultLabel} default`}
                 onSelect={() => choose(SAME_AS_CHAT_MODEL)}
               >
-                <span className="min-w-0 flex-1 truncate">Same as chat model</span>
+                <span className="min-w-0 flex-1 truncate">{defaultLabel}</span>
                 {value === SAME_AS_CHAT_MODEL ? <CheckIcon className="size-3.5" /> : null}
               </CommandItem>
             </CommandGroup>
-            {groups.map(([provider, items]) => (
-              <CommandGroup key={provider} heading={provider}>
+            {groups.map(([group, items]) => (
+              <CommandGroup key={group} heading={group}>
                 {items.map((model) => (
                   <CommandItem
                     key={model.id}
                     // cmdk filters on this string: match the name and the slug.
-                    value={`${model.label} ${model.id}`}
+                    value={`${model.label} ${model.slug}`}
                     onSelect={() => choose(model.id)}
                   >
                     <span className="grid min-w-0 flex-1 gap-0.5">
                       <span className="truncate">{model.label}</span>
                       <span className="truncate text-muted-foreground text-xs">
-                        {formatModelPrice(model) || model.id}
+                        {modelDetails(model)}
                       </span>
                     </span>
                     {model.expensive ? (

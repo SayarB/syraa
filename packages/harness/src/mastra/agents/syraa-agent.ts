@@ -2,11 +2,11 @@ import type { ToolsInput } from "@mastra/core/agent";
 import { Agent } from "@mastra/core/agent";
 import { ToolCallFilter } from "@mastra/core/processors";
 import type { Memory } from "@mastra/memory";
+import { chatModelConfigFor } from "../../chat-model.js";
 import { isPageReadingConfigured } from "../../web/crawl4ai.js";
 import { isWebSearchConfigured } from "../../web/searxng.js";
 import { HistoryCompactionProcessor } from "../history-compaction-processor.js";
 import { getSyraaMemory } from "../memory.js";
-import { requireChatModel } from "../model.js";
 import { SYRAA_BASE_INSTRUCTIONS } from "../prompt.js";
 import { StripFootersProcessor } from "../strip-footers-processor.js";
 import { StripReasoningProcessor } from "../strip-reasoning-processor.js";
@@ -37,7 +37,7 @@ export function createSyraaAgent(overrides: { tools?: ToolsInput; memory?: Memor
     name: "Syraa Agent",
     description: "Chat agent for the Syraa harness with Mastra Memory threads.",
     instructions: SYRAA_BASE_INSTRUCTIONS,
-    model: () => requireChatModel().mastraModel,
+    model: ({ requestContext }) => chatModelConfigFor(requestContext),
     memory: overrides.memory ?? getSyraaMemory(),
     tools: overrides.tools ?? syraaAgentTools(),
     inputProcessors: [
