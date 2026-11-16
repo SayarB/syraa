@@ -357,8 +357,8 @@
       ],
       "user": "What does the Madverse pitch deck say about the business model?",
       "maxCalls": 3,
-      "require": ["search_materials"],
-      "forbid": ["thread_history"]
+      "forbid": ["thread_history"],
+      "requireAny": ["search_materials", "read_materials_section"]
     }
   ]
 }
