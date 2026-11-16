@@ -17,6 +17,7 @@ from typing import Any
 
 from syraa_ingest.heading_heuristics.heuristics import TopicNode
 from syraa_ingest.heading_heuristics.structure import extract_structure_tree
+from syraa_ingest.sanitize import neutralise_delimiter
 
 
 def _uuid() -> str:
@@ -72,7 +73,7 @@ def flatten_topics(
         TopicRecord(
             id=root_id,
             parent_id=None,
-            title=root.title or "Document",
+            title=neutralise_delimiter(root.title or "Document"),
             level=-1,
             path="/" + _slug(root.title or "document"),
             ordinal=0,
@@ -91,7 +92,7 @@ def flatten_topics(
             rec = TopicRecord(
                 id=tid,
                 parent_id=parent_rec.id,
-                title=child.title,
+                title=neutralise_delimiter(child.title),
                 level=child.level,
                 path=path,
                 ordinal=i,
@@ -134,7 +135,7 @@ def extract_page_texts(pdf: Path) -> dict[int, str]:
     doc = pymupdf.open(pdf)
     try:
         for i, page in enumerate(doc):
-            texts[i + 1] = page.get_text("text") or ""
+            texts[i + 1] = neutralise_delimiter(page.get_text("text") or "")
     finally:
         doc.close()
     return texts
@@ -330,7 +331,8 @@ def ingest_pdf(
         toc_pages=toc_pages,
         leaf_target_chars=leaf_target_chars,
     )
-    card = build_card(topics, meta["title"], len(chunks))
+    title = neutralise_delimiter(meta["title"])
+    card = build_card(topics, title, len(chunks))
 
     bridges = sum(1 for c in chunks if c.role == "bridge")
     leaves = sum(1 for c in chunks if c.role == "leaf")
@@ -338,12 +340,12 @@ def ingest_pdf(
     return {
         "resource": {
             "path": str(pdf.resolve()),
-            "name": pdf.name,
+            "name": neutralise_delimiter(pdf.name),
             "content_hash": content_hash(pdf),
             "page_count": page_count,
             "status": "ready",
             "structure_source": meta["source"],
-            "title": meta["title"],
+            "title": title,
         },
         "meta": {
             "toc_pages": meta.get("toc_pages"),

@@ -1,5 +1,6 @@
 import type { MaterialsLayer1Outline } from "@syraa/context";
 import type { MemoryItem } from "@syraa/memory";
+import { wrapUntrusted } from "../untrusted.js";
 
 export const SYRAA_BASE_INSTRUCTIONS = `You are Syraa, a helpful assistant.
 
@@ -117,7 +118,7 @@ export function buildSystemPrompt(
   return `${SYRAA_BASE_INSTRUCTIONS}${webBlock}
 
 Materials overview (one line per document — call list_materials for full section lists):
-${materialsOutline}
+${wrapUntrusted("the user's uploaded documents (names and summaries)", materialsOutline)}
 
 Current active memory (follow silently — do not recite unless the user asks what you remember):
 ${memoryBlock}`;

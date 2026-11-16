@@ -9,8 +9,45 @@ import {
   resolveResourceIdByName,
 } from "../../materials-retrieve.js";
 import { rememberToolResult, repeatedToolResult } from "../../tool-call-dedupe.js";
+import { jsonWithUntrusted, textForModel, wrapUntrusted } from "../../untrusted.js";
 
 const MAX_CHARS = 24_000;
+
+/** The tools return differently shaped objects, so the formatters read them by key. */
+type ToolResult = Record<string, unknown>;
+
+/**
+ * What the model sees. Everything that came out of an uploaded document — passages, document
+ * names, section titles — is fenced as untrusted data; our own errors and notes stay outside the
+ * block. The full result stays in the tool part for the UI.
+ */
+export function formatSearchMaterialsForModel(output: ToolResult): string {
+  return jsonWithUntrusted("the user's documents (search results)", output, [
+    "hits",
+    "availableDocuments",
+  ]);
+}
+
+export function formatListMaterialsForModel(output: ToolResult): string {
+  return jsonWithUntrusted("the user's documents (names and sections)", output, ["materials"]);
+}
+
+export function formatSectionForModel(output: ToolResult): string {
+  // An error or "section not found" result: our message stays outside, the names inside.
+  if (typeof output.text !== "string") {
+    return jsonWithUntrusted("the user's documents (names and sections)", output, [
+      "document",
+      "availableDocuments",
+      "topSections",
+    ]);
+  }
+
+  // A document section: the text is fenced, and so are its document and section names (they go
+  // into the block's label). Only counters like `truncated` stay outside.
+  const { text, document, section, ...counters } = output;
+  const source = `document "${document}", section "${section}"`;
+  return `${JSON.stringify(counters)}\n${wrapUntrusted(source, text)}`;
+}
 
 export const searchMaterialsTool = createTool({
   id: "search_materials",
@@ -27,6 +64,7 @@ export const searchMaterialsTool = createTool({
       idempotentHint: true,
     },
   },
+  toModelOutput: (output) => textForModel(formatSearchMaterialsForModel(output as ToolResult)),
   execute: async (input) => {
     const repeat = repeatedToolResult("search_materials", input);
     if (repeat) return repeat;
@@ -94,6 +132,7 @@ export const listMaterialsTool = createTool({
       idempotentHint: true,
     },
   },
+  toModelOutput: (output) => textForModel(formatListMaterialsForModel(output as ToolResult)),
   execute: async () => {
     const repeat = repeatedToolResult("list_materials", {});
     if (repeat) return repeat;
@@ -128,6 +167,7 @@ export const readMaterialsSectionTool = createTool({
       idempotentHint: true,
     },
   },
+  toModelOutput: (output) => textForModel(formatSectionForModel(output as ToolResult)),
   execute: async (input) => {
     const repeat = repeatedToolResult("read_materials_section", input);
     if (repeat) return repeat;
