@@ -1,6 +1,7 @@
 import { isTextUIPart, isToolUIPart, type UIMessage } from "ai";
 import { BrainIcon, CheckIcon, ChevronRightIcon, WrenchIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { ImageGallery, MarkdownImage } from "@/components/ai-elements/image-gallery";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Source, Sources, SourcesContent, SourcesTrigger } from "@/components/ai-elements/sources";
@@ -10,8 +11,10 @@ import { formatMemoryDraftNotice } from "@/lib/memory-notice";
 import { pickThinkingPhrase } from "@/lib/thinking-status";
 import {
   formatToolActivity,
+  imagesFromPart,
   summarizeToolRun,
   toolRunOutcome,
+  type WebImage,
   type WebSource,
   webSourcesFromPart,
 } from "@/lib/tool-activity";
@@ -43,6 +46,7 @@ type ChatBlock =
   | ToolBlockData
   | { kind: "tools"; id: string; summary: string; tools: ToolBlockData[] }
   | { kind: "assistant"; id: string; text: string; streaming: boolean }
+  | { kind: "images"; id: string; images: WebImage[] }
   | { kind: "sources"; id: string; sources: WebSource[] }
   | { kind: "memory"; id: string; text: string; variant: "draft" | "saved" }
   | { kind: "system"; id: string; text: string };
@@ -77,6 +81,12 @@ function userText(message: UIMessage): string {
     .join("\n")
     .trim();
 }
+
+/** Most images one reply shows, however many searches it ran. */
+const MAX_REPLY_IMAGES = 20;
+
+/** Markdown images in replies go through the same proxy and lightbox as the gallery. */
+const REPLY_MARKDOWN_COMPONENTS = { img: MarkdownImage };
 
 const CITED_LINK = /\]\((https?:\/\/[^)\s]+)\)/g;
 
@@ -153,6 +163,7 @@ function flattenMessages(
     const isLastMessage = message.id === lastMessageId;
     const textIndex = lastTextPartIndex(message.parts);
     const sources = new Map<string, WebSource>();
+    const images = new Map<string, WebImage>();
     // Once the reply is finished, each run of back-to-back tool calls folds into one summary line.
     const foldTools = !(streaming && isLastMessage);
     let toolRun: ToolBlockData[] = [];
@@ -178,6 +189,9 @@ function flattenMessages(
       if (isToolUIPart(part)) {
         for (const source of webSourcesFromPart(part)) {
           if (!sources.has(source.url)) sources.set(source.url, source);
+        }
+        for (const image of imagesFromPart(part)) {
+          if (!images.has(image.imageUrl)) images.set(image.imageUrl, image);
         }
         const done = part.state === "output-available" || part.state === "output-error";
         const activity = formatToolActivity(part, !done && streaming && isLastMessage);
@@ -226,6 +240,14 @@ function flattenMessages(
       });
     });
     flushToolRun();
+
+    if (images.size > 0) {
+      blocks.push({
+        kind: "images",
+        id: `${message.id}-images`,
+        images: [...images.values()].slice(0, MAX_REPLY_IMAGES),
+      });
+    }
 
     if (sources.size > 0) {
       blocks.push({
@@ -348,6 +370,10 @@ export function ChatMessages({
         if (block.kind === "tool") return <ToolBlock key={block.id} block={block} />;
         if (block.kind === "tools") return <ToolRunBlock key={block.id} block={block} />;
 
+        if (block.kind === "images") {
+          return <ImageGallery key={block.id} images={block.images} />;
+        }
+
         if (block.kind === "sources") {
           return (
             <Sources key={block.id} className="mb-0">
@@ -381,7 +407,9 @@ export function ChatMessages({
         return (
           <Message key={block.id} from="assistant">
             <MessageContent className="text-[0.95rem] leading-relaxed">
-              <MessageResponse isAnimating={block.streaming}>{block.text}</MessageResponse>
+              <MessageResponse isAnimating={block.streaming} components={REPLY_MARKDOWN_COMPONENTS}>
+                {block.text}
+              </MessageResponse>
             </MessageContent>
           </Message>
         );

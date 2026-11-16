@@ -27,6 +27,7 @@ const CACHE_TTL_MS = 10 * 60 * 1000;
 const CACHE_MAX_ENTRIES = 200;
 const MAX_SNIPPET_CHARS = 300;
 const MAX_RESULTS = 10;
+const MAX_IMAGE_TITLE_CHARS = 120;
 
 const cache = createTtlCache<WebSearchResult[]>({
   ttlMs: CACHE_TTL_MS,
@@ -94,6 +95,32 @@ export function normalizeResults(body: unknown): WebSearchResult[] {
   return results;
 }
 
+/** One SearXNG query. Throws on HTTP errors, timeouts and bad responses. */
+async function querySearxng(query: string, extra: Record<string, string> = {}): Promise<unknown> {
+  const url = new URL("/search", baseUrl());
+  url.search = new URLSearchParams({
+    q: query.trim(),
+    format: "json",
+    safesearch: "1",
+    ...extra,
+  }).toString();
+
+  const res = await fetch(url, {
+    headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
+  if (!res.ok) throw new Error(`searxng HTTP ${res.status}`);
+  return res.json();
+}
+
+/** Throws when an empty page is an engine outage (CAPTCHAs); returns normally for a real miss. */
+function assertNotOutage(body: unknown): void {
+  const unresponsive = (body as { unresponsive_engines?: unknown[] })?.unresponsive_engines;
+  if (Array.isArray(unresponsive) && unresponsive.length > 0) {
+    throw new Error(`searxng: no results, ${unresponsive.length} engine(s) unresponsive`);
+  }
+}
+
 /** Searches the web through SearXNG. Throws on HTTP errors, timeouts and bad responses. */
 export async function searchWeb(
   query: string,
@@ -103,29 +130,77 @@ export async function searchWeb(
   const cached = cache.get(key);
   if (cached) return cached.slice(0, opts.limit);
 
-  const url = new URL("/search", baseUrl());
-  url.search = new URLSearchParams({ q: query.trim(), format: "json", safesearch: "1" }).toString();
-
-  const res = await fetch(url, {
-    headers: { Accept: "application/json" },
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-  });
-  if (!res.ok) throw new Error(`searxng HTTP ${res.status}`);
-
-  const body: unknown = await res.json();
+  const body = await querySearxng(query);
   const results = normalizeResults(body);
   if (results.length === 0) {
     // Nothing is cached for empty results: they are often a temporary engine outage (CAPTCHAs).
-    const unresponsive = (body as { unresponsive_engines?: unknown[] })?.unresponsive_engines;
-    if (Array.isArray(unresponsive) && unresponsive.length > 0) {
-      throw new Error(`searxng: no results, ${unresponsive.length} engine(s) unresponsive`);
-    }
+    assertNotOutage(body);
     return [];
   }
   cache.set(key, results);
   return results.slice(0, opts.limit);
 }
 
+export type ImageSearchResult = {
+  title: string;
+  /** Full-size image. Shown through the image proxy, never loaded by the browser directly. */
+  imageUrl: string;
+  /** Small preview; falls back to imageUrl when the engine gave none. */
+  thumbUrl: string;
+  /** The page the image was found on. */
+  sourceUrl: string;
+};
+
+const imageCache = createTtlCache<ImageSearchResult[]>({
+  ttlMs: CACHE_TTL_MS,
+  maxEntries: CACHE_MAX_ENTRIES,
+});
+
+/** Keeps http(s) image results with a title, drops duplicate images, and trims titles. */
+export function normalizeImageResults(body: unknown): ImageSearchResult[] {
+  const raw = (body as { results?: unknown })?.results;
+  if (!Array.isArray(raw)) return [];
+
+  const seen = new Set<string>();
+  const results: ImageSearchResult[] = [];
+  for (const item of raw as Array<Record<string, unknown>>) {
+    const imageUrl = asText(item.img_src);
+    if (!imageUrl || !isHttpUrl(imageUrl) || seen.has(imageUrl)) continue;
+    seen.add(imageUrl);
+
+    const thumb = asText(item.thumbnail_src) || asText(item.thumbnail);
+    const sourceUrl = asText(item.url);
+    results.push({
+      title: truncate(asText(item.title) || "Image", MAX_IMAGE_TITLE_CHARS),
+      imageUrl,
+      thumbUrl: thumb && isHttpUrl(thumb) ? thumb : imageUrl,
+      sourceUrl: sourceUrl && isHttpUrl(sourceUrl) ? sourceUrl : imageUrl,
+    });
+    if (results.length >= MAX_RESULTS) break;
+  }
+  return results;
+}
+
+/** Searches for images through SearXNG's images category. Same failure modes as searchWeb. */
+export async function searchImages(
+  query: string,
+  opts: { limit: number },
+): Promise<ImageSearchResult[]> {
+  const key = normalizeQuery(query);
+  const cached = imageCache.get(key);
+  if (cached) return cached.slice(0, opts.limit);
+
+  const body = await querySearxng(query, { categories: "images" });
+  const results = normalizeImageResults(body);
+  if (results.length === 0) {
+    assertNotOutage(body);
+    return [];
+  }
+  imageCache.set(key, results);
+  return results.slice(0, opts.limit);
+}
+
 export function clearWebSearchCacheForTests(): void {
   cache.clear();
+  imageCache.clear();
 }
