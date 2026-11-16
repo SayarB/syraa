@@ -41,7 +41,7 @@ Use the repo root [`compose.yaml`](compose.yaml) (or Dokploy “Docker Compose�
    - `POSTGRES_PASSWORD` — strong password
    - `BETTER_AUTH_SECRET` — `openssl rand -base64 32`
    - `BETTER_AUTH_URL` — public HTTPS origin, e.g. `https://syraa.example.com` (no trailing slash)
-   - `FIREWORKS_API_KEY` (or `CHAT_PROVIDER=openai` + `OPENAI_API_KEY`)
+   - `FIREWORKS_API_KEY` (or `CHAT_PROVIDER=openai` + `OPENAI_API_KEY`, or `CHAT_PROVIDER=gateway` + `AI_GATEWAY_API_KEY` for Vercel AI Gateway)
 2. Point the domain / Traefik to the **api** service on port **3000** (UI is same-origin).
 3. Leave Postgres and Redis on the internal compose network (host ports bind to `127.0.0.1` by default).
 4. First boot runs memory, context, and Better Auth migrations via [`docker/entrypoint.sh`](docker/entrypoint.sh).

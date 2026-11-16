@@ -23,6 +23,16 @@ describe("resolveChatProvider", () => {
     vi.stubEnv("OPENAI_API_KEY", "");
     expect(resolveChatProvider()).toBe("fireworks");
   });
+
+  it("selects the Vercel AI Gateway explicitly or from its key alone", () => {
+    vi.stubEnv("CHAT_PROVIDER", "gateway");
+    expect(resolveChatProvider()).toBe("gateway");
+    vi.stubEnv("CHAT_PROVIDER", "");
+    vi.stubEnv("FIREWORKS_API_KEY", "");
+    vi.stubEnv("OPENAI_API_KEY", "");
+    vi.stubEnv("AI_GATEWAY_API_KEY", "gw");
+    expect(resolveChatProvider()).toBe("gateway");
+  });
 });
 
 describe("parseSaveCommand", () => {

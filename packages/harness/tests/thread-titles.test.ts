@@ -83,6 +83,33 @@ describe("titleModelConfig", () => {
   });
 });
 
+describe("titleModelConfig on the Vercel AI Gateway", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("routes the full creator/model slug through the vercel provider", () => {
+    vi.stubEnv("CHAT_PROVIDER", "gateway");
+    vi.stubEnv("AI_GATEWAY_API_KEY", "gw-key");
+    vi.stubEnv("AI_GATEWAY_MODEL", "");
+    vi.stubEnv("AI_GATEWAY_BASE_URL", "");
+    expect(titleModelConfig("chat")).toEqual({
+      id: "vercel/openai/gpt-oss-120b",
+      url: "https://ai-gateway.vercel.sh/v1",
+      apiKey: "gw-key",
+    });
+  });
+
+  it("honours AI_GATEWAY_MODEL and does not double the vercel prefix", () => {
+    vi.stubEnv("CHAT_PROVIDER", "gateway");
+    vi.stubEnv("AI_GATEWAY_API_KEY", "gw-key");
+    vi.stubEnv("AI_GATEWAY_MODEL", "openai/gpt-4o-mini");
+    expect((titleModelConfig("chat") as { id: string }).id).toBe("vercel/openai/gpt-4o-mini");
+    vi.stubEnv("AI_GATEWAY_MODEL", "vercel/openai/gpt-4o-mini");
+    expect((titleModelConfig("chat") as { id: string }).id).toBe("vercel/openai/gpt-4o-mini");
+  });
+});
+
 describe("generateThreadTitle", () => {
   afterEach(() => {
     generate.mockReset();
