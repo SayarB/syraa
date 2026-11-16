@@ -187,4 +187,9 @@ describe("prompt", () => {
     expect(WEB_SEARCH_INSTRUCTIONS).toContain("image_search");
     expect(WEB_SEARCH_INSTRUCTIONS).toContain("do not paste image URLs");
   });
+
+  it("limits images to when they clearly help", () => {
+    expect(WEB_SEARCH_INSTRUCTIONS).toContain("would clearly help");
+    expect(WEB_SEARCH_INSTRUCTIONS).toContain("When unsure, don't search for images");
+  });
 });

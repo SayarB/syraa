@@ -138,7 +138,7 @@ export function formatImageSearchForModel(output: ImageSearchOutput): string {
 export const imageSearchTool = createTool({
   id: "image_search",
   description:
-    "Find pictures on the public web when the user asks to see images or photos of something. The images are displayed to the user automatically in a gallery. Pass a short keyword query.",
+    "Find pictures on the public web when the user asks to see images, or when a few pictures would clearly help them understand (a place, animal, product, artwork). Do not use it when images add nothing. The images are displayed to the user automatically in a gallery. Pass a short keyword query.",
   inputSchema: z.object({
     query: z.string().min(1).max(200),
     limit: z.number().int().min(1).max(10).optional(),
