@@ -3,9 +3,10 @@ import type { ChatProvider } from "../schemas.js";
 
 export function resolveChatProvider(): ChatProvider {
   const explicit = process.env.CHAT_PROVIDER?.trim().toLowerCase();
-  if (explicit === "fireworks" || explicit === "openai") return explicit;
+  if (explicit === "fireworks" || explicit === "openai" || explicit === "gateway") return explicit;
   if (process.env.FIREWORKS_API_KEY?.trim()) return "fireworks";
   if (process.env.OPENAI_API_KEY?.trim()) return "openai";
+  if (process.env.AI_GATEWAY_API_KEY?.trim()) return "gateway";
   return "fireworks";
 }
 
@@ -27,6 +28,14 @@ const DEFAULTS: Record<
     modelEnv: "OPENAI_MODEL",
     baseUrlEnv: "OPENAI_BASE_URL",
   },
+  // Vercel AI Gateway: OpenAI-compatible, models are `creator/model` slugs.
+  gateway: {
+    model: "openai/gpt-oss-120b",
+    baseUrl: "https://ai-gateway.vercel.sh/v1",
+    apiKeyEnv: "AI_GATEWAY_API_KEY",
+    modelEnv: "AI_GATEWAY_MODEL",
+    baseUrlEnv: "AI_GATEWAY_BASE_URL",
+  },
 };
 
 export type ResolvedChatModel = {
@@ -39,6 +48,12 @@ export type ResolvedChatModel = {
 };
 
 export function toMastraModelId(provider: ChatProvider, model: string): `${string}/${string}` {
+  // The gateway's own slugs already contain a "/" (`openai/gpt-oss-120b`). Mastra's `vercel/`
+  // provider prefix is stripped before the request, so the gateway still receives the full slug.
+  if (provider === "gateway") {
+    return (model.startsWith("vercel/") ? model : `vercel/${model}`) as `${string}/${string}`;
+  }
+
   if (model.includes("/")) {
     const [prefix] = model.split("/", 1);
     if (

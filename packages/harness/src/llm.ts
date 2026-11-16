@@ -24,6 +24,11 @@ const DEFAULTS: Record<ChatProvider, { model: string; apiKeyEnv: string; modelEn
     apiKeyEnv: "OPENAI_API_KEY",
     modelEnv: "OPENAI_MODEL",
   },
+  gateway: {
+    model: "openai/gpt-oss-120b",
+    apiKeyEnv: "AI_GATEWAY_API_KEY",
+    modelEnv: "AI_GATEWAY_MODEL",
+  },
 };
 
 async function buildChatTurnOptions(opts: {
@@ -42,7 +47,9 @@ async function buildChatTurnOptions(opts: {
       temperature: 0.4,
       maxOutputTokens: 2048,
       // Fireworks routes a thread's calls to the same prompt cache (long, stable prefix).
-      headers: { "x-session-affinity": opts.threadId },
+      ...(resolveChatProvider() === "fireworks"
+        ? { headers: { "x-session-affinity": opts.threadId } }
+        : {}),
     },
     maxSteps: 50,
     tracingContext: { currentSpan: opts.turnSpan },

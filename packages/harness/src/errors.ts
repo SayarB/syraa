@@ -1,6 +1,10 @@
 export function formatHarnessError(err: unknown): string {
   const message = err instanceof Error ? err.message : String(err);
-  if (message.includes("FIREWORKS_API_KEY") || message.includes("OPENAI_API_KEY")) {
+  if (
+    message.includes("FIREWORKS_API_KEY") ||
+    message.includes("OPENAI_API_KEY") ||
+    message.includes("AI_GATEWAY_API_KEY")
+  ) {
     return message;
   }
   if (message.includes("Cannot connect to Postgres")) {

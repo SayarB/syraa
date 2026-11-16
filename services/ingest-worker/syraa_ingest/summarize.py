@@ -47,6 +47,13 @@ PROVIDERS = {
         "model_env": "OPENAI_MODEL",
         "base_url_env": "OPENAI_BASE_URL",
     },
+    "gateway": {
+        "model": "openai/gpt-oss-120b",
+        "base_url": "https://ai-gateway.vercel.sh/v1",
+        "key_env": "AI_GATEWAY_API_KEY",
+        "model_env": "AI_GATEWAY_MODEL",
+        "base_url_env": "AI_GATEWAY_BASE_URL",
+    },
 }
 
 # Text extracted from PDFs with legacy Hindi fonts comes out as Latin-1 soup ("£ÉÉ®iÉ BÉEÉ").
@@ -61,9 +68,14 @@ def resolve_summary_model() -> dict[str, str] | None:
     """
     provider = _env("CHAT_PROVIDER").lower()
     if provider not in PROVIDERS:
-        provider = (
-            "openai" if not _env("FIREWORKS_API_KEY") and _env("OPENAI_API_KEY") else "fireworks"
-        )
+        if _env("FIREWORKS_API_KEY"):
+            provider = "fireworks"
+        elif _env("OPENAI_API_KEY"):
+            provider = "openai"
+        elif _env("AI_GATEWAY_API_KEY"):
+            provider = "gateway"
+        else:
+            provider = "fireworks"
 
     defaults = PROVIDERS[provider]
     api_key = _env(defaults["key_env"])

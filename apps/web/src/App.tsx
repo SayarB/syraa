@@ -424,7 +424,7 @@ export default function App() {
       setSubtitle(`${data.chat.provider} · ${data.chat.model.split("/").pop()}`);
       setChatReady(true);
     } else {
-      setSubtitle("Set FIREWORKS_API_KEY in .env");
+      setSubtitle("Set a chat API key in .env");
       setChatReady(false);
     }
     setGoogleAuthEnabled(Boolean(data.auth?.google));

@@ -7,7 +7,7 @@ export class ValidationError extends Error {
   }
 }
 
-export const chatProviderSchema = z.enum(["fireworks", "openai"]);
+export const chatProviderSchema = z.enum(["fireworks", "openai", "gateway"]);
 
 export const lessonKindSchema = z.enum(["preference", "rule", "method", "decision", "suggestion"]);
 
