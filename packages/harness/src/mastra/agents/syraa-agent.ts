@@ -13,7 +13,7 @@ import { StripReasoningProcessor } from "../strip-reasoning-processor.js";
 import { syraaTools } from "../tools/materials-tools.js";
 import { getMyMemoryTool } from "../tools/memory-tools.js";
 import { threadHistoryTool } from "../tools/thread-history-tool.js";
-import { webFetchTool, webSearchTool } from "../tools/web-tools.js";
+import { imageSearchTool, webFetchTool, webSearchTool } from "../tools/web-tools.js";
 
 export const SYRAA_AGENT_ID = "syraa-agent";
 
@@ -23,7 +23,9 @@ export function syraaAgentTools(): ToolsInput {
     ...syraaTools,
     get_my_memory: getMyMemoryTool,
     thread_history: threadHistoryTool,
-    ...(isWebSearchConfigured() ? { web_search: webSearchTool } : {}),
+    ...(isWebSearchConfigured()
+      ? { web_search: webSearchTool, image_search: imageSearchTool }
+      : {}),
     ...(isPageReadingConfigured() ? { web_fetch: webFetchTool } : {}),
   };
 }
@@ -43,9 +45,12 @@ export function createSyraaAgent(overrides: { tools?: ToolsInput; memory?: Memor
       // Older turns are replaced by summaries, so history stays about the same size however long
       // the thread gets. Only what is sent changes; stored messages are untouched.
       new HistoryCompactionProcessor(),
-      // Earlier turns' web results and thread look-ups are stale: drop them from the prompt.
-      // Transient — stored messages and the UI keep them; the current turn still sees its own.
-      new ToolCallFilter({ exclude: ["web_search", "web_fetch", "thread_history"] }),
+      // Earlier turns' web results, image results and thread look-ups are stale: drop them from
+      // the prompt. Transient — stored messages and the UI keep them; the current turn still sees
+      // its own results.
+      new ToolCallFilter({
+        exclude: ["web_search", "web_fetch", "image_search", "thread_history"],
+      }),
     ],
     outputProcessors: [new StripFootersProcessor(), new StripReasoningProcessor()],
   });
