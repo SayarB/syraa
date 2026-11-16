@@ -1,5 +1,8 @@
 import type { MastraDBMessage } from "@mastra/core/agent";
+import type { Memory } from "@mastra/memory";
+import type { RecalledMessage } from "@syraa/history";
 import { getHarnessPool } from "./db.js";
+import { getCompactionStateStore } from "./history-state.js";
 import { getSyraaMemory } from "./mastra/memory.js";
 import { ValidationError } from "./schemas.js";
 import { mastraThreadToUiMessages, type ThreadUiMessageDto } from "./thread-ui-messages.js";
@@ -364,7 +367,20 @@ function wasRecentlyDeleted(threadId: string): boolean {
 export async function purgeIfDeleted(threadId: string): Promise<boolean> {
   if (!wasRecentlyDeleted(threadId)) return false;
   await getSyraaMemory().deleteThread(threadId);
+  await removeThreadSummaries(threadId);
   return true;
+}
+
+/** Forget a deleted thread's stored summaries, which would otherwise keep a gist of its messages. Best effort. */
+async function removeThreadSummaries(threadId: string): Promise<void> {
+  try {
+    await getCompactionStateStore().remove(threadId);
+  } catch (error) {
+    console.warn(
+      "[threads] summaries not removed:",
+      error instanceof Error ? error.message : error,
+    );
+  }
 }
 
 /**
@@ -409,6 +425,44 @@ export async function deleteChatThread(opts: { userId: string; threadId: string 
   }
   rememberDeleted(opts.threadId);
   await getSyraaMemory().deleteThread(opts.threadId);
+  await removeThreadSummaries(opts.threadId);
+}
+
+/**
+ * Every user and assistant message in a thread that has text, oldest first, numbered from 1.
+ * `position` is what `thread_history` reports and what summaries cite ("messages 9–16").
+ */
+export async function loadThreadTextMessages(opts: {
+  userId: string;
+  threadId: string;
+  /** Evals and tests pass their own memory. */
+  memory?: Memory;
+}): Promise<RecalledMessage[]> {
+  const recalled = await (opts.memory ?? getSyraaMemory()).recall({
+    threadId: opts.threadId,
+    resourceId: opts.userId,
+    perPage: false,
+    orderBy: { field: "createdAt", direction: "ASC" },
+  });
+
+  const ordered = recalled.messages
+    .map((message, index) => ({ message, index, time: new Date(message.createdAt).getTime() }))
+    .sort((a, b) => a.time - b.time || a.index - b.index);
+
+  const messages: RecalledMessage[] = [];
+  for (const { message } of ordered) {
+    if (message.role !== "user" && message.role !== "assistant") continue;
+    const text = extractDisplayText(message);
+    if (!text) continue;
+    messages.push({
+      id: message.id,
+      role: message.role,
+      text,
+      createdAt: toIso(message.createdAt),
+      position: messages.length + 1,
+    });
+  }
+  return messages;
 }
 
 function extractDisplayText(message: MastraDBMessage): string | null {

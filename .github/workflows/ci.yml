@@ -61,6 +61,7 @@ jobs:
           npm run build -w @syraa/memory
           npm run build -w @syraa/context
           npm run build -w @syraa/ingest
+          npm run build -w @syraa/history
           npm run build -w @syraa/harness
           npm run build -w @syraa/api
 
@@ -100,6 +101,7 @@ jobs:
           npm run build -w @syraa/memory
           npm run build -w @syraa/context
           npm run build -w @syraa/ingest
+          npm run build -w @syraa/history
 
       - name: Agent tool-call eval
         run: |

@@ -9,6 +9,7 @@ export {
   getIngestQueue,
 } from "./context.js";
 export { formatHarnessError } from "./errors.js";
+export { ensureHistoryReady } from "./history-state.js";
 export type { GatedLesson } from "./lesson-gate.js";
 export {
   applyLessons,

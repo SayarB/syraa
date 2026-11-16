@@ -84,23 +84,26 @@ export async function runChatTurn(opts: {
 
   const agent = getSyraaAgent();
 
-  return runWithChatContext({ userId: opts.userId, threadId: opts.threadId }, async () => {
-    let output: Awaited<ReturnType<typeof agent.generate>>;
-    try {
-      output = await agent.generate(opts.userMessage, await buildChatTurnOptions(opts));
-    } catch (error) {
-      const detail = error instanceof Error ? error.message : String(error);
-      throw new Error(`${chat.provider} generate failed: ${detail}`);
-    }
+  return runWithChatContext(
+    { userId: opts.userId, threadId: opts.threadId, currentUserMessage: opts.userMessage },
+    async () => {
+      let output: Awaited<ReturnType<typeof agent.generate>>;
+      try {
+        output = await agent.generate(opts.userMessage, await buildChatTurnOptions(opts));
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : String(error);
+        throw new Error(`${chat.provider} generate failed: ${detail}`);
+      }
 
-    const turn = await resolveTurnFromGenerateOutput({ text: fullReplyText(output) });
+      const turn = await resolveTurnFromGenerateOutput({ text: fullReplyText(output) });
 
-    return {
-      message: turn.message,
-      model: chat.model,
-      provider: chat.provider,
-    };
-  });
+      return {
+        message: turn.message,
+        model: chat.model,
+        provider: chat.provider,
+      };
+    },
+  );
 }
 
 export { resolveChatProvider } from "./mastra/model.js";
