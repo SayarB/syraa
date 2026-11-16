@@ -1,3 +1,4 @@
+import { RequestContext } from "@mastra/core/request-context";
 import {
   applyChunk,
   applyMerge,
@@ -16,13 +17,12 @@ import {
   splitTurns,
   summaryTargets,
 } from "@syraa/history";
-import {
-  type CompactionStateStore,
-  getCompactionStateStore,
-  isHistoryCompactionEnabled,
-} from "./history-state.js";
+import { type CompactionStateStore, getCompactionStateStore } from "./history-state.js";
+import { HISTORY_SUMMARY_MODEL_CONTEXT_KEY } from "./mastra/agents/history-summarizer.js";
 import { getHistorySummarizerAgent } from "./mastra/index.js";
 import { resolveChatModel } from "./mastra/model.js";
+import { isModelAvailable } from "./model-options.js";
+import { getUserSettings, SAME_AS_CHAT_MODEL } from "./settings.js";
 import { loadThreadTextMessages } from "./threads.js";
 
 /** The two model calls a compaction job makes. Tests pass fakes. */
@@ -35,9 +35,13 @@ const SUMMARY_TIMEOUT_MS = 90_000;
 // Reasoning models spend output tokens thinking before they answer.
 const SUMMARY_MAX_OUTPUT_TOKENS = 2048;
 
-export function agentSummarizer(): HistorySummarizer {
+/** The summariser, calling `model` (a slug on the chat provider) or the chat model when it is omitted. */
+export function agentSummarizer(model?: string): HistorySummarizer {
   const run = async (prompt: string, instructions?: string) => {
+    const requestContext = new RequestContext();
+    requestContext.set(HISTORY_SUMMARY_MODEL_CONTEXT_KEY, model ?? SAME_AS_CHAT_MODEL);
     const output = await getHistorySummarizerAgent().generate(prompt, {
+      requestContext,
       ...(instructions ? { instructions } : {}),
       modelSettings: { temperature: 0, maxOutputTokens: SUMMARY_MAX_OUTPUT_TOKENS },
       abortSignal: AbortSignal.timeout(SUMMARY_TIMEOUT_MS),
@@ -54,6 +58,8 @@ export type CompactionRunOptions = {
   userId: string;
   threadId: string;
   summarizer?: HistorySummarizer;
+  /** Model slug for the default summariser (the user's setting). Ignored when `summarizer` is given. */
+  model?: string;
   store?: CompactionStateStore;
   loadMessages?: (opts: { userId: string; threadId: string }) => Promise<RecalledMessage[]>;
   config?: CompactionConfig;
@@ -73,7 +79,7 @@ export async function compactThreadHistory(
 ): Promise<{ jobs: number; state: CompactionState }> {
   const config = opts.config ?? resolveCompactionConfig();
   const store = opts.store ?? getCompactionStateStore();
-  const summarizer = opts.summarizer ?? agentSummarizer();
+  const summarizer = opts.summarizer ?? agentSummarizer(opts.model);
   const maxJobs = opts.maxJobs ?? DEFAULT_MAX_JOBS;
 
   const messages = await (opts.loadMessages ?? loadThreadTextMessages)({
@@ -137,17 +143,48 @@ const lastFailure = new Map<string, number>();
 const RETRY_AFTER_FAILURE_MS = 5 * 60_000;
 
 /**
- * Starts a compaction run in the background and returns at once, so it never delays a reply. At
- * most one run per thread at a time; failures are logged, and the fallback trim keeps prompts
- * bounded meanwhile.
+ * The user's chosen summary model, or the chat model if they chose none or the one they chose is
+ * no longer offered (a model can leave the gateway after it was saved).
+ */
+export async function summaryModelFor(chosen: string): Promise<string> {
+  if (chosen === SAME_AS_CHAT_MODEL) return chosen;
+  try {
+    if (await isModelAvailable(chosen)) return chosen;
+    console.warn(`[history] summary model ${chosen} is no longer offered; using the chat model`);
+  } catch {
+    // The list can't be fetched right now: the chat model is the safe choice for this run.
+  }
+  return SAME_AS_CHAT_MODEL;
+}
+
+/** One compaction run for the user, using their settings. Does nothing if they turned compaction off. */
+export async function compactIfEnabled(
+  opts: { userId: string; threadId: string },
+  deps: {
+    getSettings?: typeof getUserSettings;
+    resolveModel?: typeof summaryModelFor;
+    compact?: typeof compactThreadHistory;
+  } = {},
+): Promise<{ ran: boolean; model?: string }> {
+  const settings = await (deps.getSettings ?? getUserSettings)(opts.userId);
+  if (!settings.historyCompaction) return { ran: false };
+  const model = await (deps.resolveModel ?? summaryModelFor)(settings.historySummaryModel);
+  await (deps.compact ?? compactThreadHistory)({ ...opts, model });
+  return { ran: true, model };
+}
+
+/**
+ * Starts a compaction run in the background and returns at once, so it never delays a reply. Does
+ * nothing for a user who turned compaction off. At most one run per thread at a time; failures are
+ * logged, and the fallback trim keeps prompts bounded meanwhile.
  */
 export function scheduleHistoryCompaction(opts: { userId: string; threadId: string }): void {
-  if (!isHistoryCompactionEnabled() || !resolveChatModel()) return;
+  if (!resolveChatModel()) return;
   if (inFlight.has(opts.threadId)) return;
   const failedAt = lastFailure.get(opts.threadId);
   if (failedAt !== undefined && Date.now() - failedAt < RETRY_AFTER_FAILURE_MS) return;
 
-  const run = compactThreadHistory(opts)
+  const run = compactIfEnabled(opts)
     .then(() => {
       lastFailure.delete(opts.threadId);
     })

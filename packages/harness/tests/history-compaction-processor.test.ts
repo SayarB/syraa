@@ -141,7 +141,7 @@ describe("HistoryCompactionProcessor", () => {
     const memory = await seededMemory(12); // 24 messages; chunks cover m1–m16
     const processor = new HistoryCompactionProcessor({
       config,
-      enabled: () => true,
+      enabled: async () => true,
       loadState: async () => stateCovering(2),
     });
     const { systems, conversation } = await sendTurn({ memory, processor });
@@ -177,7 +177,7 @@ describe("HistoryCompactionProcessor", () => {
     const before = await storedTexts(memory);
     const processor = new HistoryCompactionProcessor({
       config: resolveCompactionConfig({ budgets: { verbatim: 500 } }), // forces the fallback trim too
-      enabled: () => true,
+      enabled: async () => true,
       loadState: async () => stateCovering(1),
     });
     await sendTurn({ memory, processor });
@@ -192,7 +192,7 @@ describe("HistoryCompactionProcessor", () => {
     const memory = await seededMemory(10, (n) => `answer ${n} ${"lots of words ".repeat(300)}`);
     const processor = new HistoryCompactionProcessor({
       config: resolveCompactionConfig({ budgets: { verbatim: 5500 } }),
-      enabled: () => true,
+      enabled: async () => true,
       loadState: async () => null,
     });
     const { conversation, systems } = await sendTurn({ memory, processor });
@@ -216,7 +216,7 @@ describe("HistoryCompactionProcessor", () => {
       inChatRun: false,
       processor: new HistoryCompactionProcessor({
         config,
-        enabled: () => true,
+        enabled: async () => true,
         loadState: async () => state,
       }),
     });
@@ -227,18 +227,33 @@ describe("HistoryCompactionProcessor", () => {
       memory: await seededMemory(12),
       processor: new HistoryCompactionProcessor({
         config,
-        enabled: () => false,
+        enabled: async () => false,
         loadState: async () => state,
       }),
     });
     expect(off.conversation).toHaveLength(25);
   });
 
+  it("sends the last 40 messages as they are for a user who turned compaction off", async () => {
+    const memory = await seededMemory(30); // 60 messages
+    const processor = new HistoryCompactionProcessor({
+      config,
+      enabled: async () => false,
+      loadState: async () => stateCovering(3), // summaries exist but must not be used
+    });
+    const { conversation, systems } = await sendTurn({ memory, processor });
+
+    expect(systems).toEqual(["BASE INSTRUCTIONS"]);
+    expect(conversation).toHaveLength(41); // 40 history messages + the new question
+    expect(conversation[0]).toBe("question 11");
+    expect(conversation.at(-1)).toBe("new question");
+  });
+
   it("carries on with the fallback if the summaries can't be read", async () => {
     const memory = await seededMemory(6);
     const processor = new HistoryCompactionProcessor({
       config,
-      enabled: () => true,
+      enabled: async () => true,
       loadState: async () => {
         throw new Error("database unavailable");
       },

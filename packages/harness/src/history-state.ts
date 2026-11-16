@@ -16,15 +16,6 @@ const CREATE_TABLE = `
   )
 `;
 
-/**
- * Whether old turns are replaced by summaries. On by default; `HISTORY_COMPACTION=off` goes back
- * to sending the last 40 messages as they are.
- */
-export function isHistoryCompactionEnabled(): boolean {
-  const value = process.env.HISTORY_COMPACTION?.trim().toLowerCase();
-  return value !== "off" && value !== "0" && value !== "false";
-}
-
 /** Create the table if missing (idempotent; runs at boot). */
 export async function ensureHistoryReady(connectionString?: string): Promise<void> {
   await ensureTable(CREATE_TABLE, connectionString);

@@ -11,8 +11,10 @@ import {
   resolveCompactionConfig,
 } from "@syraa/history";
 import { tryGetChatRunContext } from "../chat-run-context.js";
-import { getCompactionStateStore, isHistoryCompactionEnabled } from "../history-state.js";
+import { getCompactionStateStore } from "../history-state.js";
+import { getUserSettings } from "../settings.js";
 import { wrapUntrusted } from "../untrusted.js";
+import { PLAIN_HISTORY_MESSAGES } from "./memory.js";
 
 /** Longest text kept from a message in an older turn when the fallback has to shorten it. */
 const FALLBACK_TEXT_CHARS = 600;
@@ -83,9 +85,20 @@ function turnSize(turn: readonly MastraDBMessage[]): FallbackTurn {
   return { tokens: tokensOf(full), clippedTokens: tokensOf(clipped) };
 }
 
+/** The user's setting; on if settings can't be read, so an outage doesn't change what the model sees. */
+async function compactionEnabledFor(userId: string): Promise<boolean> {
+  try {
+    return (await getUserSettings(userId)).historyCompaction;
+  } catch (error) {
+    console.warn("[history] settings not read:", error instanceof Error ? error.message : error);
+    return true;
+  }
+}
+
 export type HistoryCompactionOptions = {
   config?: CompactionConfig;
-  enabled?: () => boolean;
+  /** Whether this user has compaction on. Default: the user's `historyCompaction` setting. */
+  enabled?: (userId: string) => Promise<boolean>;
   loadState?: (userId: string, threadId: string) => Promise<CompactionState | null>;
 };
 
@@ -103,19 +116,19 @@ export class HistoryCompactionProcessor implements Processor {
   readonly id = "history-compaction";
 
   private readonly config: CompactionConfig;
-  private readonly enabled: () => boolean;
+  private readonly enabled: (userId: string) => Promise<boolean>;
   private readonly loadState: NonNullable<HistoryCompactionOptions["loadState"]>;
 
   constructor(options: HistoryCompactionOptions = {}) {
     this.config = options.config ?? resolveCompactionConfig();
-    this.enabled = options.enabled ?? isHistoryCompactionEnabled;
+    this.enabled = options.enabled ?? compactionEnabledFor;
     this.loadState =
       options.loadState ?? ((userId, threadId) => getCompactionStateStore().load(userId, threadId));
   }
 
   async processInput({ messages, messageList }: ProcessInputArgs) {
     const ctx = tryGetChatRunContext();
-    if (!ctx || !this.enabled()) return messages;
+    if (!ctx) return messages;
 
     // Everything from the newest user message on is this turn's and is never touched.
     let current = -1;
@@ -124,6 +137,14 @@ export class HistoryCompactionProcessor implements Processor {
     });
     if (current <= 0) return messages;
     const history = messages.slice(0, current);
+
+    // Compaction off for this user: the old behaviour, the last N messages as they are.
+    if (!(await this.enabled(ctx.userId))) {
+      const cut = history.length - PLAIN_HISTORY_MESSAGES;
+      if (cut <= 0) return messages;
+      const old = new Set(history.slice(0, cut).map((message) => message.id));
+      return messages.filter((message) => !old.has(message.id));
+    }
 
     const state = await this.safeLoadState(ctx.userId, ctx.threadId);
     const dropped = new Set<string>();

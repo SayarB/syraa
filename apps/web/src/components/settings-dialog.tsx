@@ -1,5 +1,6 @@
 import { CheckIcon, MoonIcon, SlidersHorizontalIcon, SunIcon } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
+import { formatModelPrice, ModelPicker } from "@/components/model-picker";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -9,14 +10,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useUserSettings } from "@/lib/settings";
+import { Switch } from "@/components/ui/switch";
+import { type ModelOption, useModelOptions, useUserSettings } from "@/lib/settings";
 import { THEME_PALETTES, type Theme, type ThemeMode, type ThemePalette } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
@@ -71,12 +66,82 @@ const MODES = [
   { id: "dark", label: "Dark", icon: MoonIcon },
 ] as const;
 
+/**
+ * A model setting. Picking a premium model asks first: calls use the app's own AI key, so a costly
+ * model adds up for everyone.
+ */
+function ModelSetting(props: {
+  id: string;
+  label: string;
+  description: string;
+  value: string | undefined;
+  models: ModelOption[] | null;
+  modelsError: string | null;
+  disabled?: boolean;
+  onSave: (modelId: string) => void;
+}) {
+  const [pending, setPending] = useState<ModelOption | null>(null);
+
+  const select = (modelId: string) => {
+    const model = props.models?.find((entry) => entry.id === modelId);
+    if (model?.expensive && modelId !== props.value) {
+      setPending(model);
+      return;
+    }
+    setPending(null);
+    props.onSave(modelId);
+  };
+
+  return (
+    <>
+      <SettingRow label={props.label} description={props.description} htmlFor={props.id}>
+        <ModelPicker
+          id={props.id}
+          value={props.value ?? ""}
+          models={props.models}
+          error={props.modelsError}
+          disabled={props.disabled || props.value === undefined}
+          onSelect={select}
+        />
+      </SettingRow>
+      {pending ? (
+        <div
+          role="alert"
+          className="grid gap-2 rounded-lg border border-destructive/40 p-3 text-xs"
+        >
+          <p>
+            <span className="font-medium">{pending.label}</span> is a premium model (
+            {formatModelPrice(pending)}). Every call is paid from the shared AI budget, so a costly
+            model adds up quickly.
+          </p>
+          <div className="flex gap-2">
+            <Button
+              size="xs"
+              onClick={() => {
+                setPending(null);
+                props.onSave(pending.id);
+              }}
+            >
+              Use anyway
+            </Button>
+            <Button variant="outline" size="xs" onClick={() => setPending(null)}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
 function GeneralSettings(props: Omit<Props, "open" | "onOpenChange">) {
-  const { settings, options, loadError, saveError, load, update } = useUserSettings();
+  const { settings, loadError, saveError, load, update } = useUserSettings();
+  const { models, error: modelsError, load: loadModels } = useModelOptions();
 
   useEffect(() => {
     void load();
-  }, [load]);
+    void loadModels();
+  }, [load, loadModels]);
 
   return (
     <div className="grid gap-6">
@@ -138,40 +203,61 @@ function GeneralSettings(props: Omit<Props, "open" | "onOpenChange">) {
       </SettingsSection>
 
       <SettingsSection title="Chat titles">
-        <SettingRow
+        <ModelSetting
+          id="settings-title-model"
           label="Title model"
           description="Writes a short title for each new chat."
-          htmlFor="settings-title-model"
-        >
-          <Select
-            value={settings?.titleModel ?? ""}
-            onValueChange={(titleModel) => void update({ titleModel })}
-            disabled={!settings || !options}
-          >
-            <SelectTrigger id="settings-title-model" className="w-56">
-              <SelectValue placeholder={loadError ? "Unavailable" : "Loading…"} />
-            </SelectTrigger>
-            <SelectContent>
-              {options?.titleModels.map((model) => (
-                <SelectItem key={model.id} value={model.id}>
-                  {model.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </SettingRow>
-        {loadError ? (
-          <p className="flex items-center gap-2 text-destructive text-xs">
-            Could not load settings: {loadError}
-            <Button variant="outline" size="xs" onClick={() => void load()}>
-              Retry
-            </Button>
-          </p>
-        ) : null}
-        {saveError ? (
-          <p className="text-destructive text-xs">Could not save settings: {saveError}</p>
-        ) : null}
+          value={settings?.titleModel}
+          models={models}
+          modelsError={modelsError}
+          onSave={(titleModel) => void update({ titleModel })}
+        />
       </SettingsSection>
+
+      <SettingsSection title="Chat history">
+        <SettingRow
+          label="Summarise older messages"
+          description="Long chats keep their newest messages in full and replace older ones with short summaries. This is cheaper and faster, and the assistant can still look up anything said earlier."
+          htmlFor="settings-history-compaction"
+        >
+          <Switch
+            id="settings-history-compaction"
+            checked={settings?.historyCompaction ?? true}
+            disabled={!settings}
+            onCheckedChange={(historyCompaction) => void update({ historyCompaction })}
+          />
+        </SettingRow>
+        <ModelSetting
+          id="settings-history-summary-model"
+          label="Summary model"
+          description="Writes those summaries. A small, fast model is plenty."
+          value={settings?.historySummaryModel}
+          models={models}
+          modelsError={modelsError}
+          disabled={settings?.historyCompaction === false}
+          onSave={(historySummaryModel) => void update({ historySummaryModel })}
+        />
+      </SettingsSection>
+
+      {loadError ? (
+        <p className="flex items-center gap-2 text-destructive text-xs">
+          Could not load settings: {loadError}
+          <Button variant="outline" size="xs" onClick={() => void load()}>
+            Retry
+          </Button>
+        </p>
+      ) : null}
+      {modelsError ? (
+        <p className="flex items-center gap-2 text-destructive text-xs">
+          Could not load the model list: {modelsError}
+          <Button variant="outline" size="xs" onClick={() => void loadModels()}>
+            Retry
+          </Button>
+        </p>
+      ) : null}
+      {saveError ? (
+        <p className="text-destructive text-xs">Could not save settings: {saveError}</p>
+      ) : null}
     </div>
   );
 }

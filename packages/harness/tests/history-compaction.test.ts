@@ -4,10 +4,17 @@ import {
   type RecalledMessage,
   resolveCompactionConfig,
 } from "@syraa/history";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CompactionStateStore } from "../src/history-state.js";
 
-const { compactThreadHistory } = await import("../src/history-compaction.js");
+const isModelAvailable = vi.fn();
+vi.mock("../src/model-options.js", () => ({
+  isModelAvailable: (...args: unknown[]) => isModelAvailable(...args),
+}));
+
+const { compactIfEnabled, compactThreadHistory, summaryModelFor } = await import(
+  "../src/history-compaction.js"
+);
 
 const config = resolveCompactionConfig(); // n=3, k=4
 
@@ -175,5 +182,56 @@ describe("compactThreadHistory", () => {
     expect(result.state.summarizedTurns).toBe(16);
     expect(summarizer.summarizeChunk.mock.calls[0][0]).toContain("question 9");
     expect(emptyCompactionState().rev).toBe(0);
+  });
+});
+
+describe("the user's settings", () => {
+  const settings = (over: Record<string, unknown>) => async () =>
+    ({
+      titleModel: "chat",
+      historyCompaction: true,
+      historySummaryModel: "chat",
+      ...over,
+    }) as never;
+
+  beforeEach(() => {
+    isModelAvailable.mockReset();
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+  });
+
+  it("does nothing for a user who turned compaction off", async () => {
+    const compact = vi.fn();
+    const result = await compactIfEnabled(
+      { userId: "u1", threadId: "t1" },
+      { getSettings: settings({ historyCompaction: false }), compact },
+    );
+    expect(result).toEqual({ ran: false });
+    expect(compact).not.toHaveBeenCalled();
+  });
+
+  it("runs with the model the user chose", async () => {
+    isModelAvailable.mockResolvedValue(true);
+    const compact = vi.fn(async () => ({ jobs: 0, state: emptyCompactionState() }));
+    const result = await compactIfEnabled(
+      { userId: "u1", threadId: "t1" },
+      { getSettings: settings({ historySummaryModel: "openai/gpt-5-mini" }), compact },
+    );
+    expect(result).toEqual({ ran: true, model: "openai/gpt-5-mini" });
+    expect(compact).toHaveBeenCalledWith({
+      userId: "u1",
+      threadId: "t1",
+      model: "openai/gpt-5-mini",
+    });
+  });
+
+  it("uses the chat model when the chosen one has left the list or the list can't be read", async () => {
+    isModelAvailable.mockResolvedValueOnce(false);
+    expect(await summaryModelFor("gone/model")).toBe("chat");
+
+    isModelAvailable.mockRejectedValueOnce(new Error("gateway down"));
+    expect(await summaryModelFor("openai/gpt-5-mini")).toBe("chat");
+
+    expect(await summaryModelFor("chat")).toBe("chat");
+    expect(isModelAvailable).toHaveBeenCalledTimes(2); // "chat" needs no lookup
   });
 });
