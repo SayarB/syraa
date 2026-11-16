@@ -21,8 +21,8 @@ import { type CompactionStateStore, getCompactionStateStore } from "./history-st
 import { HISTORY_SUMMARY_MODEL_CONTEXT_KEY } from "./mastra/agents/history-summarizer.js";
 import { getHistorySummarizerAgent } from "./mastra/index.js";
 import { resolveChatModel } from "./mastra/model.js";
-import { isModelAvailable } from "./model-options.js";
-import { getUserSettings, SAME_AS_CHAT_MODEL } from "./settings.js";
+import { usableModelRef } from "./model-options.js";
+import { effectiveModelRef, getUserSettings, SAME_AS_CHAT_MODEL } from "./settings.js";
 import { loadThreadTextMessages } from "./threads.js";
 
 /** The two model calls a compaction job makes. Tests pass fakes. */
@@ -142,33 +142,22 @@ const lastFailure = new Map<string, number>();
 /** After a failed run, leave the thread alone for a while instead of retrying (and paying) every turn. */
 const RETRY_AFTER_FAILURE_MS = 5 * 60_000;
 
-/**
- * The user's chosen summary model, or the chat model if they chose none or the one they chose is
- * no longer offered (a model can leave the gateway after it was saved).
- */
-export async function summaryModelFor(chosen: string): Promise<string> {
-  if (chosen === SAME_AS_CHAT_MODEL) return chosen;
-  try {
-    if (await isModelAvailable(chosen)) return chosen;
-    console.warn(`[history] summary model ${chosen} is no longer offered; using the chat model`);
-  } catch {
-    // The list can't be fetched right now: the chat model is the safe choice for this run.
-  }
-  return SAME_AS_CHAT_MODEL;
-}
-
 /** One compaction run for the user, using their settings. Does nothing if they turned compaction off. */
 export async function compactIfEnabled(
   opts: { userId: string; threadId: string },
   deps: {
     getSettings?: typeof getUserSettings;
-    resolveModel?: typeof summaryModelFor;
+    resolveModel?: typeof usableModelRef;
     compact?: typeof compactThreadHistory;
   } = {},
 ): Promise<{ ran: boolean; model?: string }> {
   const settings = await (deps.getSettings ?? getUserSettings)(opts.userId);
   if (!settings.historyCompaction) return { ran: false };
-  const model = await (deps.resolveModel ?? summaryModelFor)(settings.historySummaryModel);
+  // "Same as chat model" follows the chat model the user chose; a model that has left the list is
+  // replaced by the default.
+  const model = await (deps.resolveModel ?? usableModelRef)(
+    effectiveModelRef(settings.historySummaryModel, settings),
+  );
   await (deps.compact ?? compactThreadHistory)({ ...opts, model });
   return { ran: true, model };
 }

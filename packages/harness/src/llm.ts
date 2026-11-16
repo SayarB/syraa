@@ -1,5 +1,6 @@
 import type { AnySpan } from "@mastra/core/observability";
 import type { MemoryItem } from "@syraa/memory";
+import { type PreparedChatModel, prepareChatModel } from "./chat-model.js";
 import { runWithChatContext } from "./chat-run-context.js";
 import { getSyraaAgent } from "./mastra/index.js";
 import { resolveChatModel, resolveChatProvider } from "./mastra/model.js";
@@ -31,26 +32,24 @@ const DEFAULTS: Record<ChatProvider, { model: string; apiKeyEnv: string; modelEn
   },
 };
 
-async function buildChatTurnOptions(opts: {
-  userId: string;
-  threadId: string;
-  memoryItems: MemoryItem[];
-  turnSpan?: AnySpan;
-}) {
+async function buildChatTurnOptions(
+  opts: {
+    userId: string;
+    threadId: string;
+    memoryItems: MemoryItem[];
+    turnSpan?: AnySpan;
+  },
+  model: PreparedChatModel,
+) {
   return {
     memory: {
       thread: opts.threadId,
       resource: opts.userId,
     },
     instructions: await buildTurnInstructions(opts.userId, opts.memoryItems),
-    modelSettings: {
-      temperature: 0.4,
-      maxOutputTokens: 2048,
-      // Fireworks routes a thread's calls to the same prompt cache (long, stable prefix).
-      ...(resolveChatProvider() === "fireworks"
-        ? { headers: { "x-session-affinity": opts.threadId } }
-        : {}),
-    },
+    // The user's chat model setting, and call settings suited to that model.
+    requestContext: model.requestContext,
+    modelSettings: model.modelSettings,
     maxSteps: 50,
     tracingContext: { currentSpan: opts.turnSpan },
   };
@@ -87,20 +86,21 @@ export async function runChatTurn(opts: {
   return runWithChatContext(
     { userId: opts.userId, threadId: opts.threadId, currentUserMessage: opts.userMessage },
     async () => {
+      const model = await prepareChatModel(opts.userId, opts.threadId);
       let output: Awaited<ReturnType<typeof agent.generate>>;
       try {
-        output = await agent.generate(opts.userMessage, await buildChatTurnOptions(opts));
+        output = await agent.generate(opts.userMessage, await buildChatTurnOptions(opts, model));
       } catch (error) {
         const detail = error instanceof Error ? error.message : String(error);
-        throw new Error(`${chat.provider} generate failed: ${detail}`);
+        throw new Error(`${model.providerId} generate failed: ${detail}`);
       }
 
       const turn = await resolveTurnFromGenerateOutput({ text: fullReplyText(output) });
 
       return {
         message: turn.message,
-        model: chat.model,
-        provider: chat.provider,
+        model: model.slug,
+        provider: model.providerId,
       };
     },
   );

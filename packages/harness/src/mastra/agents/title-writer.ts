@@ -1,22 +1,15 @@
 import { Agent } from "@mastra/core/agent";
 import type { MastraModelConfig } from "@mastra/core/llm";
-import { SAME_AS_CHAT_MODEL } from "../../settings.js";
-import { requireChatModel, toMastraModelId } from "../model.js";
+import { selectModel } from "../../providers/index.js";
 
 export const TITLE_WRITER_AGENT_ID = "title-writer";
 
-/** Request-context key holding the user's `titleModel` setting. */
+/** Request-context key holding the model ref the title is written with. */
 export const TITLE_MODEL_CONTEXT_KEY = "titleModel";
 
-/** Model config for a `titleModel` setting: the chat model, or another model on the same provider. */
+/** Model config for a title model ref (see `selectModel`): the model it names, or the server's default for "chat". */
 export function titleModelConfig(titleModel: string | undefined): MastraModelConfig {
-  const chat = requireChatModel();
-  if (!titleModel || titleModel === SAME_AS_CHAT_MODEL) return chat.mastraModel;
-  return {
-    id: toMastraModelId(chat.provider, titleModel),
-    url: chat.baseUrl,
-    apiKey: chat.apiKey,
-  };
+  return selectModel(titleModel).config;
 }
 
 /** Names a chat thread from its opening messages. */

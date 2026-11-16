@@ -3,21 +3,31 @@ import { apiFetch } from "./api";
 
 /** A model a setting can use, as listed by the server (`/api/settings/models`). */
 export type ModelOption = {
+  /** The value that is saved: `provider:slug`. */
   id: string;
+  providerId: string;
+  /** The provider's own name for the model. */
+  slug: string;
   label: string;
-  provider?: string;
+  /** Picker heading. */
+  group: string;
   /** US dollars per million tokens. */
   inputPerMillion?: number;
   outputPerMillion?: number;
   /** Costly enough to warn about: the app's own key pays for every call. */
   expensive?: boolean;
+  /** Tokens of context the model accepts, when the provider says. */
+  contextWindow?: number;
+  /** Can run the assistant: it can call tools and has room for the conversation. */
+  chatCapable: boolean;
 };
 
-/** Setting value meaning "use the chat model". */
+/** Setting value meaning "the server's default model" (for the title and summary models: the chat model). */
 export const SAME_AS_CHAT_MODEL = "chat";
 
 /** Mirrors the harness `UserSettings`; every field has a server-side default. */
 export type UserSettings = {
+  chatModel: string;
   titleModel: string;
   historyCompaction: boolean;
   historySummaryModel: string;
@@ -28,7 +38,10 @@ type SettingsResponse = {
 };
 
 export type ModelOptionsResponse = {
-  provider: string;
+  /** The server's default model: what "chat" means. */
+  defaultModel: { id: string; providerId: string; slug: string };
+  /** Providers with a key, and whether their model list could be loaded. */
+  providers: { id: string; label: string; ok: boolean }[];
   models: ModelOption[];
 };
 
@@ -106,18 +119,23 @@ export function useUserSettings() {
  * hundreds. `models` is null until loaded.
  */
 export function useModelOptions() {
-  const [models, setModels] = useState<ModelOption[] | null>(null);
+  const [options, setOptions] = useState<ModelOptionsResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
     try {
-      const data = await readJson<ModelOptionsResponse>(await apiFetch("/api/settings/models"));
-      setModels(data.models);
+      setOptions(await readJson<ModelOptionsResponse>(await apiFetch("/api/settings/models")));
     } catch (err) {
       setError(errorText(err));
     }
   }, []);
 
-  return { models, error, load };
+  return {
+    models: options?.models ?? null,
+    defaultModel: options?.defaultModel ?? null,
+    providers: options?.providers ?? [],
+    error,
+    load,
+  };
 }

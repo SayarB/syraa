@@ -11,6 +11,7 @@ const { getSyraaMemory } = await import("../src/mastra/memory.js");
 const { closeMastraStorage, ensureMastraStorageReady } = await import("../src/mastra/storage.js");
 const { closeHarnessPool, getHarnessPool } = await import("../src/db.js");
 const { ensureSettingsReady, updateUserSettings } = await import("../src/settings.js");
+const { resetModelCatalogs } = await import("../src/model-options.js");
 const { backfillThreadTitles, cleanGeneratedTitle, generateThreadTitle, nameNewThread } =
   await import("../src/thread-titles.js");
 const { isUntitledThread, listChatThreads, saveThreadTitle, titleSourceOf } = await import(
@@ -167,6 +168,16 @@ describe.skipIf(!process.env.DATABASE_URL)("thread titles (Postgres)", () => {
 
   beforeAll(async () => {
     vi.stubEnv("CHAT_PROVIDER", "fireworks");
+    // Saving a Fireworks model needs the provider to have a key and to list the model.
+    vi.stubEnv("FIREWORKS_API_KEY", "test-key");
+    resetModelCatalogs();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ data: [{ id: GLM_FLASH, supports_chat: true }] })),
+      ),
+    );
     await ensureMastraStorageReady();
     await ensureSettingsReady();
   });
@@ -180,6 +191,7 @@ describe.skipIf(!process.env.DATABASE_URL)("thread titles (Postgres)", () => {
     for (const threadId of createdThreadIds) await memory.deleteThread(threadId);
     await getHarnessPool().query("DELETE FROM user_settings WHERE user_id = $1", [userId]);
     vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
     await closeHarnessPool();
     await closeMastraStorage();
   });
@@ -194,7 +206,9 @@ describe.skipIf(!process.env.DATABASE_URL)("thread titles (Postgres)", () => {
     const result = await backfillThreadTitles({ userId });
 
     expect(result).toEqual({ scanned: 3, retitled: 1, skipped: 2, failed: 0 });
-    expect(generate.mock.calls[0][1].requestContext.get("titleModel")).toBe(GLM_FLASH);
+    expect(generate.mock.calls[0][1].requestContext.get("titleModel")).toBe(
+      `fireworks:${GLM_FLASH}`,
+    );
     const memory = getSyraaMemory();
     const after = await memory.getThreadById({ threadId: legacy.id });
     expect(after?.title).toBe("Slow Postgres query");

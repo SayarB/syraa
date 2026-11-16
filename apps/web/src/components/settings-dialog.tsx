@@ -77,6 +77,12 @@ function ModelSetting(props: {
   value: string | undefined;
   models: ModelOption[] | null;
   modelsError: string | null;
+  /** What the default ("chat") value is called in this setting. */
+  defaultLabel: string;
+  /** Offer only some models. */
+  filter?: (model: ModelOption) => boolean;
+  /** Said in the premium warning: what each call is for. */
+  usage?: string;
   disabled?: boolean;
   onSave: (modelId: string) => void;
 }) {
@@ -99,6 +105,8 @@ function ModelSetting(props: {
           id={props.id}
           value={props.value ?? ""}
           models={props.models}
+          defaultLabel={props.defaultLabel}
+          filter={props.filter}
           error={props.modelsError}
           disabled={props.disabled || props.value === undefined}
           onSelect={select}
@@ -111,8 +119,8 @@ function ModelSetting(props: {
         >
           <p>
             <span className="font-medium">{pending.label}</span> is a premium model (
-            {formatModelPrice(pending)}). Every call is paid from the shared AI budget, so a costly
-            model adds up quickly.
+            {formatModelPrice(pending)}). {props.usage ?? "Every call"} is paid from the shared AI
+            budget, so a costly model adds up quickly.
           </p>
           <div className="flex gap-2">
             <Button
@@ -134,9 +142,12 @@ function ModelSetting(props: {
   );
 }
 
+/** A stable function, so the picker doesn't rebuild its list on every render. */
+const canRunAssistant = (model: ModelOption) => model.chatCapable;
+
 function GeneralSettings(props: Omit<Props, "open" | "onOpenChange">) {
   const { settings, loadError, saveError, load, update } = useUserSettings();
-  const { models, error: modelsError, load: loadModels } = useModelOptions();
+  const { models, defaultModel, error: modelsError, load: loadModels } = useModelOptions();
 
   useEffect(() => {
     void load();
@@ -145,6 +156,21 @@ function GeneralSettings(props: Omit<Props, "open" | "onOpenChange">) {
 
   return (
     <div className="grid gap-6">
+      <SettingsSection title="Assistant">
+        <ModelSetting
+          id="settings-chat-model"
+          label="Chat model"
+          description="The model that answers you. Only models that can use tools are listed, because the assistant needs them."
+          value={settings?.chatModel}
+          models={models}
+          modelsError={modelsError}
+          defaultLabel={defaultModel ? `Server default (${defaultModel.slug})` : "Server default"}
+          filter={canRunAssistant}
+          usage="Every reply"
+          onSave={(chatModel) => void update({ chatModel })}
+        />
+      </SettingsSection>
+
       <SettingsSection title="Appearance">
         <SettingRow label="Mode" description="Light or dark interface.">
           <fieldset className="flex gap-1 rounded-lg bg-muted p-1">
@@ -210,6 +236,8 @@ function GeneralSettings(props: Omit<Props, "open" | "onOpenChange">) {
           value={settings?.titleModel}
           models={models}
           modelsError={modelsError}
+          defaultLabel="Same as chat model"
+          usage="Every new chat's title"
           onSave={(titleModel) => void update({ titleModel })}
         />
       </SettingsSection>
@@ -234,6 +262,8 @@ function GeneralSettings(props: Omit<Props, "open" | "onOpenChange">) {
           value={settings?.historySummaryModel}
           models={models}
           modelsError={modelsError}
+          defaultLabel="Same as chat model"
+          usage="Every summary"
           disabled={settings?.historyCompaction === false}
           onSave={(historySummaryModel) => void update({ historySummaryModel })}
         />

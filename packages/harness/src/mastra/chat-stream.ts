@@ -3,6 +3,7 @@ import { toAISdkStream } from "@mastra/ai-sdk";
 import type { AnySpan } from "@mastra/core/observability";
 import type { MemoryItem } from "@syraa/memory";
 import { createUIMessageStream, type UIMessage, type UIMessageStreamWriter } from "ai";
+import { prepareChatModel } from "../chat-model.js";
 import { runWithChatContext } from "../chat-run-context.js";
 import { buildTurnInstructions } from "../turn-instructions.js";
 import { getSyraaAgent } from "./index.js";
@@ -36,6 +37,8 @@ export async function createSyraaUIMessageStream(opts: {
         parts: [{ type: "text", text: opts.userMessage }],
       };
 
+      // The user's chat model setting, and call settings suited to that model.
+      const model = await prepareChatModel(opts.userId, opts.threadId);
       const result = await agent.stream([userMessage], {
         memory: {
           thread: opts.threadId,
@@ -43,12 +46,8 @@ export async function createSyraaUIMessageStream(opts: {
         },
         instructions: await buildTurnInstructions(opts.userId, opts.memoryItems),
         maxSteps: 50,
-        modelSettings: {
-          temperature: 0.4,
-          maxOutputTokens: 2048,
-          // Fireworks routes a thread's calls to the same prompt cache (long, stable prefix).
-          headers: { "x-session-affinity": opts.threadId },
-        },
+        requestContext: model.requestContext,
+        modelSettings: model.modelSettings,
         tracingContext: { currentSpan: opts.turnSpan },
       });
 

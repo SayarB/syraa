@@ -7,14 +7,12 @@ import {
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CompactionStateStore } from "../src/history-state.js";
 
-const isModelAvailable = vi.fn();
+const usableModelRef = vi.fn(async (ref: string | undefined) => ref ?? "chat");
 vi.mock("../src/model-options.js", () => ({
-  isModelAvailable: (...args: unknown[]) => isModelAvailable(...args),
+  usableModelRef: (...args: [string | undefined]) => usableModelRef(...args),
 }));
 
-const { compactIfEnabled, compactThreadHistory, summaryModelFor } = await import(
-  "../src/history-compaction.js"
-);
+const { compactIfEnabled, compactThreadHistory } = await import("../src/history-compaction.js");
 
 const config = resolveCompactionConfig(); // n=3, k=4
 
@@ -188,6 +186,7 @@ describe("compactThreadHistory", () => {
 describe("the user's settings", () => {
   const settings = (over: Record<string, unknown>) => async () =>
     ({
+      chatModel: "chat",
       titleModel: "chat",
       historyCompaction: true,
       historySummaryModel: "chat",
@@ -195,7 +194,8 @@ describe("the user's settings", () => {
     }) as never;
 
   beforeEach(() => {
-    isModelAvailable.mockReset();
+    usableModelRef.mockReset();
+    usableModelRef.mockImplementation(async (ref) => ref ?? "chat");
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
   });
 
@@ -210,28 +210,36 @@ describe("the user's settings", () => {
   });
 
   it("runs with the model the user chose", async () => {
-    isModelAvailable.mockResolvedValue(true);
     const compact = vi.fn(async () => ({ jobs: 0, state: emptyCompactionState() }));
     const result = await compactIfEnabled(
       { userId: "u1", threadId: "t1" },
-      { getSettings: settings({ historySummaryModel: "openai/gpt-5-mini" }), compact },
+      { getSettings: settings({ historySummaryModel: "gateway:openai/gpt-5-mini" }), compact },
     );
-    expect(result).toEqual({ ran: true, model: "openai/gpt-5-mini" });
+    expect(result).toEqual({ ran: true, model: "gateway:openai/gpt-5-mini" });
     expect(compact).toHaveBeenCalledWith({
       userId: "u1",
       threadId: "t1",
-      model: "openai/gpt-5-mini",
+      model: "gateway:openai/gpt-5-mini",
     });
   });
 
-  it("uses the chat model when the chosen one has left the list or the list can't be read", async () => {
-    isModelAvailable.mockResolvedValueOnce(false);
-    expect(await summaryModelFor("gone/model")).toBe("chat");
+  it("'same as chat model' summarises with the model the user chats with", async () => {
+    const compact = vi.fn(async () => ({ jobs: 0, state: emptyCompactionState() }));
+    const result = await compactIfEnabled(
+      { userId: "u1", threadId: "t1" },
+      { getSettings: settings({ chatModel: "gateway:anthropic/claude-haiku-x" }), compact },
+    );
+    expect(result.model).toBe("gateway:anthropic/claude-haiku-x");
+  });
 
-    isModelAvailable.mockRejectedValueOnce(new Error("gateway down"));
-    expect(await summaryModelFor("openai/gpt-5-mini")).toBe("chat");
-
-    expect(await summaryModelFor("chat")).toBe("chat");
-    expect(isModelAvailable).toHaveBeenCalledTimes(2); // "chat" needs no lookup
+  it("uses whatever the model check returns, so a model that has left the list is replaced", async () => {
+    usableModelRef.mockResolvedValueOnce("chat");
+    const compact = vi.fn(async () => ({ jobs: 0, state: emptyCompactionState() }));
+    const result = await compactIfEnabled(
+      { userId: "u1", threadId: "t1" },
+      { getSettings: settings({ historySummaryModel: "gateway:gone/model" }), compact },
+    );
+    expect(usableModelRef).toHaveBeenCalledWith("gateway:gone/model");
+    expect(result.model).toBe("chat");
   });
 });
