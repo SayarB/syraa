@@ -186,11 +186,22 @@ describe.skipIf(!process.env.DATABASE_URL)("user settings store (Postgres)", () 
 
   beforeAll(async () => {
     vi.stubEnv("CHAT_PROVIDER", "fireworks");
+    // Saving a Fireworks model needs the provider to have a key and to list the model.
+    vi.stubEnv("FIREWORKS_API_KEY", "test-key");
+    resetModelCatalogs();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ data: [{ id: GLM_FLASH, supports_chat: true }] })),
+      ),
+    );
     await ensureSettingsReady();
   });
 
   afterAll(async () => {
     vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
     await closeHarnessPool();
     const pool = createPgPool(resolveDatabaseUrl(), { max: 1 });
     await pool.query("DELETE FROM user_settings WHERE user_id = $1", [userId]);
@@ -209,8 +220,9 @@ describe.skipIf(!process.env.DATABASE_URL)("user settings store (Postgres)", () 
 
   it("saves and reads back a title model", async () => {
     const saved = await updateUserSettings(userId, { titleModel: GLM_FLASH });
-    expect(saved.settings.titleModel).toBe(GLM_FLASH);
-    expect((await getUserSettings(userId)).titleModel).toBe(GLM_FLASH);
+    // saved in `provider:slug` form
+    expect(saved.settings.titleModel).toBe(`fireworks:${GLM_FLASH}`);
+    expect((await getUserSettings(userId)).titleModel).toBe(`fireworks:${GLM_FLASH}`);
   });
 
   it("saves the history settings without touching the title model", async () => {
@@ -219,9 +231,9 @@ describe.skipIf(!process.env.DATABASE_URL)("user settings store (Postgres)", () 
       historySummaryModel: GLM_FLASH,
     });
     expect(saved.settings).toMatchObject({
-      titleModel: GLM_FLASH,
+      titleModel: `fireworks:${GLM_FLASH}`,
       historyCompaction: false,
-      historySummaryModel: GLM_FLASH,
+      historySummaryModel: `fireworks:${GLM_FLASH}`,
     });
   });
 
