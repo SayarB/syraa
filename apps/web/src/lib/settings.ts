@@ -1,28 +1,43 @@
 import { useCallback, useRef, useState } from "react";
 import { apiFetch } from "./api";
 
-export type ModelOption = { id: string; label: string };
+/** A model a setting can use, as listed by the server (`/api/settings/models`). */
+export type ModelOption = {
+  id: string;
+  label: string;
+  provider?: string;
+  /** US dollars per million tokens. */
+  inputPerMillion?: number;
+  outputPerMillion?: number;
+  /** Costly enough to warn about: the app's own key pays for every call. */
+  expensive?: boolean;
+};
+
+/** Setting value meaning "use the chat model". */
+export const SAME_AS_CHAT_MODEL = "chat";
 
 /** Mirrors the harness `UserSettings`; every field has a server-side default. */
 export type UserSettings = {
   titleModel: string;
-};
-
-export type SettingsOptions = {
-  titleModels: ModelOption[];
+  historyCompaction: boolean;
+  historySummaryModel: string;
 };
 
 type SettingsResponse = {
   settings: UserSettings;
-  options: SettingsOptions;
 };
 
-async function readSettingsResponse(res: Response): Promise<SettingsResponse> {
+export type ModelOptionsResponse = {
+  provider: string;
+  models: ModelOption[];
+};
+
+async function readJson<T>(res: Response): Promise<T> {
   if (!res.ok) {
     const err = (await res.json().catch(() => ({}))) as { error?: string };
     throw new Error(err.error ?? `HTTP ${res.status}`);
   }
-  return (await res.json()) as SettingsResponse;
+  return (await res.json()) as T;
 }
 
 function errorText(err: unknown): string {
@@ -35,7 +50,6 @@ function errorText(err: unknown): string {
  */
 export function useUserSettings() {
   const [settings, setSettings] = useState<UserSettings | null>(null);
-  const [options, setOptions] = useState<SettingsOptions | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   // Saves run one at a time, in order, so the last change is also the last one stored; only the
@@ -45,13 +59,12 @@ export function useUserSettings() {
 
   const apply = useCallback((data: SettingsResponse) => {
     setSettings(data.settings);
-    setOptions(data.options);
   }, []);
 
   const load = useCallback(async () => {
     setLoadError(null);
     try {
-      apply(await readSettingsResponse(await apiFetch("/api/settings")));
+      apply(await readJson<SettingsResponse>(await apiFetch("/api/settings")));
     } catch (err) {
       setLoadError(errorText(err));
     }
@@ -70,7 +83,7 @@ export function useUserSettings() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(patch),
           });
-          const data = await readSettingsResponse(res);
+          const data = await readJson<SettingsResponse>(res);
           if (save === latestSave.current) apply(data);
         } catch (err) {
           if (save !== latestSave.current) return;
@@ -85,5 +98,26 @@ export function useUserSettings() {
     [apply, load],
   );
 
-  return { settings, options, loadError, saveError, load, update };
+  return { settings, loadError, saveError, load, update };
+}
+
+/**
+ * Models the pickers offer, loaded apart from the settings: on the AI gateway it is a list of
+ * hundreds. `models` is null until loaded.
+ */
+export function useModelOptions() {
+  const [models, setModels] = useState<ModelOption[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setError(null);
+    try {
+      const data = await readJson<ModelOptionsResponse>(await apiFetch("/api/settings/models"));
+      setModels(data.models);
+    } catch (err) {
+      setError(errorText(err));
+    }
+  }, []);
+
+  return { models, error, load };
 }

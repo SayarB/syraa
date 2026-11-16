@@ -23,7 +23,12 @@ import {
   threadPatchSchema,
   ValidationError,
 } from "./schemas.js";
-import { getSettingsResponse, settingsPatchSchema, updateUserSettings } from "./settings.js";
+import {
+  getModelOptionsResponse,
+  getSettingsResponse,
+  settingsPatchSchema,
+  updateUserSettings,
+} from "./settings.js";
 import {
   createChatThread,
   deleteChatThread,
@@ -235,6 +240,11 @@ async function handleApi(
 
   if (req.method === "GET" && pathname === "/api/settings") {
     sendJson(res, 200, await getSettingsResponse(userId));
+    return;
+  }
+
+  if (req.method === "GET" && pathname === "/api/settings/models") {
+    sendJson(res, 200, await getModelOptionsResponse());
     return;
   }
 

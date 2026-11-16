@@ -26,81 +26,84 @@ export async function createSyraaUIMessageStream(opts: {
   /** Runs once the turn is over, whether it completed or failed. Its errors are ignored. */
   onSettled?: () => Promise<void>;
 }) {
-  return runWithChatContext({ userId: opts.userId, threadId: opts.threadId }, async () => {
-    const agent = getSyraaAgent();
-    const userMessage: UIMessage = {
-      id: randomUUID(),
-      role: "user",
-      parts: [{ type: "text", text: opts.userMessage }],
-    };
+  return runWithChatContext(
+    { userId: opts.userId, threadId: opts.threadId, currentUserMessage: opts.userMessage },
+    async () => {
+      const agent = getSyraaAgent();
+      const userMessage: UIMessage = {
+        id: randomUUID(),
+        role: "user",
+        parts: [{ type: "text", text: opts.userMessage }],
+      };
 
-    const result = await agent.stream([userMessage], {
-      memory: {
-        thread: opts.threadId,
-        resource: opts.userId,
-      },
-      instructions: await buildTurnInstructions(opts.userId, opts.memoryItems),
-      maxSteps: 50,
-      modelSettings: {
-        temperature: 0.4,
-        maxOutputTokens: 2048,
-        // Fireworks routes a thread's calls to the same prompt cache (long, stable prefix).
-        headers: { "x-session-affinity": opts.threadId },
-      },
-      tracingContext: { currentSpan: opts.turnSpan },
-    });
+      const result = await agent.stream([userMessage], {
+        memory: {
+          thread: opts.threadId,
+          resource: opts.userId,
+        },
+        instructions: await buildTurnInstructions(opts.userId, opts.memoryItems),
+        maxSteps: 50,
+        modelSettings: {
+          temperature: 0.4,
+          maxOutputTokens: 2048,
+          // Fireworks routes a thread's calls to the same prompt cache (long, stable prefix).
+          headers: { "x-session-affinity": opts.threadId },
+        },
+        tracingContext: { currentSpan: opts.turnSpan },
+      });
 
-    return createUIMessageStream({
-      originalMessages: [userMessage],
-      execute: async ({ writer }) => {
-        try {
-          await writeTurn(writer);
-        } catch (error) {
-          failSpan(opts.turnSpan, error);
-          throw error;
-        } finally {
-          await opts.onSettled?.().catch(() => undefined);
+      return createUIMessageStream({
+        originalMessages: [userMessage],
+        execute: async ({ writer }) => {
+          try {
+            await writeTurn(writer);
+          } catch (error) {
+            failSpan(opts.turnSpan, error);
+            throw error;
+          } finally {
+            await opts.onSettled?.().catch(() => undefined);
+          }
+        },
+      });
+
+      async function writeTurn(writer: UIMessageStreamWriter) {
+        // Collect every streamed text delta: after a tool step Mastra's `result.text` is only
+        // the last step's text, not the whole reply the user saw.
+        let streamedText = "";
+        for await (const part of toAISdkStream(result, {
+          from: "agent",
+          version: "v7",
+        })) {
+          if (part.type === "text-delta") streamedText += part.delta;
+          await writer.write(part);
         }
-      },
-    });
 
-    async function writeTurn(writer: UIMessageStreamWriter) {
-      // Collect every streamed text delta: after a tool step Mastra's `result.text` is only
-      // the last step's text, not the whole reply the user saw.
-      let streamedText = "";
-      for await (const part of toAISdkStream(result, {
-        from: "agent",
-        version: "v7",
-      })) {
-        if (part.type === "text-delta") streamedText += part.delta;
-        await writer.write(part);
+        // Nothing visible was streamed (or only a footer): stream the resolved fallback.
+        const agentText = stripRuntimeFooters(streamedText);
+        const turn = await resolveTurnFromStreamOutput({ text: streamedText });
+        const message = turn.message.trim();
+
+        if (message && !agentText) {
+          const textId = randomUUID();
+          await writer.write({ type: "text-start", id: textId });
+          await writer.write({
+            type: "text-delta",
+            id: textId,
+            delta: message,
+          });
+          await writer.write({ type: "text-end", id: textId });
+        }
+
+        const meta = await opts.onTurnComplete(turn);
+        if (meta) {
+          await writer.write({
+            type: "data-syraa-turn",
+            data: meta,
+          });
+        }
       }
-
-      // Nothing visible was streamed (or only a footer): stream the resolved fallback.
-      const agentText = stripRuntimeFooters(streamedText);
-      const turn = await resolveTurnFromStreamOutput({ text: streamedText });
-      const message = turn.message.trim();
-
-      if (message && !agentText) {
-        const textId = randomUUID();
-        await writer.write({ type: "text-start", id: textId });
-        await writer.write({
-          type: "text-delta",
-          id: textId,
-          delta: message,
-        });
-        await writer.write({ type: "text-end", id: textId });
-      }
-
-      const meta = await opts.onTurnComplete(turn);
-      if (meta) {
-        await writer.write({
-          type: "data-syraa-turn",
-          data: meta,
-        });
-      }
-    }
-  });
+    },
+  );
 }
 
 export function createStaticUIMessageStream(content: string) {

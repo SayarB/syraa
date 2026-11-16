@@ -1,12 +1,18 @@
 import { Mastra } from "@mastra/core";
 import type { Agent } from "@mastra/core/agent";
+import { createHistorySummarizerAgent } from "./agents/history-summarizer.js";
 import { createLessonWriterAgent } from "./agents/lesson-writer.js";
 import { createSyraaAgent } from "./agents/syraa-agent.js";
 import { createTitleWriterAgent } from "./agents/title-writer.js";
 import { createObservability } from "./observability.js";
 import { getMastraStorage } from "./storage.js";
 
-type SyraaAgents = { syraa: Agent; lessonWriter: Agent; titleWriter: Agent };
+type SyraaAgents = {
+  syraa: Agent;
+  lessonWriter: Agent;
+  titleWriter: Agent;
+  historySummarizer: Agent;
+};
 
 let mastra: Mastra<SyraaAgents> | null = null;
 
@@ -18,6 +24,7 @@ export function getMastra(): Mastra<SyraaAgents> {
         syraa: createSyraaAgent(),
         lessonWriter: createLessonWriterAgent(),
         titleWriter: createTitleWriterAgent(),
+        historySummarizer: createHistorySummarizerAgent(),
       },
       observability: createObservability(),
     });
@@ -35,6 +42,10 @@ export function getLessonWriterAgent(): Agent {
 
 export function getTitleWriterAgent(): Agent {
   return getMastra().getAgent("titleWriter");
+}
+
+export function getHistorySummarizerAgent(): Agent {
+  return getMastra().getAgent("historySummarizer");
 }
 
 /** Flush buffered traces (batch mode) before the process exits. */

@@ -73,6 +73,12 @@ export function toMastraModelId(provider: ChatProvider, model: string): `${strin
   return `openai/${model}`;
 }
 
+/** Base URL of the Vercel AI Gateway (its public `/models` list lives under it). */
+export function gatewayBaseUrl(): string {
+  const { baseUrlEnv, baseUrl } = DEFAULTS.gateway;
+  return (process.env[baseUrlEnv]?.trim() || baseUrl).replace(/\/$/, "");
+}
+
 export function resolveChatModel(): ResolvedChatModel | null {
   const provider = resolveChatProvider();
   const defaults = DEFAULTS[provider];

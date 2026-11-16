@@ -36,6 +36,7 @@ These stay Syraa-owned and **must not import Mastra**:
 - `@syraa/memory` — product prefs/rules/decisions (HITL)
 - `@syraa/context` — materials, topics, chunks, retrieve
 - `@syraa/ingest` — PDF ingest worker
+- `@syraa/history` — chat-history compaction and recall (pure planning, rendering, search)
 
 Wire domain data **into** Mastra via tools, processors, or dynamic instructions — do not reimplement Mastra Memory or the agent loop.
 

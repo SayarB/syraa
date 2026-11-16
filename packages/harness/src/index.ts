@@ -9,6 +9,7 @@ export {
   getIngestQueue,
 } from "./context.js";
 export { formatHarnessError } from "./errors.js";
+export { ensureHistoryReady } from "./history-state.js";
 export type { GatedLesson } from "./lesson-gate.js";
 export {
   applyLessons,
@@ -45,7 +46,7 @@ export type { HarnessServerOptions } from "./server.js";
 export { createHarnessServer } from "./server.js";
 export type {
   ModelOption,
-  SettingsOptions,
+  ModelOptions,
   SettingsPatch,
   SettingsResponse,
   UserSettings,
@@ -53,11 +54,11 @@ export type {
 export {
   DEFAULT_USER_SETTINGS,
   ensureSettingsReady,
+  getModelOptionsResponse,
   getSettingsResponse,
   getUserSettings,
   SAME_AS_CHAT_MODEL,
   settingsPatchSchema,
-  titleModelOptions,
   updateUserSettings,
 } from "./settings.js";
 export type { BackfillResult } from "./thread-titles.js";

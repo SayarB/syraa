@@ -18,6 +18,7 @@ import { InMemoryStore } from "@mastra/core/storage";
 import { createTool } from "@mastra/core/tools";
 import { config } from "dotenv";
 import { createSyraaAgent } from "../../src/mastra/agents/syraa-agent.js";
+import { OMITTED_HISTORY_NOTE } from "../../src/mastra/history-compaction-processor.js";
 import { createSyraaMemory } from "../../src/mastra/memory.js";
 import { buildSystemPrompt, formatMaterialsOutline } from "../../src/mastra/prompt.js";
 import {
@@ -26,6 +27,7 @@ import {
   searchMaterialsTool,
 } from "../../src/mastra/tools/materials-tools.js";
 import { getMyMemoryTool } from "../../src/mastra/tools/memory-tools.js";
+import { runThreadHistory, threadHistoryTool } from "../../src/mastra/tools/thread-history-tool.js";
 
 config({ path: fileURLToPath(new URL("../../../../.env", import.meta.url)) });
 for (const key of Object.keys(process.env)) {
@@ -51,6 +53,11 @@ type EvalCase = {
   fixture: string;
   user: string;
   history?: { role: "user" | "assistant"; content: string }[];
+  /**
+   * Earlier messages that are in the thread but NOT in the prompt (older than `history`), as after
+   * compaction. Only the thread_history stub can return them.
+   */
+  storedHistory?: { role: "user" | "assistant"; content: string }[];
   /** Total tool calls allowed in the turn. */
   maxCalls: number;
   /** Each must be called at least once. */
@@ -58,6 +65,8 @@ type EvalCase = {
   /** At least one of these must be called. */
   requireAny?: string[];
   forbid?: string[];
+  /** Each must appear in the reply (case-insensitive). */
+  replyIncludes?: string[];
 };
 type ToolCall = { tool: string; args: string };
 type RunResult = { calls: ToolCall[]; reply: string; failures: string[] };
@@ -74,7 +83,7 @@ function matches(haystack: string, needle: string): boolean {
 }
 
 /** Stubs answer from the fixture with the real tools' result shapes, and log every call. */
-function stubTools(fixture: Fixture, calls: ToolCall[]) {
+function stubTools(fixture: Fixture, calls: ToolCall[], c: EvalCase) {
   const record = (tool: string, args: unknown) =>
     calls.push({ tool, args: JSON.stringify(args ?? {}) });
   const findDoc = (name: string) =>
@@ -164,6 +173,31 @@ function stubTools(fixture: Fixture, calls: ToolCall[]) {
         return { document: doc.name, section: section.title, text: section.text, truncated: false };
       },
     }),
+    thread_history: createTool({
+      id: threadHistoryTool.id,
+      description: threadHistoryTool.description,
+      inputSchema: threadHistoryTool.inputSchema,
+      toModelOutput: threadHistoryTool.toModelOutput,
+      execute: async (input) => {
+        record("thread_history", input);
+        // As stored: the older messages, the ones shown in the prompt, then this turn's question.
+        const thread = [
+          ...(c.storedHistory ?? []),
+          ...(c.history ?? []),
+          { role: "user" as const, content: c.user },
+        ];
+        return runThreadHistory(
+          thread.map((message, index) => ({
+            id: `m${index + 1}`,
+            position: index + 1,
+            role: message.role,
+            text: message.content,
+          })),
+          input,
+          c.user,
+        );
+      },
+    }),
     get_my_memory: createTool({
       id: getMyMemoryTool.id,
       description: getMyMemoryTool.description,
@@ -204,6 +238,9 @@ function check(c: EvalCase, calls: ToolCall[], reply: string): string[] {
   for (const tool of c.forbid ?? []) {
     if (called(tool)) failures.push(`called ${tool}`);
   }
+  for (const text of c.replyIncludes ?? []) {
+    if (!matches(reply, text)) failures.push(`reply does not mention "${text}"`);
+  }
   if (!reply.trim()) failures.push("empty reply");
   for (const banned of BANNED_REPLY_TEXT) {
     if (matches(reply, banned)) failures.push(`reply contains "${banned}"`);
@@ -217,7 +254,7 @@ async function runOnce(c: EvalCase): Promise<RunResult> {
 
   const calls: ToolCall[] = [];
   const memory = createSyraaMemory(new InMemoryStore());
-  const agent = createSyraaAgent({ tools: stubTools(fixture, calls), memory });
+  const agent = createSyraaAgent({ tools: stubTools(fixture, calls, c), memory });
   const threadId = `eval-${c.id}-${randomUUID()}`;
   const resourceId = "eval-user";
   const outline = fixture.materials.map((doc, index) => ({
@@ -246,10 +283,14 @@ async function runOnce(c: EvalCase): Promise<RunResult> {
     ],
     {
       memory: { thread: threadId, resource: resourceId },
-      instructions: buildSystemPrompt(
-        memoryItems as Parameters<typeof buildSystemPrompt>[0],
-        formatMaterialsOutline(outline as Parameters<typeof formatMaterialsOutline>[0]),
-      ),
+      instructions: [
+        buildSystemPrompt(
+          memoryItems as Parameters<typeof buildSystemPrompt>[0],
+          formatMaterialsOutline(outline as Parameters<typeof formatMaterialsOutline>[0]),
+        ),
+        // As in production, where the history processor adds this when older messages are left out.
+        ...((c.storedHistory?.length ?? 0) > 0 ? [OMITTED_HISTORY_NOTE] : []),
+      ].join("\n\n"),
       maxSteps: MAX_STEPS,
       modelSettings: { temperature: 0.4, maxOutputTokens: 2048 },
     },
@@ -261,9 +302,13 @@ async function runOnce(c: EvalCase): Promise<RunResult> {
       const name = toolNameOf(call);
       if (
         name &&
-        !["search_materials", "list_materials", "read_materials_section", "get_my_memory"].includes(
-          name,
-        )
+        ![
+          "search_materials",
+          "list_materials",
+          "read_materials_section",
+          "get_my_memory",
+          "thread_history",
+        ].includes(name)
       ) {
         calls.push({ tool: name, args: "(unknown tool)" });
       }

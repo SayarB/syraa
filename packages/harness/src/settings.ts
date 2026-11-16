@@ -1,61 +1,53 @@
 import { createPgPool, resolveDatabaseUrl } from "@syraa/memory";
 import { z } from "zod";
 import { getHarnessPool } from "./db.js";
-import { resolveChatProvider } from "./mastra/model.js";
+import { getModelOptions, isModelAvailable, type ModelOptions } from "./model-options.js";
 import { ValidationError } from "./schemas.js";
 
-/** `titleModel` value meaning "reuse the chat model". */
+/** Model setting value meaning "reuse the chat model". */
 export const SAME_AS_CHAT_MODEL = "chat";
 
-export type ModelOption = { id: string; label: string };
-
-/** Fast, low-cost Fireworks models offered for thread titles (checked against the key's model list). */
-const FIREWORKS_TITLE_MODELS: ModelOption[] = [
-  { id: "accounts/fireworks/models/glm-5p3-flash", label: "GLM 5.3 Flash" },
-  { id: "accounts/fireworks/models/deepseek-v4p1-flash", label: "DeepSeek V4.1 Flash" },
-];
+export type { ModelOption, ModelOptions } from "./model-options.js";
 
 /** Per-user settings. Every field has a default, so adding one needs no migration. */
 export type UserSettings = {
+  /** Model that writes a short title for each new chat. */
   titleModel: string;
+  /** Replace older turns of a long chat with short summaries (see @syraa/history). */
+  historyCompaction: boolean;
+  /** Model that writes those summaries. */
+  historySummaryModel: string;
 };
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {
   titleModel: SAME_AS_CHAT_MODEL,
-};
-
-export type SettingsOptions = {
-  titleModels: ModelOption[];
+  historyCompaction: true,
+  historySummaryModel: SAME_AS_CHAT_MODEL,
 };
 
 export type SettingsResponse = {
   settings: UserSettings;
-  options: SettingsOptions;
 };
 
-/** Title models this server can call: the chat model, plus the Fireworks list when chat runs on Fireworks. */
-export function titleModelOptions(): ModelOption[] {
-  const options: ModelOption[] = [{ id: SAME_AS_CHAT_MODEL, label: "Same as chat model" }];
-  if (resolveChatProvider() === "fireworks") options.push(...FIREWORKS_TITLE_MODELS);
-  return options;
-}
-
-function settingsOptions(): SettingsOptions {
-  return { titleModels: titleModelOptions() };
-}
-
-/** Stored JSON is loose: a field that is missing, malformed, or no longer offered gets its default. */
+/**
+ * Stored JSON is loose: a field that is missing or malformed gets its default. Model slugs are not
+ * checked against the provider's list here (that list is fetched over the network): they are
+ * checked when saved, and again when used.
+ */
 const storedSettingsSchema = z.object({
-  titleModel: z.string().optional().catch(undefined),
+  titleModel: z.string().trim().min(1).optional().catch(undefined),
+  historyCompaction: z.boolean().optional().catch(undefined),
+  historySummaryModel: z.string().trim().min(1).optional().catch(undefined),
 });
 
 export function resolveUserSettings(stored: unknown): UserSettings {
   const parsed = storedSettingsSchema.safeParse(stored ?? {});
   const raw = parsed.success ? parsed.data : {};
-  const titleModel = titleModelOptions().some((option) => option.id === raw.titleModel)
-    ? (raw.titleModel as string)
-    : DEFAULT_USER_SETTINGS.titleModel;
-  return { titleModel };
+  return {
+    titleModel: raw.titleModel ?? DEFAULT_USER_SETTINGS.titleModel,
+    historyCompaction: raw.historyCompaction ?? DEFAULT_USER_SETTINGS.historyCompaction,
+    historySummaryModel: raw.historySummaryModel ?? DEFAULT_USER_SETTINGS.historySummaryModel,
+  };
 }
 
 const CREATE_USER_SETTINGS_TABLE = `
@@ -94,12 +86,25 @@ export async function getUserSettings(userId: string): Promise<UserSettings> {
 }
 
 export async function getSettingsResponse(userId: string): Promise<SettingsResponse> {
-  return { settings: await getUserSettings(userId), options: settingsOptions() };
+  return { settings: await getUserSettings(userId) };
+}
+
+/** Models the settings pickers offer (besides "same as chat"). Fetched on demand, apart from the settings themselves. */
+export async function getModelOptionsResponse(): Promise<ModelOptions> {
+  try {
+    return await getModelOptions();
+  } catch (error) {
+    throw new ValidationError(
+      `model list unavailable right now: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
 }
 
 export const settingsPatchSchema = z
   .object({
     titleModel: z.string().trim().min(1).optional(),
+    historyCompaction: z.boolean().optional(),
+    historySummaryModel: z.string().trim().min(1).optional(),
   })
   .strict();
 
@@ -110,11 +115,15 @@ export async function updateUserSettings(
   userId: string,
   patch: SettingsPatch,
 ): Promise<SettingsResponse> {
-  if (
-    patch.titleModel !== undefined &&
-    !titleModelOptions().some((option) => option.id === patch.titleModel)
-  ) {
-    throw new ValidationError(`unknown title model: ${patch.titleModel}`);
+  for (const slug of [patch.titleModel, patch.historySummaryModel]) {
+    if (slug === undefined || slug === SAME_AS_CHAT_MODEL) continue;
+    let available: boolean;
+    try {
+      available = await isModelAvailable(slug);
+    } catch {
+      throw new ValidationError("model list unavailable right now; try again in a moment");
+    }
+    if (!available) throw new ValidationError(`unknown model: ${slug}`);
   }
 
   const result = await getHarnessPool().query<{ settings: unknown }>(
@@ -125,5 +134,5 @@ export async function updateUserSettings(
      RETURNING settings`,
     [userId, JSON.stringify(patch)],
   );
-  return { settings: resolveUserSettings(result.rows[0]?.settings), options: settingsOptions() };
+  return { settings: resolveUserSettings(result.rows[0]?.settings) };
 }

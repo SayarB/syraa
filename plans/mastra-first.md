@@ -29,6 +29,7 @@ Syraa domain packages stay the source of truth for **product** data. Mastra owns
 | `@syraa/memory` | Prefs, rules, methods, decisions (HITL) | Chat transcript store |
 | `@syraa/context` | Resources, topics, chunks, cards, retrieve/assemble | Mastra thread history |
 | `@syraa/ingest` | PDF → topics/chunks queue worker | Agent orchestration |
+| `@syraa/history` | Older-turn summaries, tiering plan, thread search | Memory storage, the agent loop |
 | Drive / Postgres product tables | User materials & product rows | Trace warehouse |
 
 Mastra must **not** replace these schemas. Domain packages still **must not import Mastra**.

@@ -32,6 +32,7 @@
     "@mastra/observability": "^1.18.3",
     "@mastra/pg": "^1.22.2",
     "@syraa/context": "*",
+    "@syraa/history": "*",
     "@syraa/ingest": "*",
     "@syraa/memory": "*",
     "ai": "^7.0.87",

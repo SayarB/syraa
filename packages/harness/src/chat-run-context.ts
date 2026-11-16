@@ -13,6 +13,10 @@ export type ChatRunContext = {
   imageSearchCount?: number;
   /** web_fetch calls made this turn (capped per turn). */
   webFetchCount?: number;
+  /** thread_history calls made this turn (capped per turn). */
+  threadHistoryCount?: number;
+  /** The user's message for this turn, so thread_history can leave the question being answered out of its results. */
+  currentUserMessage?: string;
 };
 
 const storage = new AsyncLocalStorage<ChatRunContext>();
@@ -22,6 +26,11 @@ export function runWithChatContext<T>(
   fn: () => Promise<T>,
 ): Promise<T> {
   return storage.run({ ...ctx, toolCallCache: new Map() }, fn);
+}
+
+/** The active chat run, or undefined outside one (evals and tests run the agent without it). */
+export function tryGetChatRunContext(): ChatRunContext | undefined {
+  return storage.getStore();
 }
 
 export function getChatRunContext(): ChatRunContext {

@@ -1,6 +1,7 @@
 import type { ServerResponse } from "node:http";
 import type { MemoryItem } from "@syraa/memory";
 import { pipeUIMessageStreamToResponse } from "ai";
+import { scheduleHistoryCompaction } from "./history-compaction.js";
 import { type GatedLesson, gateLesson } from "./lesson-gate.js";
 import { applyLessons } from "./lessons.js";
 import { runChatTurn } from "./llm.js";
@@ -100,6 +101,10 @@ async function finishTurn(
       console.warn("[chat] thread title not set:", error instanceof Error ? error.message : error);
     }
   }
+
+  // Summarise turns that have just aged out of the recent window. Runs in the background and
+  // never delays the reply; a failure only means the fallback trim keeps the prompt bounded.
+  scheduleHistoryCompaction({ userId: request.userId, threadId: prepared.threadId });
 
   const lessons = await prepared.lessonGate;
   try {
@@ -244,6 +249,8 @@ export async function pipeChatStream(request: ChatRequest, res: ServerResponse):
 }
 
 export async function closeHarness(): Promise<void> {
+  const { drainHistoryCompaction } = await import("./history-compaction.js");
+  await drainHistoryCompaction();
   const { shutdownObservability } = await import("./mastra/index.js");
   const { closeMastraStorage } = await import("./mastra/storage.js");
   const { closeContextAndQueue } = await import("./context.js");

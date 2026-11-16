@@ -4,13 +4,22 @@ import { getMastraStorage } from "./storage.js";
 
 let memory: Memory | null = null;
 
+/** Messages of history sent per turn when a user has turned compaction off. */
+export const PLAIN_HISTORY_MESSAGES = 40;
 /**
- * Threads are isolated: history is this thread's last messages, and nothing is recalled from
- * other threads (no semantic recall, no resource scope). Cross-conversation knowledge lives only
- * in product memory (@syraa/memory), and document summaries in the per-turn system prompt.
+ * Messages of history loaded per turn. The history compaction processor cuts this down to the
+ * summaries plus the newest turns (or to the last 40 messages when a user has turned compaction
+ * off), so it only has to reach back past the turns that are not summarised yet.
+ */
+export const HISTORY_LOAD_MESSAGES = 400;
+
+/**
+ * Threads are isolated: history is this thread's messages, and nothing is recalled from other
+ * threads (no semantic recall, no resource scope). Cross-conversation knowledge lives only in
+ * product memory (@syraa/memory), and document summaries in the per-turn system prompt.
  */
 export const SYRAA_MEMORY_OPTIONS = {
-  lastMessages: 40,
+  lastMessages: HISTORY_LOAD_MESSAGES,
   semanticRecall: false,
   // Off: it only duplicated the materials overview the system prompt rebuilds every turn, and
   // Mastra's working-memory instructions sent the model hunting for an update tool it never had.

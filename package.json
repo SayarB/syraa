@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "check": "npm run check:ts && npm run check:py",
-    "check:ts": "biome check . && npm run build -w @syraa/memory && npm run build -w @syraa/context && npm run build -w @syraa/ingest && npm run build -w @syraa/harness && npm run typecheck --workspaces --if-present",
+    "check:ts": "biome check . && npm run build -w @syraa/memory && npm run build -w @syraa/context && npm run build -w @syraa/ingest && npm run build -w @syraa/history && npm run build -w @syraa/harness && npm run typecheck --workspaces --if-present",
     "check:py": "bash scripts/dev/python.sh -m ruff check . && bash scripts/dev/python.sh -m ruff format --check .",
     "format": "npm run format:ts && npm run format:py",
     "format:ts": "biome check --write .",

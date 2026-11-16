@@ -4,6 +4,7 @@ import { ToolCallFilter } from "@mastra/core/processors";
 import type { Memory } from "@mastra/memory";
 import { isPageReadingConfigured } from "../../web/crawl4ai.js";
 import { isWebSearchConfigured } from "../../web/searxng.js";
+import { HistoryCompactionProcessor } from "../history-compaction-processor.js";
 import { getSyraaMemory } from "../memory.js";
 import { requireChatModel } from "../model.js";
 import { SYRAA_BASE_INSTRUCTIONS } from "../prompt.js";
@@ -11,6 +12,7 @@ import { StripFootersProcessor } from "../strip-footers-processor.js";
 import { StripReasoningProcessor } from "../strip-reasoning-processor.js";
 import { syraaTools } from "../tools/materials-tools.js";
 import { getMyMemoryTool } from "../tools/memory-tools.js";
+import { threadHistoryTool } from "../tools/thread-history-tool.js";
 import { imageSearchTool, webFetchTool, webSearchTool } from "../tools/web-tools.js";
 
 export const SYRAA_AGENT_ID = "syraa-agent";
@@ -20,6 +22,7 @@ export function syraaAgentTools(): ToolsInput {
   return {
     ...syraaTools,
     get_my_memory: getMyMemoryTool,
+    thread_history: threadHistoryTool,
     ...(isWebSearchConfigured()
       ? { web_search: webSearchTool, image_search: imageSearchTool }
       : {}),
@@ -39,9 +42,15 @@ export function createSyraaAgent(overrides: { tools?: ToolsInput; memory?: Memor
     tools: overrides.tools ?? syraaAgentTools(),
     inputProcessors: [
       new StripReasoningProcessor(),
-      // Earlier turns' web results are stale: drop them from the prompt. Transient — stored
-      // messages and the UI keep them; the current turn still sees its own results.
-      new ToolCallFilter({ exclude: ["web_search", "web_fetch", "image_search"] }),
+      // Older turns are replaced by summaries, so history stays about the same size however long
+      // the thread gets. Only what is sent changes; stored messages are untouched.
+      new HistoryCompactionProcessor(),
+      // Earlier turns' web results, image results and thread look-ups are stale: drop them from
+      // the prompt. Transient — stored messages and the UI keep them; the current turn still sees
+      // its own results.
+      new ToolCallFilter({
+        exclude: ["web_search", "web_fetch", "image_search", "thread_history"],
+      }),
     ],
     outputProcessors: [new StripFootersProcessor(), new StripReasoningProcessor()],
   });
