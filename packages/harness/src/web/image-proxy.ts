@@ -14,6 +14,10 @@ const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/g
 export const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const MAX_REDIRECTS = 3;
 const TOTAL_TIMEOUT_MS = 10_000;
+/** Images are buffered in memory, so cap how many load at once (8 MB each, worst case). */
+export const MAX_CONCURRENT_FETCHES = 32;
+
+let inFlight = 0;
 
 /** A failure the route can map straight to an HTTP status. */
 export class ImageProxyError extends Error {
@@ -99,13 +103,9 @@ async function readCapped(response: ImageResponse): Promise<Buffer> {
   return Buffer.concat(chunks);
 }
 
-/**
- * Returns the bytes and media type of a public raster image. Throws BlockedUrlError for non-public
- * URLs and ImageProxyError (with an HTTP status) for everything else.
- */
-export async function fetchPublicImage(
+async function loadImage(
   raw: string,
-  request: ImageRequester = requestOnce,
+  request: ImageRequester,
 ): Promise<{ contentType: string; body: Buffer }> {
   let current = await assertPublicHttpUrl(raw);
 
@@ -137,4 +137,24 @@ export async function fetchPublicImage(
     return { contentType, body: await readCapped(response) };
   }
   throw new ImageProxyError("That image redirects too many times.", 502);
+}
+
+/**
+ * Returns the bytes and media type of a public raster image. Throws BlockedUrlError for non-public
+ * URLs and ImageProxyError (with an HTTP status) for everything else, including 429 when too many
+ * images are already loading.
+ */
+export async function fetchPublicImage(
+  raw: string,
+  request: ImageRequester = requestOnce,
+): Promise<{ contentType: string; body: Buffer }> {
+  if (inFlight >= MAX_CONCURRENT_FETCHES) {
+    throw new ImageProxyError("Too many images are loading. Try again in a moment.", 429);
+  }
+  inFlight += 1;
+  try {
+    return await loadImage(raw, request);
+  } finally {
+    inFlight -= 1;
+  }
 }

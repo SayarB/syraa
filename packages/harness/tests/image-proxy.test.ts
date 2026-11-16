@@ -3,6 +3,7 @@ import {
   fetchPublicImage,
   type ImageRequester,
   type ImageResponse,
+  MAX_CONCURRENT_FETCHES,
   MAX_IMAGE_BYTES,
 } from "../src/web/image-proxy.js";
 import { BlockedUrlError } from "../src/web/url-guard.js";
@@ -115,5 +116,26 @@ describe("fetchPublicImage", () => {
     await expect(fetchPublicImage("http://93.184.216.34/a.png", request)).rejects.toMatchObject({
       status: 502,
     });
+  });
+
+  it("sheds load past the concurrency cap and recovers once requests finish", async () => {
+    let release: (response: ImageResponse) => void = () => {};
+    const gate = new Promise<ImageResponse>((resolve) => {
+      release = resolve;
+    });
+    const slow: ImageRequester = () => gate;
+
+    const pending = Array.from({ length: MAX_CONCURRENT_FETCHES }, () =>
+      fetchPublicImage("http://93.184.216.34/a.png", slow),
+    );
+    await expect(
+      fetchPublicImage("http://93.184.216.34/a.png", async () => respond()),
+    ).rejects.toMatchObject({ status: 429 });
+
+    release(respond());
+    await Promise.all(pending);
+    await expect(
+      fetchPublicImage("http://93.184.216.34/a.png", async () => respond()),
+    ).resolves.toMatchObject({ contentType: "image/png" });
   });
 });

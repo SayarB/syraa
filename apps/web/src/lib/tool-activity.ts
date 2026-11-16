@@ -202,8 +202,6 @@ export type WebImage = {
   imageUrl: string;
   thumbUrl: string;
   sourceUrl: string;
-  width?: number;
-  height?: number;
 };
 
 type ImageSearchOutput = {
@@ -295,8 +293,6 @@ export function imagesFromPart(part: UIMessage["parts"][number]): WebImage[] {
             imageUrl: image.imageUrl,
             thumbUrl: isHttpUrl(image.thumbUrl) ? image.thumbUrl : image.imageUrl,
             sourceUrl: isHttpUrl(image.sourceUrl) ? image.sourceUrl : image.imageUrl,
-            width: image.width,
-            height: image.height,
           },
         ]
       : [],

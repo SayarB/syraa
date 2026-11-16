@@ -149,19 +149,12 @@ export type ImageSearchResult = {
   thumbUrl: string;
   /** The page the image was found on. */
   sourceUrl: string;
-  width?: number;
-  height?: number;
 };
 
 const imageCache = createTtlCache<ImageSearchResult[]>({
   ttlMs: CACHE_TTL_MS,
   maxEntries: CACHE_MAX_ENTRIES,
 });
-
-function parseResolution(value: unknown): { width?: number; height?: number } {
-  const match = typeof value === "string" ? value.match(/(\d{2,5})\s*[x×]\s*(\d{2,5})/i) : null;
-  return match ? { width: Number(match[1]), height: Number(match[2]) } : {};
-}
 
 /** Keeps http(s) image results with a title, drops duplicate images, and trims titles. */
 export function normalizeImageResults(body: unknown): ImageSearchResult[] {
@@ -182,7 +175,6 @@ export function normalizeImageResults(body: unknown): ImageSearchResult[] {
       imageUrl,
       thumbUrl: thumb && isHttpUrl(thumb) ? thumb : imageUrl,
       sourceUrl: sourceUrl && isHttpUrl(sourceUrl) ? sourceUrl : imageUrl,
-      ...parseResolution(item.resolution),
     });
     if (results.length >= MAX_RESULTS) break;
   }

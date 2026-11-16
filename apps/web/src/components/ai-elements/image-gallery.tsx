@@ -19,6 +19,29 @@ export function proxiedImageUrl(url: string): string {
   return apiUrl(`/api/image-proxy?url=${encodeURIComponent(url)}`);
 }
 
+/** Grid classes for 1 to MAX_TILES tiles, picked so no cell is left empty. */
+function galleryLayout(count: number): { grid: string; first?: string } {
+  const large = "col-span-2 row-span-2";
+  switch (count) {
+    case 1:
+      return { grid: "max-w-md grid-cols-1 grid-rows-[15rem]" };
+    case 2:
+      return { grid: "max-w-md grid-cols-2 grid-rows-[10rem]" };
+    case 3:
+      return {
+        grid: "max-w-xl grid-cols-3 grid-rows-[6.5rem_6.5rem] sm:grid-rows-[8rem_8rem]",
+        first: large,
+      };
+    case 4:
+      return { grid: "max-w-md grid-cols-2 grid-rows-[7rem_7rem] sm:grid-rows-[8rem_8rem]" };
+    default:
+      return {
+        grid: "max-w-xl grid-cols-4 grid-rows-[6.5rem_6.5rem] sm:grid-rows-[8rem_8rem]",
+        first: large,
+      };
+  }
+}
+
 function Tile({
   image,
   className,
@@ -82,7 +105,7 @@ function Lightbox({
   onClose: () => void;
 }) {
   const image = images[index];
-  const [failedFull, setFailedFull] = useState<string | null>(null);
+  const [failed, setFailed] = useState<ReadonlySet<string>>(new Set());
   const step = useCallback(
     (delta: number) => onIndexChange((index + delta + images.length) % images.length),
     [index, images.length, onIndexChange],
@@ -90,7 +113,8 @@ function Lightbox({
   if (!image) return null;
 
   // If the full-size file won't load, fall back to the thumbnail the grid already showed.
-  const src = failedFull === image.imageUrl ? image.thumbUrl : image.imageUrl;
+  const src = failed.has(image.imageUrl) ? image.thumbUrl : image.imageUrl;
+  const broken = failed.has(src);
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -108,14 +132,21 @@ function Lightbox({
           Image {index + 1} of {images.length} from {hostnameOf(image.sourceUrl)}
         </DialogDescription>
         <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-lg bg-muted">
-          <img
-            key={src}
-            src={proxiedImageUrl(src)}
-            alt={image.title}
-            referrerPolicy="no-referrer"
-            onError={() => setFailedFull(image.imageUrl)}
-            className="max-h-[68vh] w-auto max-w-full object-contain"
-          />
+          {broken ? (
+            <span className="flex h-48 flex-col items-center justify-center gap-2 text-muted-foreground text-sm">
+              <ImageOffIcon className="size-6" />
+              This image couldn't be loaded.
+            </span>
+          ) : (
+            <img
+              key={src}
+              src={proxiedImageUrl(src)}
+              alt={image.title}
+              referrerPolicy="no-referrer"
+              onError={() => setFailed((prev) => new Set(prev).add(src))}
+              className="max-h-[68vh] w-auto max-w-full object-contain"
+            />
+          )}
           {images.length > 1 ? (
             <>
               <Button
@@ -172,21 +203,16 @@ export function ImageGallery({ images, className }: ImageGalleryProps) {
 
   const shown = images.slice(0, MAX_TILES);
   const hidden = images.length - shown.length;
-  const layout =
-    shown.length === 1
-      ? "max-w-md grid-cols-1 grid-rows-[15rem]"
-      : shown.length === 2
-        ? "max-w-md grid-cols-2 grid-rows-[10rem]"
-        : "max-w-xl grid-cols-4 grid-rows-[6.5rem_6.5rem] sm:grid-rows-[8rem_8rem]";
+  const layout = galleryLayout(shown.length);
 
   return (
     <>
-      <div className={cn("grid gap-1.5", layout, className)}>
+      <div className={cn("grid gap-1.5", layout.grid, className)}>
         {shown.map((image, index) => (
           <Tile
             key={image.imageUrl}
             image={image}
-            className={cn(shown.length >= 3 && index === 0 && "col-span-2 row-span-2")}
+            className={index === 0 ? layout.first : undefined}
             overlay={hidden > 0 && index === shown.length - 1 ? `+${hidden}` : undefined}
             onOpen={() => setOpen(index)}
           />
@@ -211,7 +237,8 @@ export function ImageGallery({ images, className }: ImageGalleryProps) {
 export function MarkdownImage({ src, alt }: ComponentProps<"img">) {
   const url = typeof src === "string" ? src : "";
   const [open, setOpen] = useState(false);
-  const [failed, setFailed] = useState(false);
+  // Remember which URL failed: while a reply streams, a half-typed URL can fail and then complete.
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
   if (!/^https?:\/\//i.test(url)) return null;
 
   const image: WebImage = {
@@ -220,7 +247,7 @@ export function MarkdownImage({ src, alt }: ComponentProps<"img">) {
     thumbUrl: url,
     sourceUrl: url,
   };
-  if (failed) {
+  if (failedUrl === url) {
     return (
       <span className="inline-flex items-center gap-1 text-muted-foreground text-xs">
         <ImageOffIcon className="size-4" />
@@ -242,7 +269,7 @@ export function MarkdownImage({ src, alt }: ComponentProps<"img">) {
           alt={image.title}
           loading="lazy"
           referrerPolicy="no-referrer"
-          onError={() => setFailed(true)}
+          onError={() => setFailedUrl(url)}
           className="max-h-72 w-auto object-cover"
         />
       </button>

@@ -106,8 +106,6 @@ const imageResultSchema = z.object({
   imageUrl: z.string(),
   thumbUrl: z.string(),
   sourceUrl: z.string(),
-  width: z.number().optional(),
-  height: z.number().optional(),
 });
 
 const imageSearchOutputSchema = z.object({
