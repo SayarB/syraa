@@ -4,11 +4,14 @@ import { type ChatRunContext, getChatRunContext } from "../../chat-run-context.j
 import { rememberToolResult } from "../../tool-call-dedupe.js";
 import { textForModel, wrapUntrusted } from "../../untrusted.js";
 import { readPage } from "../../web/crawl4ai.js";
-import { searchWeb } from "../../web/searxng.js";
+import { searchImages, searchWeb } from "../../web/searxng.js";
 import { BlockedUrlError } from "../../web/url-guard.js";
 
 export const MAX_WEB_SEARCHES_PER_TURN = 4;
 export const MAX_WEB_FETCHES_PER_TURN = 3;
+export const MAX_IMAGE_SEARCHES_PER_TURN = 2;
+const DEFAULT_IMAGES = 8;
+const MODEL_IMAGES = 6;
 const DEFAULT_RESULTS = 8;
 const MODEL_RESULTS = 5;
 
@@ -29,7 +32,10 @@ const webSearchOutputSchema = z.object({
 export type WebSearchOutput = z.infer<typeof webSearchOutputSchema>;
 
 /** Counts a web call against this turn's budget; false once the cap is reached. */
-function takeTurnSlot(counter: "webSearchCount" | "webFetchCount", max: number): boolean {
+function takeTurnSlot(
+  counter: "webSearchCount" | "webFetchCount" | "imageSearchCount",
+  max: number,
+): boolean {
   const ctx: ChatRunContext = getChatRunContext();
   ctx[counter] = (ctx[counter] ?? 0) + 1;
   return (ctx[counter] ?? 0) <= max;
@@ -91,6 +97,81 @@ export const webSearchTool = createTool({
       result = { query, results: [], error: "Web search is unavailable right now." };
     }
     rememberToolResult("web_search", input, result);
+    return result;
+  },
+});
+
+const imageResultSchema = z.object({
+  title: z.string(),
+  imageUrl: z.string(),
+  thumbUrl: z.string(),
+  sourceUrl: z.string(),
+  width: z.number().optional(),
+  height: z.number().optional(),
+});
+
+const imageSearchOutputSchema = z.object({
+  query: z.string(),
+  images: z.array(imageResultSchema),
+  error: z.string().optional(),
+});
+
+export type ImageSearchOutput = z.infer<typeof imageSearchOutputSchema>;
+
+/**
+ * What the model sees: titles and the pages the images came from, fenced as untrusted data. It never
+ * sees image URLs — the UI shows the images itself, so the reply only needs to describe them.
+ */
+export function formatImageSearchForModel(output: ImageSearchOutput): string {
+  if (output.error) return `Image search for "${output.query}" failed: ${output.error}`;
+  if (output.images.length === 0) {
+    return `Image search for "${output.query}" found no images. Say so; do not guess.`;
+  }
+
+  const lines = output.images
+    .slice(0, MODEL_IMAGES)
+    .map((image, index) => `[${index + 1}] ${image.title} — ${image.sourceUrl}`);
+  return [
+    `Found ${output.images.length} images for "${output.query}". They are shown to the user in a gallery under your reply: do not paste image URLs or markdown images, just say briefly what they show and, if useful, cite a source page as [n](url).`,
+    wrapUntrusted(`image search results for "${output.query}"`, lines.join("\n")),
+  ].join("\n");
+}
+
+export const imageSearchTool = createTool({
+  id: "image_search",
+  description:
+    "Find pictures on the public web when the user asks to see images or photos of something. The images are displayed to the user automatically in a gallery. Pass a short keyword query.",
+  inputSchema: z.object({
+    query: z.string().min(1).max(200),
+    limit: z.number().int().min(1).max(10).optional(),
+  }),
+  outputSchema: imageSearchOutputSchema,
+  mcp: {
+    annotations: {
+      readOnlyHint: true,
+      openWorldHint: true,
+    },
+  },
+  toModelOutput: (output) => textForModel(formatImageSearchForModel(output)),
+  execute: async (input) => {
+    const { query, limit } = input;
+    if (!takeTurnSlot("imageSearchCount", MAX_IMAGE_SEARCHES_PER_TURN)) {
+      return {
+        query,
+        images: [],
+        error:
+          "Image search limit for this turn reached — answer from the images you already have.",
+      };
+    }
+
+    let result: ImageSearchOutput;
+    try {
+      result = { query, images: await searchImages(query, { limit: limit ?? DEFAULT_IMAGES }) };
+    } catch (error) {
+      console.warn("[image_search] failed:", error instanceof Error ? error.message : error);
+      result = { query, images: [], error: "Image search is unavailable right now." };
+    }
+    rememberToolResult("image_search", input, result);
     return result;
   },
 });

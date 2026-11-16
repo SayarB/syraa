@@ -11,7 +11,7 @@ import { StripFootersProcessor } from "../strip-footers-processor.js";
 import { StripReasoningProcessor } from "../strip-reasoning-processor.js";
 import { syraaTools } from "../tools/materials-tools.js";
 import { getMyMemoryTool } from "../tools/memory-tools.js";
-import { webFetchTool, webSearchTool } from "../tools/web-tools.js";
+import { imageSearchTool, webFetchTool, webSearchTool } from "../tools/web-tools.js";
 
 export const SYRAA_AGENT_ID = "syraa-agent";
 
@@ -20,7 +20,9 @@ export function syraaAgentTools(): ToolsInput {
   return {
     ...syraaTools,
     get_my_memory: getMyMemoryTool,
-    ...(isWebSearchConfigured() ? { web_search: webSearchTool } : {}),
+    ...(isWebSearchConfigured()
+      ? { web_search: webSearchTool, image_search: imageSearchTool }
+      : {}),
     ...(isPageReadingConfigured() ? { web_fetch: webFetchTool } : {}),
   };
 }
@@ -39,7 +41,7 @@ export function createSyraaAgent(overrides: { tools?: ToolsInput; memory?: Memor
       new StripReasoningProcessor(),
       // Earlier turns' web results are stale: drop them from the prompt. Transient — stored
       // messages and the UI keep them; the current turn still sees its own results.
-      new ToolCallFilter({ exclude: ["web_search", "web_fetch"] }),
+      new ToolCallFilter({ exclude: ["web_search", "web_fetch", "image_search"] }),
     ],
     outputProcessors: [new StripFootersProcessor(), new StripReasoningProcessor()],
   });

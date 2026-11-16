@@ -33,6 +33,8 @@ import {
   updateChatThread,
 } from "./threads.js";
 import { getIngestJobStatus, handleIngestUpload } from "./upload.js";
+import { fetchPublicImage, ImageProxyError } from "./web/image-proxy.js";
+import { BlockedUrlError } from "./web/url-guard.js";
 
 const MIME: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -146,6 +148,38 @@ async function handleApi(
   const { service } = await getMemory();
   const user = await requireUser(req);
   const userId = user.userId;
+
+  if (req.method === "GET" && pathname === "/api/image-proxy") {
+    const target = new URL(req.url ?? "/", "http://localhost").searchParams.get("url");
+    if (!target) {
+      sendJson(res, 400, { error: "url required" });
+      return;
+    }
+    try {
+      const image = await fetchPublicImage(target);
+      res.writeHead(200, {
+        "Content-Type": image.contentType,
+        "Content-Length": image.body.length,
+        "Cache-Control": "private, max-age=86400",
+        // The bytes come from an untrusted host: never let a browser reinterpret or run them.
+        "X-Content-Type-Options": "nosniff",
+        "Content-Security-Policy": "default-src 'none'; sandbox",
+        "Referrer-Policy": "no-referrer",
+      });
+      res.end(image.body);
+    } catch (err) {
+      if (err instanceof BlockedUrlError) {
+        sendJson(res, 400, { error: err.message });
+        return;
+      }
+      if (err instanceof ImageProxyError) {
+        sendJson(res, err.status, { error: err.message });
+        return;
+      }
+      throw err;
+    }
+    return;
+  }
 
   if (req.method === "GET" && pathname === "/api/threads") {
     const url = new URL(req.url ?? "/", "http://localhost");

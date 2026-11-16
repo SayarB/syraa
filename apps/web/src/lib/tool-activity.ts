@@ -21,6 +21,7 @@ const TOOL_LABELS: Record<string, string> = {
   read_materials_section: "Read document section",
   get_my_memory: "Checked memory",
   web_search: "Searched the web",
+  image_search: "Searched for images",
   web_fetch: "Read page",
 };
 
@@ -32,6 +33,7 @@ const TOOL_RUN_PHRASES: Record<string, (count: number) => string> = {
     n === 1 ? "read a document section" : `read ${n} document sections`,
   get_my_memory: (n) => (n === 1 ? "checked memory" : `checked memory ${n} times`),
   web_search: (n) => (n === 1 ? "searched the web" : `searched the web ${n} times`),
+  image_search: (n) => (n === 1 ? "searched for images" : `searched for images ${n} times`),
   web_fetch: (n) => (n === 1 ? "read a page" : `read ${n} pages`),
 };
 
@@ -195,6 +197,36 @@ function formatWebSearchOutput(output: unknown): { summary: string; detail: stri
   };
 }
 
+export type WebImage = {
+  title: string;
+  imageUrl: string;
+  thumbUrl: string;
+  sourceUrl: string;
+  width?: number;
+  height?: number;
+};
+
+type ImageSearchOutput = {
+  query?: string;
+  images?: Array<Partial<WebImage>>;
+  error?: string;
+};
+
+function formatImageSearchOutput(output: unknown): { summary: string; detail: string } {
+  const data = output as ImageSearchOutput;
+  if (data.error) return { summary: data.error, detail: `Output\n  error: ${data.error}` };
+
+  const images = data.images ?? [];
+  const query = data.query ? ` for “${data.query}”` : "";
+  const lines = images.map(
+    (image, index) => `  ${index + 1}. ${image.title ?? "Image"}\n     ${image.sourceUrl ?? ""}`,
+  );
+  return {
+    summary: `${images.length} image${images.length === 1 ? "" : "s"}${query}`,
+    detail: ["Output", ...(lines.length > 0 ? lines : ["  (no images)"])].join("\n"),
+  };
+}
+
 type WebFetchOutput = {
   url?: string;
   content?: string;
@@ -202,7 +234,7 @@ type WebFetchOutput = {
   error?: string;
 };
 
-function hostnameOf(url: string | undefined): string {
+export function hostnameOf(url: string | undefined): string {
   if (!url) return "page";
   try {
     return new URL(url).hostname;
@@ -242,6 +274,32 @@ export function webSourcesFromPart(part: UIMessage["parts"][number]): WebSource[
   const results = (part.output as WebSearchOutput | undefined)?.results ?? [];
   return results.flatMap((result) =>
     result.url ? [{ title: result.title || result.url, url: result.url }] : [],
+  );
+}
+
+function isHttpUrl(value: unknown): value is string {
+  return typeof value === "string" && /^https?:\/\//i.test(value);
+}
+
+/** Pictures a finished image_search call found, for the gallery under the reply. */
+export function imagesFromPart(part: UIMessage["parts"][number]): WebImage[] {
+  if (!isToolUIPart(part) || part.state !== "output-available") return [];
+  if (getToolName(part) !== "image_search") return [];
+
+  const images = (part.output as ImageSearchOutput | undefined)?.images ?? [];
+  return images.flatMap((image) =>
+    isHttpUrl(image.imageUrl)
+      ? [
+          {
+            title: image.title || hostnameOf(image.sourceUrl ?? image.imageUrl),
+            imageUrl: image.imageUrl,
+            thumbUrl: isHttpUrl(image.thumbUrl) ? image.thumbUrl : image.imageUrl,
+            sourceUrl: isHttpUrl(image.sourceUrl) ? image.sourceUrl : image.imageUrl,
+            width: image.width,
+            height: image.height,
+          },
+        ]
+      : [],
   );
 }
 
@@ -308,6 +366,8 @@ export function formatToolActivity(
     formatted = formatReadSectionOutput(output);
   } else if (toolName === "web_search") {
     formatted = formatWebSearchOutput(output);
+  } else if (toolName === "image_search") {
+    formatted = formatImageSearchOutput(output);
   } else if (toolName === "web_fetch") {
     formatted = formatWebFetchOutput(output);
   } else {
