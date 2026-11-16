@@ -1,6 +1,13 @@
 "use client";
 
-import { ChevronLeftIcon, ChevronRightIcon, ExternalLinkIcon, ImageOffIcon } from "lucide-react";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ExternalLinkIcon,
+  ImageIcon,
+  ImageOffIcon,
+  RefreshCwIcon,
+} from "lucide-react";
 import { type ComponentProps, useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -93,6 +100,92 @@ function Tile({
   );
 }
 
+type LoadState = "loading" | "loaded" | "failed";
+
+/**
+ * The picture area of the lightbox. It has a fixed height so the dialog doesn't resize as the
+ * image arrives: a skeleton shows while loading, and a failure shows a blurred copy of the
+ * thumbnail (already cached by the grid) behind a short message and a retry.
+ */
+function LightboxStage({ image }: { image: WebImage }) {
+  const [state, setState] = useState<LoadState>("loading");
+  const [attempt, setAttempt] = useState(0);
+  const [thumbFailed, setThumbFailed] = useState(false);
+
+  // A cached image can finish before React attaches handlers, so read the element's own state.
+  const settle = useCallback((el: HTMLImageElement | null) => {
+    if (el?.complete) setState(el.naturalWidth > 0 ? "loaded" : "failed");
+  }, []);
+
+  return (
+    <div className="relative flex h-[60vh] min-h-64 w-full items-center justify-center overflow-hidden rounded-lg bg-muted">
+      {state === "loading" ? (
+        <div
+          role="status"
+          aria-label="Loading image"
+          className="absolute inset-0 grid animate-pulse place-items-center bg-foreground/8"
+        >
+          <ImageIcon className="size-8 text-muted-foreground/50" />
+        </div>
+      ) : null}
+      {state === "failed" ? (
+        <>
+          {thumbFailed ? null : (
+            <img
+              src={proxiedImageUrl(image.thumbUrl)}
+              alt=""
+              aria-hidden
+              referrerPolicy="no-referrer"
+              onError={() => setThumbFailed(true)}
+              className="absolute inset-0 size-full scale-110 object-cover opacity-50 blur-2xl"
+            />
+          )}
+          <div
+            role="alert"
+            className="relative flex max-w-xs flex-col items-center gap-3 rounded-xl border bg-background/75 px-5 py-4 text-center shadow-lg backdrop-blur-md"
+          >
+            <ImageOffIcon className="size-6 text-muted-foreground" />
+            <div className="space-y-0.5">
+              <p className="font-medium text-sm">Couldn't load this image</p>
+              <p className="text-muted-foreground text-xs">
+                The source didn't respond or blocked the request.
+              </p>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => {
+                setState("loading");
+                setAttempt((n) => n + 1);
+              }}
+            >
+              <RefreshCwIcon />
+              Retry
+            </Button>
+          </div>
+        </>
+      ) : (
+        <img
+          // A new key per retry remounts the element so the browser really refetches.
+          key={attempt}
+          ref={settle}
+          // The proxy ignores `r`; it only gives a retry a fresh URL past any cached failure.
+          src={`${proxiedImageUrl(image.imageUrl)}${attempt > 0 ? `&r=${attempt}` : ""}`}
+          alt={image.title}
+          referrerPolicy="no-referrer"
+          onLoad={() => setState("loaded")}
+          onError={() => setState("failed")}
+          className={cn(
+            "max-h-full max-w-full object-contain transition-opacity duration-200",
+            state === "loaded" ? "opacity-100" : "opacity-0",
+          )}
+        />
+      )}
+    </div>
+  );
+}
+
 function Lightbox({
   images,
   index,
@@ -105,16 +198,11 @@ function Lightbox({
   onClose: () => void;
 }) {
   const image = images[index];
-  const [failed, setFailed] = useState<ReadonlySet<string>>(new Set());
   const step = useCallback(
     (delta: number) => onIndexChange((index + delta + images.length) % images.length),
     [index, images.length, onIndexChange],
   );
   if (!image) return null;
-
-  // If the full-size file won't load, fall back to the thumbnail the grid already showed.
-  const src = failed.has(image.imageUrl) ? image.thumbUrl : image.imageUrl;
-  const broken = failed.has(src);
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -131,22 +219,9 @@ function Lightbox({
         <DialogDescription className="sr-only">
           Image {index + 1} of {images.length} from {hostnameOf(image.sourceUrl)}
         </DialogDescription>
-        <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-lg bg-muted">
-          {broken ? (
-            <span className="flex h-48 flex-col items-center justify-center gap-2 text-muted-foreground text-sm">
-              <ImageOffIcon className="size-6" />
-              This image couldn't be loaded.
-            </span>
-          ) : (
-            <img
-              key={src}
-              src={proxiedImageUrl(src)}
-              alt={image.title}
-              referrerPolicy="no-referrer"
-              onError={() => setFailed((prev) => new Set(prev).add(src))}
-              className="max-h-[68vh] w-auto max-w-full object-contain"
-            />
-          )}
+        <div className="relative">
+          {/* Keyed by image so each one starts in its own loading state. */}
+          <LightboxStage key={image.imageUrl} image={image} />
           {images.length > 1 ? (
             <>
               <Button
