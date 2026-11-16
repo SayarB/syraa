@@ -18,6 +18,7 @@ import { InMemoryStore } from "@mastra/core/storage";
 import { createTool } from "@mastra/core/tools";
 import { config } from "dotenv";
 import { createSyraaAgent } from "../../src/mastra/agents/syraa-agent.js";
+import { OMITTED_HISTORY_NOTE } from "../../src/mastra/history-compaction-processor.js";
 import { createSyraaMemory } from "../../src/mastra/memory.js";
 import { buildSystemPrompt, formatMaterialsOutline } from "../../src/mastra/prompt.js";
 import {
@@ -282,10 +283,14 @@ async function runOnce(c: EvalCase): Promise<RunResult> {
     ],
     {
       memory: { thread: threadId, resource: resourceId },
-      instructions: buildSystemPrompt(
-        memoryItems as Parameters<typeof buildSystemPrompt>[0],
-        formatMaterialsOutline(outline as Parameters<typeof formatMaterialsOutline>[0]),
-      ),
+      instructions: [
+        buildSystemPrompt(
+          memoryItems as Parameters<typeof buildSystemPrompt>[0],
+          formatMaterialsOutline(outline as Parameters<typeof formatMaterialsOutline>[0]),
+        ),
+        // As in production, where the history processor adds this when older messages are left out.
+        ...((c.storedHistory?.length ?? 0) > 0 ? [OMITTED_HISTORY_NOTE] : []),
+      ].join("\n\n"),
       maxSteps: MAX_STEPS,
       modelSettings: { temperature: 0.4, maxOutputTokens: 2048 },
     },

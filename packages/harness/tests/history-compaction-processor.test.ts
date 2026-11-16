@@ -10,7 +10,10 @@ import {
 import { convertArrayToReadableStream, MockLanguageModelV3 } from "ai/test";
 import { describe, expect, it } from "vitest";
 import { runWithChatContext } from "../src/chat-run-context.js";
-import { HistoryCompactionProcessor } from "../src/mastra/history-compaction-processor.js";
+import {
+  HistoryCompactionProcessor,
+  OMITTED_HISTORY_NOTE,
+} from "../src/mastra/history-compaction-processor.js";
 
 const usage = {
   inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
@@ -153,6 +156,8 @@ describe("HistoryCompactionProcessor", () => {
     expect(summary).toContain("Messages 1–8");
     expect(summary).toContain("Messages 9–16");
     expect(systems[0]).toContain("BASE INSTRUCTIONS");
+    // the summary block accounts for what is missing, so no separate note
+    expect(systems).not.toContain(OMITTED_HISTORY_NOTE);
 
     // m1–m16 (turns 1–8) are replaced; turns 9–12 and the new question go as written
     for (let turn = 1; turn <= 8; turn++) {
@@ -243,10 +248,46 @@ describe("HistoryCompactionProcessor", () => {
     });
     const { conversation, systems } = await sendTurn({ memory, processor });
 
-    expect(systems).toEqual(["BASE INSTRUCTIONS"]);
+    expect(systems).toEqual(["BASE INSTRUCTIONS", OMITTED_HISTORY_NOTE]);
     expect(conversation).toHaveLength(41); // 40 history messages + the new question
     expect(conversation[0]).toBe("question 11");
     expect(conversation.at(-1)).toBe("new question");
+  });
+
+  it("says older messages are missing when the fallback had to drop turns", async () => {
+    const memory = await seededMemory(10, (n) => `answer ${n} ${"lots of words ".repeat(300)}`);
+    const processor = new HistoryCompactionProcessor({
+      config: resolveCompactionConfig({ budgets: { verbatim: 3000 } }), // so small that old turns are dropped
+      enabled: async () => true,
+      loadState: async () => null,
+    });
+    const { systems, conversation } = await sendTurn({ memory, processor });
+
+    expect(conversation.some((text) => text.startsWith("answer 1 "))).toBe(false);
+    expect(systems).toContain(OMITTED_HISTORY_NOTE);
+  });
+
+  it("adds no note when nothing was left out", async () => {
+    const memory = await seededMemory(6);
+    const processor = new HistoryCompactionProcessor({
+      config,
+      enabled: async () => true,
+      loadState: async () => null,
+    });
+    const { systems, conversation } = await sendTurn({ memory, processor });
+    expect(conversation).toHaveLength(13);
+    expect(systems).toEqual(["BASE INSTRUCTIONS"]);
+  });
+
+  it("says so when the thread reaches back past what is loaded and no summary covers it", async () => {
+    const memory = await seededMemory(250); // 500 messages; the newest 400 are loaded
+    const processor = new HistoryCompactionProcessor({
+      config: resolveCompactionConfig({ budgets: { verbatim: 1_000_000 } }), // keep the fallback out of the way
+      enabled: async () => true,
+      loadState: async () => null,
+    });
+    const { systems } = await sendTurn({ memory, processor });
+    expect(systems).toContain(OMITTED_HISTORY_NOTE);
   });
 
   it("carries on with the fallback if the summaries can't be read", async () => {

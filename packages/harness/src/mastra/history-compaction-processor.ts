@@ -14,12 +14,23 @@ import { tryGetChatRunContext } from "../chat-run-context.js";
 import { getCompactionStateStore } from "../history-state.js";
 import { getUserSettings } from "../settings.js";
 import { wrapUntrusted } from "../untrusted.js";
-import { PLAIN_HISTORY_MESSAGES } from "./memory.js";
+import { HISTORY_LOAD_MESSAGES, PLAIN_HISTORY_MESSAGES } from "./memory.js";
 
 /** Longest text kept from a message in an older turn when the fallback has to shorten it. */
 const FALLBACK_TEXT_CHARS = 600;
 const OLD_TOOL_RESULT = "[older tool result left out; call the tool again if you need it]";
 const SUMMARY_SOURCE = "earlier turns of this conversation (automatic summaries)";
+
+/**
+ * Said whenever older messages were left out and no summary accounts for them (compaction is off,
+ * the summaries are behind, or the thread outgrew what is loaded). Without it the agent sees a
+ * conversation that appears to start at its oldest shown message, and answers "what was my first
+ * message?" from that. It carries no count: a number that changes every turn would break the
+ * provider's prompt cache for everything after it.
+ */
+export const OMITTED_HISTORY_NOTE =
+  "Earlier messages in this conversation are not shown here, so the oldest message you can see is not the first one in the thread. For anything from before it, call thread_history; do not guess.";
+const OMITTED_NOTE_TAG = "history-omitted";
 
 type Part = { type: string; [key: string]: unknown };
 
@@ -143,6 +154,7 @@ export class HistoryCompactionProcessor implements Processor {
       const cut = history.length - PLAIN_HISTORY_MESSAGES;
       if (cut <= 0) return messages;
       const old = new Set(history.slice(0, cut).map((message) => message.id));
+      messageList.addSystem(OMITTED_HISTORY_NOTE, OMITTED_NOTE_TAG);
       return messages.filter((message) => !old.has(message.id));
     }
 
@@ -160,13 +172,21 @@ export class HistoryCompactionProcessor implements Processor {
     // Safety net for turns with no summary yet (job behind or failed, or an old thread).
     const turns = groupIntoTurns(unsummarised);
     const actions = fallbackActions(turns.map(turnSize), this.config);
+    let leftOut = false;
     turns.forEach((turn, index) => {
-      if (actions[index] === "drop") for (const message of turn) dropped.add(message.id);
-      else if (actions[index] === "clip") for (const message of turn) clipMessage(message);
+      if (actions[index] === "drop") {
+        leftOut = true;
+        for (const message of turn) dropped.add(message.id);
+      } else if (actions[index] === "clip") {
+        for (const message of turn) clipMessage(message);
+      }
     });
+    // The thread may reach back past what is loaded, with no summary to stand in for it.
+    if (coveredAt < 0 && history.length >= HISTORY_LOAD_MESSAGES) leftOut = true;
 
     const block = state ? renderSummaryBlock(state, this.config) : null;
     if (block) messageList.addSystem(wrapUntrusted(SUMMARY_SOURCE, block), "history-compaction");
+    if (leftOut) messageList.addSystem(OMITTED_HISTORY_NOTE, OMITTED_NOTE_TAG);
 
     return dropped.size > 0 ? messages.filter((message) => !dropped.has(message.id)) : messages;
   }
