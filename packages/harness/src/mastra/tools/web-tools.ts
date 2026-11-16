@@ -2,11 +2,10 @@ import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
 import { type ChatRunContext, getChatRunContext } from "../../chat-run-context.js";
 import { rememberToolResult } from "../../tool-call-dedupe.js";
-import { wrapUntrusted } from "../../untrusted.js";
+import { textForModel, wrapUntrusted } from "../../untrusted.js";
 import { readPage } from "../../web/crawl4ai.js";
 import { searchWeb } from "../../web/searxng.js";
 import { BlockedUrlError } from "../../web/url-guard.js";
-import { textForModel } from "./model-output.js";
 
 export const MAX_WEB_SEARCHES_PER_TURN = 4;
 export const MAX_WEB_FETCHES_PER_TURN = 3;
