@@ -17,6 +17,20 @@ search:
     - html
     - json
 
+engines:
+  # Image search: Google instead of Bing. Bing's image index returned unrelated results for place
+  # names (Halo book covers for "Chail Himachal Pradesh"). Two Google engines are listed because
+  # "google images" scrapes google.com and is often blocked (403) from server IPs, while
+  # "google cse images" keeps working. Other default image engines stay on as fallbacks.
+  - name: bing images
+    disabled: true
+  - name: google images
+    disabled: false
+    weight: 2
+  - name: google cse images
+    disabled: false
+    weight: 2
+
 outgoing:
   request_timeout: 3.0
   max_request_timeout: 6.0
