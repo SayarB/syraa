@@ -1,7 +1,6 @@
 import { RefreshCwIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import type { MemoryItem } from "@/lib/types";
 
 type Props = {
@@ -80,19 +79,17 @@ export function MemoryPanel({ items, meta, onRefresh, onConfirm, onDismiss }: Pr
           <RefreshCwIcon />
         </Button>
       </div>
-      <ScrollArea className="min-h-0 flex-1">
-        <div className="grid gap-2 p-3">
-          {items.length === 0 ? (
-            <p className="px-3 py-6 text-center text-muted-foreground text-sm">
-              Nothing saved yet. Chat naturally — durable facts show up here as they land.
-            </p>
-          ) : (
-            items.map((item) => (
-              <MemoryRow key={item.id} item={item} onConfirm={onConfirm} onDismiss={onDismiss} />
-            ))
-          )}
-        </div>
-      </ScrollArea>
+      <div className="grid min-h-0 flex-1 content-start gap-2 overflow-y-auto overscroll-contain p-3">
+        {items.length === 0 ? (
+          <p className="px-3 py-6 text-center text-muted-foreground text-sm">
+            Nothing saved yet. Chat naturally — durable facts show up here as they land.
+          </p>
+        ) : (
+          items.map((item) => (
+            <MemoryRow key={item.id} item={item} onConfirm={onConfirm} onDismiss={onDismiss} />
+          ))
+        )}
+      </div>
     </div>
   );
 }
