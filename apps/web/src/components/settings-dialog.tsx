@@ -151,13 +151,13 @@ function ModelSetting(props: {
 const canRunAssistant = (model: ModelOption) => model.chatCapable;
 
 function GeneralSettings(props: GeneralProps) {
+  // The app loads the settings at sign-in; the model list is only needed here.
   const { settings, loadError, saveError, load, update } = props.userSettings;
   const { models, defaultModel, error: modelsError, load: loadModels } = useModelOptions();
 
   useEffect(() => {
-    void load();
     void loadModels();
-  }, [load, loadModels]);
+  }, [loadModels]);
 
   return (
     <div className="grid gap-6">

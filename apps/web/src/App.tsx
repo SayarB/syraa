@@ -665,11 +665,14 @@ export default function App() {
   }
 
   const chatReady = serverChat?.configured ?? true;
-  const subtitle = !serverChat
-    ? "SYRAA AI Chat"
-    : serverChat.configured
-      ? chatModelLabel(serverChat, userSettings.settings?.chatModel)
-      : "Set a chat API key in .env";
+  // The model name waits for the user's settings: showing the server default first would be wrong
+  // for anyone who chose another model.
+  const subtitle =
+    serverChat && !serverChat.configured
+      ? "Set a chat API key in .env"
+      : serverChat && userSettings.settings
+        ? chatModelLabel(serverChat, userSettings.settings.chatModel)
+        : "SYRAA AI Chat";
   const displayName = userEmail ?? userId ?? "there";
   const activeThreadTitle =
     [...threads, ...archivedThreads].find((thread) => thread.id === threadId)?.title ?? "New chat";

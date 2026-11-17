@@ -85,23 +85,28 @@ export function useUserSettings() {
   // newest save's response is shown.
   const saveQueue = useRef<Promise<void>>(Promise.resolve());
   const latestSave = useRef(0);
+  // Only the newest load may land: a slow one must not overwrite a newer save or a sign-out.
+  const latestLoad = useRef(0);
 
   const apply = useCallback((data: SettingsResponse) => {
     setSettings(data.settings);
   }, []);
 
   const load = useCallback(async () => {
+    const request = ++latestLoad.current;
     setLoadError(null);
     try {
-      apply(await readJson<SettingsResponse>(await apiFetch("/api/settings")));
+      const data = await readJson<SettingsResponse>(await apiFetch("/api/settings"));
+      if (request === latestLoad.current) apply(data);
     } catch (err) {
-      setLoadError(errorText(err));
+      if (request === latestLoad.current) setLoadError(errorText(err));
     }
   }, [apply]);
 
   const update = useCallback(
     (patch: Partial<UserSettings>) => {
       const save = ++latestSave.current;
+      latestLoad.current++;
       setSaveError(null);
       setSettings((current) => (current ? { ...current, ...patch } : current));
 
@@ -130,6 +135,7 @@ export function useUserSettings() {
   /** Forget the loaded settings (on sign-out), so the next user never sees them. */
   const reset = useCallback(() => {
     latestSave.current++;
+    latestLoad.current++;
     setSettings(null);
     setLoadError(null);
     setSaveError(null);
