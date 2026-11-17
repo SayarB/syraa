@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { apiFetch } from "./api";
+import type { ChatConfig } from "./types";
 
 /** A model a setting can use, as listed by the server (`/api/settings/models`). */
 export type ModelOption = {
@@ -24,6 +25,21 @@ export type ModelOption = {
 
 /** Setting value meaning "the server's default model" (for the title and summary models: the chat model). */
 export const SAME_AS_CHAT_MODEL = "chat";
+
+/**
+ * "provider · model" for the model that answers this user: their chat model setting, or the
+ * server's default model when they chose none (or their settings haven't loaded yet).
+ */
+export function chatModelLabel(serverDefault: ChatConfig, chatModel: string | undefined): string {
+  const short = (slug: string) => slug.split("/").pop() ?? slug;
+  if (!chatModel || chatModel === SAME_AS_CHAT_MODEL) {
+    return `${serverDefault.provider} · ${short(serverDefault.model)}`;
+  }
+  // The server stores `provider:slug`; a slug may itself contain colons, so split on the first.
+  const colon = chatModel.indexOf(":");
+  if (colon <= 0) return `${serverDefault.provider} · ${short(chatModel)}`;
+  return `${chatModel.slice(0, colon)} · ${short(chatModel.slice(colon + 1))}`;
+}
 
 /** Mirrors the harness `UserSettings`; every field has a server-side default. */
 export type UserSettings = {
@@ -111,7 +127,15 @@ export function useUserSettings() {
     [apply, load],
   );
 
-  return { settings, loadError, saveError, load, update };
+  /** Forget the loaded settings (on sign-out), so the next user never sees them. */
+  const reset = useCallback(() => {
+    latestSave.current++;
+    setSettings(null);
+    setLoadError(null);
+    setSaveError(null);
+  }, []);
+
+  return { settings, loadError, saveError, load, update, reset };
 }
 
 /**
