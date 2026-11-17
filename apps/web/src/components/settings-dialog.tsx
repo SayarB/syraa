@@ -1,6 +1,8 @@
-import { CheckIcon, MoonIcon, SlidersHorizontalIcon, SunIcon } from "lucide-react";
+import { BrainIcon, CheckIcon, MoonIcon, SlidersHorizontalIcon, SunIcon } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
+import { ContextSettings, type ContextSettingsProps } from "@/components/context-settings";
 import { formatModelPrice, ModelPicker } from "@/components/model-picker";
+import { SettingsSection } from "@/components/settings-section";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,31 +13,34 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { type ModelOption, useModelOptions, useUserSettings } from "@/lib/settings";
+import { type ModelOption, useModelOptions, type useUserSettings } from "@/lib/settings";
 import { THEME_PALETTES, type Theme, type ThemeMode, type ThemePalette } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 /** Settings categories, in nav order. Add a category here and render it below. */
-const CATEGORIES = [{ id: "general", label: "General", icon: SlidersHorizontalIcon }] as const;
+const CATEGORIES = [
+  { id: "general", label: "General", icon: SlidersHorizontalIcon },
+  { id: "context", label: "Context", icon: BrainIcon },
+] as const;
 
-type CategoryId = (typeof CATEGORIES)[number]["id"];
+export type SettingsCategory = (typeof CATEGORIES)[number]["id"];
 
-type Props = {
+type Props = ContextSettingsProps & {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** The open category. Controlled, so the app can open Settings straight to one (e.g. memory notices). */
+  category: SettingsCategory;
+  onCategoryChange: (category: SettingsCategory) => void;
+  /** Memories waiting to be confirmed: shown on the Context category. */
+  pendingMemories: number;
+  /** The account settings, owned by the app so other views (the model name in the sidebar) follow them. */
+  userSettings: ReturnType<typeof useUserSettings>;
   theme: Theme;
   onPaletteChange: (palette: ThemePalette) => void;
   onModeChange: (mode: ThemeMode) => void;
 };
 
-function SettingsSection({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="grid gap-3">
-      <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">{title}</h3>
-      <div className="grid gap-4 rounded-xl border p-4">{children}</div>
-    </section>
-  );
-}
+type GeneralProps = Pick<Props, "userSettings" | "theme" | "onPaletteChange" | "onModeChange">;
 
 /** A label + description beside a control. Without `htmlFor`, the control names itself (e.g. a fieldset legend). */
 function SettingRow(props: {
@@ -145,14 +150,14 @@ function ModelSetting(props: {
 /** A stable function, so the picker doesn't rebuild its list on every render. */
 const canRunAssistant = (model: ModelOption) => model.chatCapable;
 
-function GeneralSettings(props: Omit<Props, "open" | "onOpenChange">) {
-  const { settings, loadError, saveError, load, update } = useUserSettings();
+function GeneralSettings(props: GeneralProps) {
+  // The app loads the settings at sign-in; the model list is only needed here.
+  const { settings, loadError, saveError, load, update } = props.userSettings;
   const { models, defaultModel, error: modelsError, load: loadModels } = useModelOptions();
 
   useEffect(() => {
-    void load();
     void loadModels();
-  }, [load, loadModels]);
+  }, [loadModels]);
 
   return (
     <div className="grid gap-6">
@@ -292,8 +297,16 @@ function GeneralSettings(props: Omit<Props, "open" | "onOpenChange">) {
   );
 }
 
-export function SettingsDialog({ open, onOpenChange, ...rest }: Props) {
-  const [category, setCategory] = useState<CategoryId>("general");
+export function SettingsDialog({
+  open,
+  onOpenChange,
+  category,
+  onCategoryChange,
+  pendingMemories,
+  memory,
+  materials,
+  ...general
+}: Props) {
   const active = CATEGORIES.find((entry) => entry.id === category) ?? CATEGORIES[0];
 
   return (
@@ -314,7 +327,7 @@ export function SettingsDialog({ open, onOpenChange, ...rest }: Props) {
                 key={entry.id}
                 type="button"
                 aria-current={entry.id === category ? "page" : undefined}
-                onClick={() => setCategory(entry.id)}
+                onClick={() => onCategoryChange(entry.id)}
                 className={cn(
                   "flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm transition-colors hover:bg-muted",
                   entry.id === category && "bg-muted font-medium",
@@ -322,13 +335,22 @@ export function SettingsDialog({ open, onOpenChange, ...rest }: Props) {
               >
                 <entry.icon className="size-4" />
                 {entry.label}
+                {entry.id === "context" && pendingMemories > 0 ? (
+                  <span className="ml-auto grid min-w-5 place-items-center rounded-full bg-primary-soft px-1.5 text-primary-soft-foreground text-xs tabular-nums">
+                    {pendingMemories}
+                    <span className="sr-only"> memories to review</span>
+                  </span>
+                ) : null}
               </button>
             ))}
           </nav>
 
           <div className="min-h-0 flex-1 overflow-y-auto p-5">
             <h2 className="mb-4 font-semibold text-base">{active.label}</h2>
-            {category === "general" ? <GeneralSettings {...rest} /> : null}
+            {category === "general" ? <GeneralSettings {...general} /> : null}
+            {category === "context" ? (
+              <ContextSettings memory={memory} materials={materials} />
+            ) : null}
           </div>
         </div>
       </DialogContent>

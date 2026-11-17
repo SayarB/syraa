@@ -23,7 +23,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { AuthShell, SignInCard } from "@/components/auth-screen";
 import { type ChatEventLine, ChatMessages } from "@/components/chat-messages";
 import { DeleteThreadDialog } from "@/components/delete-thread-dialog";
-import { SettingsDialog } from "@/components/settings-dialog";
+import { type SettingsCategory, SettingsDialog } from "@/components/settings-dialog";
 import { ThemeModeToggle } from "@/components/theme-mode-toggle";
 import { TopicTreeDialog } from "@/components/topic-tree-dialog";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -32,6 +32,7 @@ import { apiFetch, apiUrl } from "./lib/api";
 import { authClient } from "./lib/auth-client";
 import { patchAssistantDisplayMessage } from "./lib/display-message";
 import { formatMemorySavedNotice } from "./lib/memory-notice";
+import { chatModelLabel, useUserSettings } from "./lib/settings";
 import { type SavedTheme, useTheme } from "./lib/theme";
 import type {
   ChatConfig,
@@ -103,8 +104,8 @@ export default function App() {
   const [authStatus, setAuthStatus] = useState<"loading" | "signed_out" | "signed_in">("loading");
   const [userId, setUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [subtitle, setSubtitle] = useState("SYRAA AI Chat");
-  const [chatReady, setChatReady] = useState(true);
+  // The server's default chat model. What answers a user is their own setting (see `subtitle`).
+  const [serverChat, setServerChat] = useState<ChatConfig | null>(null);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -117,7 +118,6 @@ export default function App() {
   const [threadsLoading, setThreadsLoading] = useState(false);
   const [items, setItems] = useState<MemoryItem[]>([]);
   const [memoryMeta, setMemoryMeta] = useState("—");
-  const [memoryOpen, setMemoryOpen] = useState(false);
   const [resources, setResources] = useState<ContextResource[]>([]);
   const [treeOpen, setTreeOpen] = useState(false);
   const [treeLoading, setTreeLoading] = useState(false);
@@ -131,6 +131,8 @@ export default function App() {
   const [authSent, setAuthSent] = useState(false);
   const [googleAuthEnabled, setGoogleAuthEnabled] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsCategory, setSettingsCategory] = useState<SettingsCategory>("general");
+  const userSettings = useUserSettings();
   const { theme, setPalette, setMode, toggleMode, adoptSaved } = useTheme(
     authStatus === "signed_in",
   );
@@ -195,14 +197,9 @@ export default function App() {
         if (typeof data.displayMessage === "string" && data.displayMessage.trim()) {
           pendingDisplayMessage.current = data.displayMessage.trim();
         }
-        if (data.memoryItems?.length) {
-          void (async () => {
-            await refreshMemory();
-            const pending =
-              data.memoryItems?.filter((item) => item.status === "pending").length ?? 0;
-            if (pending > 0) setMemoryOpen(true);
-          })();
-        }
+        // Pending memories are flagged in the sidebar and under Settings → Context, and the
+        // transcript shows a notice that opens them.
+        if (data.memoryItems?.length) void refreshMemory();
       }
     },
     onFinish: ({ message }) => {
@@ -352,7 +349,6 @@ export default function App() {
     threadIdRef.current = nextThreadId;
     setThreadId(nextThreadId);
     if (userId) storeThreadId(userId, nextThreadId);
-    setMemoryOpen(false);
     setEventLines([]);
     // Another chat may be opened before this one loads; then this response is dropped.
     const stillOpen = () => threadIdRef.current === nextThreadId;
@@ -420,13 +416,7 @@ export default function App() {
       chat: ChatConfig;
       auth?: { google?: boolean; magicLink?: boolean };
     };
-    if (data.chat.configured) {
-      setSubtitle(`${data.chat.provider} · ${data.chat.model.split("/").pop()}`);
-      setChatReady(true);
-    } else {
-      setSubtitle("Set a chat API key in .env");
-      setChatReady(false);
-    }
+    setServerChat(data.chat);
     setGoogleAuthEnabled(Boolean(data.auth?.google));
   }
 
@@ -448,9 +438,12 @@ export default function App() {
       setUserId(data.userId);
       setUserEmail(data.email);
       setAuthStatus("signed_in");
-      await refreshMemory();
-      await refreshResources();
-      await refreshThreads();
+      await Promise.all([
+        userSettings.load(),
+        refreshMemory(),
+        refreshResources(),
+        refreshThreads(),
+      ]);
       const stored = loadStoredThreadId(data.userId);
       if (stored) {
         setThreadId(stored);
@@ -557,7 +550,6 @@ export default function App() {
     if (userId) storeThreadId(userId, null);
     setChatMessages([]);
     setEventLines([]);
-    setMemoryOpen(false);
     inputRef.current?.focus();
   }
 
@@ -578,6 +570,7 @@ export default function App() {
     setThreadToDelete(null);
     setItems([]);
     setResources([]);
+    userSettings.reset();
   }
 
   async function signInWithGoogle() {
@@ -631,6 +624,11 @@ export default function App() {
     inputRef.current?.focus();
   }
 
+  function openSettings(category: SettingsCategory = "general") {
+    setSettingsCategory(category);
+    setSettingsOpen(true);
+  }
+
   const modeToggle = <ThemeModeToggle mode={theme.mode} onToggle={toggleMode} />;
 
   if (authStatus === "loading") {
@@ -666,6 +664,15 @@ export default function App() {
     );
   }
 
+  const chatReady = serverChat?.configured ?? true;
+  // The model name waits for the user's settings: showing the server default first would be wrong
+  // for anyone who chose another model.
+  const subtitle =
+    serverChat && !serverChat.configured
+      ? "Set a chat API key in .env"
+      : serverChat && userSettings.settings
+        ? chatModelLabel(serverChat, userSettings.settings.chatModel)
+        : "SYRAA AI Chat";
   const displayName = userEmail ?? userId ?? "there";
   const activeThreadTitle =
     [...threads, ...archivedThreads].find((thread) => thread.id === threadId)?.title ?? "New chat";
@@ -676,16 +683,6 @@ export default function App() {
         <AppSidebar
           subtitle={subtitle}
           onNewChat={startNewChat}
-          memory={{
-            items,
-            meta: memoryMeta,
-            pendingCount,
-            open: memoryOpen,
-            onOpenChange: setMemoryOpen,
-            onRefresh: () => void refreshMemory(),
-            onConfirm: (id) => void patchItem(id, "active"),
-            onDismiss: (id) => void patchItem(id, "dismissed"),
-          }}
           threads={threads}
           archivedThreads={archivedThreads}
           threadsLoading={threadsLoading}
@@ -694,11 +691,9 @@ export default function App() {
           onRenameThread={(id, title) => void renameThread(id, title)}
           onArchiveThread={(id, archived) => void archiveThread(id, archived)}
           onDeleteThread={setThreadToDelete}
-          resources={resources}
-          onRefreshResources={() => void refreshResources()}
-          onOpenResource={(id) => void openResourceTree(id)}
           displayName={displayName}
-          onOpenSettings={() => setSettingsOpen(true)}
+          pendingMemories={pendingCount}
+          onOpenSettings={() => openSettings()}
           onSignOut={() => void signOut()}
         />
 
@@ -716,7 +711,7 @@ export default function App() {
                   messages={chatMessages}
                   streaming={streaming}
                   eventLines={eventLines}
-                  onOpenMemory={() => setMemoryOpen(true)}
+                  onOpenMemory={() => openSettings("context")}
                 />
               ) : (
                 <ConversationEmptyState className="min-h-[50vh]">
@@ -807,6 +802,22 @@ export default function App() {
         <SettingsDialog
           open={settingsOpen}
           onOpenChange={setSettingsOpen}
+          category={settingsCategory}
+          onCategoryChange={setSettingsCategory}
+          pendingMemories={pendingCount}
+          userSettings={userSettings}
+          memory={{
+            items,
+            meta: memoryMeta,
+            onRefresh: () => void refreshMemory(),
+            onConfirm: (id) => void patchItem(id, "active"),
+            onDismiss: (id) => void patchItem(id, "dismissed"),
+          }}
+          materials={{
+            resources,
+            onRefresh: () => void refreshResources(),
+            onOpen: (id) => void openResourceTree(id),
+          }}
           theme={theme}
           onPaletteChange={setPalette}
           onModeChange={setMode}

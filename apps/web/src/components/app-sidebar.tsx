@@ -1,14 +1,10 @@
 import {
-  BrainIcon,
   ChevronRightIcon,
   ChevronsUpDownIcon,
-  FileTextIcon,
   LogOutIcon,
   PlusIcon,
-  RefreshCwIcon,
   SettingsIcon,
 } from "lucide-react";
-import { MemoryPanel } from "@/components/memory-panel";
 import { ThreadMenuItem } from "@/components/thread-menu-item";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -20,48 +16,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupAction,
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import type { ChatThread, ContextResource, MemoryItem } from "@/lib/types";
-import { cn } from "@/lib/utils";
-
-function statusClass(status: string): string {
-  if (status === "ready") return "text-success";
-  if (status === "failed") return "text-destructive";
-  return "text-warning";
-}
-
-function statusLabel(status: string): string {
-  return status.replaceAll("_", " ");
-}
+import type { ChatThread } from "@/lib/types";
 
 type Props = {
   subtitle: string;
   onNewChat: () => void;
-
-  memory: {
-    items: MemoryItem[];
-    meta: string;
-    pendingCount: number;
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-    onRefresh: () => void;
-    onConfirm: (id: string) => void;
-    onDismiss: (id: string) => void;
-  };
 
   threads: ChatThread[];
   archivedThreads: ChatThread[];
@@ -72,17 +43,14 @@ type Props = {
   onArchiveThread: (threadId: string, archived: boolean) => void;
   onDeleteThread: (thread: ChatThread) => void;
 
-  resources: ContextResource[];
-  onRefreshResources: () => void;
-  onOpenResource: (resourceId: string) => void;
-
   displayName: string;
+  /** Memories waiting to be confirmed (reviewed under Settings → Context). */
+  pendingMemories: number;
   onOpenSettings: () => void;
   onSignOut: () => void;
 };
 
 export function AppSidebar(props: Props) {
-  const { memory } = props;
   const initial = props.displayName.slice(0, 1).toUpperCase() || "S";
 
   const threadActions = (thread: ChatThread) => ({
@@ -110,33 +78,6 @@ export function AppSidebar(props: Props) {
           <PlusIcon />
           New chat
         </Button>
-
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <Popover open={memory.open} onOpenChange={memory.onOpenChange}>
-              <PopoverTrigger asChild>
-                <SidebarMenuButton isActive={memory.open}>
-                  <BrainIcon />
-                  <span>Memory</span>
-                </SidebarMenuButton>
-              </PopoverTrigger>
-              <PopoverContent side="right" align="start" sideOffset={12} className="w-96 p-0">
-                <MemoryPanel
-                  items={memory.items}
-                  meta={memory.meta}
-                  onRefresh={memory.onRefresh}
-                  onConfirm={memory.onConfirm}
-                  onDismiss={memory.onDismiss}
-                />
-              </PopoverContent>
-            </Popover>
-            {memory.pendingCount > 0 ? (
-              <SidebarMenuBadge className="rounded-full bg-primary-soft text-primary-soft-foreground">
-                {memory.pendingCount}
-              </SidebarMenuBadge>
-            ) : null}
-          </SidebarMenuItem>
-        </SidebarMenu>
       </SidebarHeader>
 
       <SidebarContent>
@@ -183,42 +124,6 @@ export function AppSidebar(props: Props) {
             </SidebarGroup>
           </Collapsible>
         ) : null}
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Materials</SidebarGroupLabel>
-          <SidebarGroupAction title="Refresh materials" onClick={props.onRefreshResources}>
-            <RefreshCwIcon />
-            <span className="sr-only">Refresh materials</span>
-          </SidebarGroupAction>
-          <SidebarGroupContent>
-            {props.resources.length === 0 ? (
-              <p className="px-2 py-1.5 text-muted-foreground text-xs">
-                Upload PDFs from the composer
-              </p>
-            ) : null}
-            <SidebarMenu>
-              {props.resources.map((resource) => (
-                <SidebarMenuItem key={resource.id}>
-                  <SidebarMenuButton
-                    onClick={() => props.onOpenResource(resource.id)}
-                    title={`${resource.name} · ${statusLabel(resource.status)}`}
-                  >
-                    <FileTextIcon />
-                    <span className="min-w-0 truncate">{resource.name}</span>
-                    <span
-                      aria-hidden="true"
-                      className={cn(
-                        "ml-auto size-2 shrink-0 rounded-full bg-current",
-                        statusClass(resource.status),
-                      )}
-                    />
-                    <span className="sr-only">{statusLabel(resource.status)}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter>
@@ -234,9 +139,12 @@ export function AppSidebar(props: Props) {
                   </Avatar>
                   <div className="grid min-w-0 flex-1 text-left leading-tight">
                     <span className="truncate font-medium text-sm">{props.displayName}</span>
-                    <span className="truncate text-muted-foreground text-xs">
-                      {memory.items.length} memories · {memory.pendingCount} pending
-                    </span>
+                    {props.pendingMemories > 0 ? (
+                      <span className="truncate text-muted-foreground text-xs">
+                        {props.pendingMemories}{" "}
+                        {props.pendingMemories === 1 ? "memory" : "memories"} to review
+                      </span>
+                    ) : null}
                   </div>
                   <ChevronsUpDownIcon className="ml-auto size-4" />
                 </SidebarMenuButton>

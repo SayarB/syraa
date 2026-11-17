@@ -1,12 +1,9 @@
-import { RefreshCwIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { MemoryItem } from "@/lib/types";
 
 type Props = {
   items: MemoryItem[];
-  meta: string;
-  onRefresh: () => void;
   onConfirm: (id: string) => void;
   onDismiss: (id: string) => void;
 };
@@ -66,30 +63,20 @@ function MemoryRow({
   );
 }
 
-/** Body of the Memory popover: saved and pending memories with confirm / dismiss. */
-export function MemoryPanel({ items, meta, onRefresh, onConfirm, onDismiss }: Props) {
+/** Saved and pending memories, with confirm / dismiss. Scrolling is left to the page around it. */
+export function MemoryPanel({ items, onConfirm, onDismiss }: Props) {
+  if (items.length === 0) {
+    return (
+      <p className="px-3 py-6 text-center text-muted-foreground text-sm">
+        Nothing saved yet. Chat naturally — durable facts show up here as they land.
+      </p>
+    );
+  }
   return (
-    <div className="flex max-h-[min(32rem,70vh)] flex-col">
-      <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
-        <div className="min-w-0">
-          <h2 className="font-semibold text-sm">Memory</h2>
-          <p className="truncate font-mono text-[0.68rem] text-muted-foreground">{meta}</p>
-        </div>
-        <Button variant="ghost" size="icon-sm" onClick={onRefresh} aria-label="Refresh memory">
-          <RefreshCwIcon />
-        </Button>
-      </div>
-      <div className="grid min-h-0 flex-1 content-start gap-2 overflow-y-auto overscroll-contain p-3">
-        {items.length === 0 ? (
-          <p className="px-3 py-6 text-center text-muted-foreground text-sm">
-            Nothing saved yet. Chat naturally — durable facts show up here as they land.
-          </p>
-        ) : (
-          items.map((item) => (
-            <MemoryRow key={item.id} item={item} onConfirm={onConfirm} onDismiss={onDismiss} />
-          ))
-        )}
-      </div>
+    <div className="grid gap-2">
+      {items.map((item) => (
+        <MemoryRow key={item.id} item={item} onConfirm={onConfirm} onDismiss={onDismiss} />
+      ))}
     </div>
   );
 }
