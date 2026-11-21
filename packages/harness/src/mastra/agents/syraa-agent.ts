@@ -3,6 +3,7 @@ import { Agent } from "@mastra/core/agent";
 import { ToolCallFilter } from "@mastra/core/processors";
 import type { Memory } from "@mastra/memory";
 import { chatModelConfigFor } from "../../chat-model.js";
+import { messageGuardrailProcessor } from "../../guardrails.js";
 import { isPageReadingConfigured } from "../../web/crawl4ai.js";
 import { isWebSearchConfigured } from "../../web/searxng.js";
 import { HistoryCompactionProcessor } from "../history-compaction-processor.js";
@@ -51,6 +52,8 @@ export function createSyraaAgent(overrides: { tools?: ToolsInput; memory?: Memor
       new ToolCallFilter({
         exclude: ["web_search", "web_fetch", "image_search", "thread_history"],
       }),
+      // Classifies the new user message in the background; never blocks or delays the reply.
+      messageGuardrailProcessor(),
     ],
     outputProcessors: [new StripFootersProcessor(), new StripReasoningProcessor()],
   });

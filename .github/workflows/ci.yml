@@ -62,6 +62,7 @@ jobs:
           npm run build -w @syraa/context
           npm run build -w @syraa/ingest
           npm run build -w @syraa/history
+          npm run build -w @syraa/guardrails
           npm run build -w @syraa/harness
           npm run build -w @syraa/api
 
@@ -69,6 +70,7 @@ jobs:
         run: |
           npm run db:migrate:dist -w @syraa/memory
           npm run db:migrate:dist -w @syraa/context
+          npm run db:migrate:dist -w @syraa/guardrails
 
       - name: TypeScript tests
         run: npm run test:ts
@@ -102,6 +104,7 @@ jobs:
           npm run build -w @syraa/context
           npm run build -w @syraa/ingest
           npm run build -w @syraa/history
+          npm run build -w @syraa/guardrails
 
       - name: Agent tool-call eval
         run: |

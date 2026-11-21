@@ -44,11 +44,13 @@ Use the repo root [`compose.yaml`](compose.yaml) (or Dokploy “Docker Compose�
    - `FIREWORKS_API_KEY` (or `CHAT_PROVIDER=openai` + `OPENAI_API_KEY`, or `CHAT_PROVIDER=gateway` + `AI_GATEWAY_API_KEY` for Vercel AI Gateway)
 2. Point the domain / Traefik to the **api** service on port **3000** (UI is same-origin).
 3. Leave Postgres and Redis on the internal compose network (host ports bind to `127.0.0.1` by default).
-4. First boot runs memory, context, and Better Auth migrations via [`docker/entrypoint.sh`](docker/entrypoint.sh).
+4. First boot runs memory, context, guardrails, and Better Auth migrations via [`docker/entrypoint.sh`](docker/entrypoint.sh).
 
 Smoke after deploy: open the domain → Google or magic-link sign-in → one chat turn → upload a PDF → sign out. Health: `GET /api/health`.
 
 Tracing: set `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` and `LANGFUSE_BASE_URL` to send traces to Langfuse — one `chat-turn` trace per message (grouped into a session per thread, with model calls, reasoning, token usage, tool calls and the lesson gate) and one `ingest-document` trace per upload. Unset = tracing off.
+
+Message guard: set `TYPESAFE_API_KEY` (Jev) and every user chat message is classified for `jailbreak`, `abuse` and `harmful_request` while the reply is generated. It only records a verdict (`clean`, `flagged` or `unchecked`) in `guardrail_verdicts`; it never blocks, delays or changes a reply. Text is stored only for flagged messages and verdicts are deleted after 90 days. List flags with `npm run flags -w @syraa/guardrails -- [--guard message] [--user <id>] [--since <iso>]`. Unset = guard off (nothing is sent or recorded). After changing the questions or threshold in `packages/harness/src/guardrails.ts`, re-run `npm run eval:guardrail -w @syraa/harness`.
 
 For Google: set `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` and add redirect  
 `https://your.domain/api/auth/callback/google` in Google Cloud Console.  

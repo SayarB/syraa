@@ -1,0 +1,65 @@
+# Validations: model guardrails, phase 2: document guard
+
+All commands run from the repo root against a local Postgres and Redis (`npm run db:up`, `DATABASE_URL` and `REDIS_URL` pointing at local containers). Never a production URL or production `.env`. The Jev key for live checks is loaded with `~/.local/bin/infisical-run --env=personal -- <command>` and never printed.
+
+## Must pass
+### Phase 1 still holds
+- [ ] Lint, build, typecheck and TypeScript tests are green — check: `npm run check:ts` and `npm run test:ts` exit 0 (phase 1's suites run unchanged: `packages/guardrails/tests/*`, `packages/harness/tests/guardrails.test.ts`, `packages/harness/tests/lesson-gate.test.ts`).
+- [ ] The reply is still never delayed or blocked by the message guard — check: `packages/guardrails/tests/mastra.test.ts` passes (deferred Jev, `consumeStream()` resolves while it is pending).
+- [ ] Message verdicts still only store text for flagged rows — check: `packages/guardrails/tests/repository.db.test.ts` passes.
+- [ ] The phase 1 eval bar still holds for messages — check: `~/.local/bin/infisical-run --env=personal -- npm run eval:guardrail -w @syraa/harness` exits 0 with the message categories at precision >= 0.9.
+
+### Status model and store
+- [ ] Migrations apply cleanly and twice — check: `node packages/context/dist/migrate.js` run two times against the local DB exits 0, and `\d context_resources` shows `guard_reason text` and a status check that lists `pending_guardrail` and `quarantined`.
+- [ ] Old statuses and new statuses are accepted, unknown ones rejected — check: `packages/context/tests/guard-status.db.test.ts`: inserting `pending_guardrail` and `quarantined` succeeds; inserting `bogus` fails with `context_resources_status_check`.
+- [ ] Withheld documents are unreachable by search — check: `packages/context/tests/search.db.test.ts` (extended): resources with `pending_guardrail` and `quarantined` and matching chunks return zero hits from `store.searchMaterials`, while a `ready` one returns its hits.
+- [ ] Withheld documents are absent from the ready overview and listed in the withheld list — check: `guard-status.db.test.ts`: `listMaterialsLayer1` excludes them; `listWithheldResources(userId)` returns them with `status` and `guardReason`, scoped to that user only (a second user's rows are not returned).
+- [ ] Transitions are conditional — check: `guard-status.db.test.ts`: `transitionResourceStatus(..., from: "pending_guardrail", to: "ready")` on a `quarantined` row returns `null` and leaves it `quarantined`; on a `pending_guardrail` row returns the updated row.
+- [ ] Deleting verdict rows never changes a document's state or reason — check: `packages/harness/tests/document-guard.test.ts`: after a quarantine, `purgeOlderThan(0)` leaves the resource `quarantined` with the same `guard_reason`.
+
+### Protocol and worker
+- [ ] Node protocol round-trips and stays backward compatible — check: `packages/ingest/tests/protocol.test.ts`: `parseJobPayload` of a payload without `guard` yields no/false flag; with `guard: true` yields `true`; `parseGuardJobPayload` rejects a payload missing any of `jobId`, `userId`, `resourceId`, `name`; `GUARD_QUEUE_KEY === "syraa:guard:queue"`.
+- [ ] Python protocol matches Node — check: `services/ingest-worker/tests/test_queue_embed.py`: `GUARD_QUEUE_KEY == "syraa:guard:queue"`, `IngestJob.from_json` of the same JSON fixture used by the Node test reads `guard` (missing -> `False`), and `guard_job_payload` has exactly `jobId, userId, resourceId, name`.
+- [ ] The worker holds guarded jobs and releases unguarded ones — check: `services/ingest-worker/tests/test_ingest.py`: with `guard=True` the persisted resource row ends `pending_guardrail` and a task is `LPUSH`ed on `syraa:guard:queue` and the job phase is `reviewing`; with `guard=False` the row ends `ready` and nothing is pushed (the current behavior).
+- [ ] A failed task push does not release the document — check: `test_ingest.py`: with the push raising, the row is still `pending_guardrail`, the error is logged, and the job does not end `ready` or `failed`.
+- [ ] Python lint, format and tests pass — check: `npm run check:py` and `npm run test:py` exit 0.
+- [ ] The API sets the flag only when the guard is enabled — check: `packages/harness/tests/document-guard.test.ts` (upload path with a stubbed queue): with `TYPESAFE_API_KEY` set the enqueued job has `guard: true`; unset, `guard` is absent or false.
+
+### Consumer behavior (Jev mocked)
+- [ ] Clean summary is released — check: `document-guard.test.ts`: a `pending_guardrail` resource with a summary and an all-low Jev answer ends `ready`, a `clean` verdict row exists with `subject_kind = 'document'`, `subject_id` = the resource id and `subject_text` null, and the job hash ends `ready`.
+- [ ] Flagged summary is quarantined with a fixed reason — check: `document-guard.test.ts`: a Jev answer above 0.8 for `sexual_content` ends the resource `quarantined` with `guard_reason = 'sexual_content'`; with two categories flagged the stored reason is the higher-priority one (`harmful_instructions` over `ai_instructions`) and the verdict row keeps both; the job hash ends `quarantined` with the label text.
+- [ ] No summary is quarantined as unreviewable without calling Jev — check: `document-guard.test.ts`: an empty-string summary ends `quarantined` with `guard_reason = 'unreviewable'` and the mocked Jev `fetch` is never called.
+- [ ] Strict hold on Jev failure — check: `document-guard.test.ts`: Jev returning HTTP 500 on every call yields exactly 3 attempts, an `unchecked` verdict row, and the resource still `pending_guardrail` (never `ready`); a later pass with Jev healthy releases it.
+- [ ] Idempotent and safe under races — check: `document-guard.test.ts`: reviewing the same resource twice (duplicate task) writes one transition; a resource already `ready` or manually `quarantined` is returned `skipped` and not modified.
+- [ ] The sweep recovers lost tasks — check: `document-guard.test.ts`: a `pending_guardrail` resource older than 10 minutes with no queued task is picked up by `sweepHeldDocuments` and released; one younger than 10 minutes is left alone.
+- [ ] Only the summary reaches Jev — check: `document-guard.test.ts`: the mocked Jev request body `state` equals `Document summary: <summary>` exactly; it contains neither the file name nor any chunk text.
+- [ ] The guard worker idles without a key — check: running `TYPESAFE_API_KEY= node packages/harness/dist/guard-worker.js` for 5 seconds logs that the guard is disabled, keeps running, and does not read `syraa:guard:queue` (a pushed test task is still in the list afterwards).
+
+### What the agent and the user see
+- [ ] The agent's prompt names withheld documents with fixed labels only — check: `packages/harness/tests/withheld-notice.test.ts`: `formatMaterialsOutline(ready, withheld)` output contains `- <name> — withheld: contains sexually explicit content` for a quarantined row and `awaiting safety review` for a held row, contains the "do not read, search, quote or guess" instruction, and contains no summary text of the withheld document.
+- [ ] Tools never return withheld content — check: `withheld-notice.test.ts`: `list_materials` returns a `withheld` array with `documentName` and `reason` and no `summary` or `sectionTitles` for those rows; `search_materials` with `documentName` of a withheld doc and `read_materials_section` of its name both return `error` containing `is withheld:` and the label, not "No ingested document".
+- [ ] Unknown or missing reason has a safe label — check: `withheld-notice.test.ts`: a `quarantined` row with `guard_reason` null or an unrecognised value renders `withheld by safety review`.
+- [ ] The UI shows the states — check: `npm run typecheck -w @syraa/web` and `npm run check:ts` pass; `grep -n "reviewing\|quarantined" apps/web/src/App.tsx apps/web/src/lib/types.ts` shows both phases handled; manual check in a local run: an upload held in review shows "under review" in the sidebar, and a quarantined one shows "withheld: <reason>".
+- [ ] The upload flow does not report a false "Ready" — check: manual local run with Jev unavailable (unset the key on the guard-worker only): the chat shows the "still under review" message after the poll limit, not "Ready" and not "ingest timed out".
+
+### End to end and deployment
+- [ ] Compose service builds and starts in order — check: `docker compose config` validates, `grep -n "guard-worker" -A12 compose.yaml` shows the overridden entrypoint and `depends_on` with `api: service_healthy`; `docker compose up -d --build` brings up `guard-worker` and `docker compose logs guard-worker` shows it listening (with a key) and no migration run.
+- [ ] Real flow, clean document — check: with the Jev key loaded, upload a benign PDF locally: it passes through `pending_guardrail` and ends `ready` within a minute; `search_materials` finds its text; a `clean` document verdict row exists.
+- [ ] Real flow, flagged document — check: upload a PDF whose content is clearly in a flagged category (use a synthetic test PDF, never real harmful material): it ends `quarantined` with a reason, a chat turn asking about it gets the withheld answer, and `search_materials` returns none of its text.
+- [ ] Real flow, scanned/no-summary PDF — check: upload an image-only PDF: it ends `quarantined` with `guard_reason = 'unreviewable'`, and `npm run guard:ops -w @syraa/harness -- release <resourceId>` makes it `ready` and searchable.
+- [ ] Operator CLI works and is safe — check: `release`, `quarantine <id> sexual_content`, `rerun` each change the row as described and print only ids, names and statuses; `quarantine <id> not_a_reason` exits non-zero without changing the row; no command prints a summary or document text.
+- [ ] Default-off behavior holds — check: with `TYPESAFE_API_KEY` unset on the API, a new upload goes straight to `ready` exactly as before this feature (no `pending_guardrail`, no queue push).
+- [ ] Existing documents are untouched — check: after the migrations run on a database seeded with `ready` resources, `SELECT status, count(*) FROM context_resources GROUP BY 1` is unchanged and no verdict rows were created for them.
+- [ ] The document eval clears the bar — check: `~/.local/bin/infisical-run --env=personal -- npm run eval:guardrail -w @syraa/harness` exits 0 with precision >= 0.9 for every document category with positives; the cases file has at least 40 document summaries including near-miss negatives; the per-category precision and recall table is in the PR description. If precision cannot reach 0.9 the phase is handed back to the user, not relaxed.
+
+## Negative checks
+- [ ] Search and overview `ready` filters are unchanged — check: `git diff packages/context/src/store.ts` shows no change to `readyChunkScope`, the `eq(contextResources.status, "ready")` in `listMaterialsLayer1`, or the search queries.
+- [ ] No Jev free text ever reaches the agent, the UI or `guard_reason` — check: `grep -n "guardReason\|guard_reason" packages/harness/src/document-guard.ts` shows it is only ever assigned from `DOCUMENT_PRIORITY` ids or `"unreviewable"`; `document-guard.test.ts` asserts `guard_reason` is always a key of `DOCUMENT_REASON_LABELS`.
+- [ ] Documents are never copied into verdict rows — check: `guardrail_verdicts` rows for `subject_kind = 'document'` always have `subject_text IS NULL` (`document-guard.test.ts` query), and no code path passes a summary into `repo.record`.
+- [ ] No fail-open path while the guard is enabled — check: `grep -n "ready" packages/harness/src/document-guard.ts` shows `ready` is reached only from a `clean` verdict (or the operator CLI); the Jev-failure test above passes.
+- [ ] The guard worker does not run migrations or share the api entrypoint — check: `grep -n "migrate" packages/harness/src/guard-worker.ts packages/harness/src/document-guard.ts` matches nothing; `compose.yaml` `guard-worker` sets its own `entrypoint`.
+- [ ] No secret in the new service's environment beyond what it needs — check: the `guard-worker` block in `compose.yaml` does not pass `FIREWORKS_API_KEY`, `OPENAI_API_KEY`, `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_SECRET` or `RESEND_API_KEY`.
+- [ ] No new npm or Python dependency — check: `git diff package.json packages/*/package.json apps/*/package.json requirements.txt requirements-dev.txt services/ingest-worker/pyproject.toml` shows no new dependency entries; `git diff package-lock.json` is empty.
+- [ ] No admin HTTP route or role added — check: `git diff -U0 packages/harness/src/server.ts` is empty; `grep -rn "admin" packages/harness/src` matches nothing.
+- [ ] No backfill of existing documents — check: `grep -rn "backfill\|listResources" packages/harness/src/document-guard.ts packages/harness/src/guard-ops.ts` matches nothing that enqueues or reviews `ready` documents (the CLI acts on one explicit id).
+- [ ] The message guard package and lesson gate are untouched — check: `git diff --name-only <phase-2-base>...HEAD` (the branch point after phase 1 merged) lists no file under `packages/guardrails/` and not `packages/harness/src/lesson-gate.ts`.

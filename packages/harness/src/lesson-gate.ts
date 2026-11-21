@@ -1,4 +1,6 @@
 import { type AnySpan, SpanType } from "@mastra/core/observability";
+import { askJev, type JevAnswers } from "@syraa/guardrails";
+import { jevSpanTrace } from "./guardrails.js";
 import { getLessonWriterAgent } from "./mastra/index.js";
 import { failSpan } from "./mastra/observability.js";
 import type { LessonKind } from "./schemas.js";
@@ -16,9 +18,6 @@ import { lastAssistantMessageText } from "./threads.js";
  * re-run `npm run eval:lesson-gate` after changing any wording or threshold.
  */
 
-const JEV_URL = "https://api.typesafe.ai/v1/systemone";
-const JEV_MODEL = "jev-latest";
-const JEV_TIMEOUT_MS = 3000;
 const WRITER_TIMEOUT_MS = 5000;
 const GATED_KINDS: readonly GatedLesson["kind"][] = ["preference", "rule", "method", "decision"];
 const MAX_SCORED_SENTENCES = 12;
@@ -117,12 +116,6 @@ export const SENTENCE_QUESTIONS = {
   self_contained: LESSON_GATE_QUESTIONS.self_contained,
 } as const;
 
-type QuestionSet = Record<string, { type: "noul" | "choice" }>;
-
-type JevAnswers<Q extends QuestionSet> = {
-  [K in keyof Q]: Q[K]["type"] extends "noul" ? number : string;
-};
-
 type TurnAnswers = JevAnswers<typeof LESSON_GATE_QUESTIONS>;
 type ConfirmationAnswers = JevAnswers<typeof CONFIRMATION_QUESTIONS>;
 
@@ -182,13 +175,11 @@ export async function evaluateTurn(
   parentSpan?: AnySpan,
 ): Promise<TurnDecision> {
   const userOnlyCall = askJev(jevState(null, userMessage), LESSON_GATE_QUESTIONS, {
-    parentSpan,
-    name: "classify-turn",
+    trace: jevSpanTrace(parentSpan, "classify-turn"),
   });
   const confirmationCall = prevAssistant
     ? askJev(jevState(prevAssistant, userMessage), CONFIRMATION_QUESTIONS, {
-        parentSpan,
-        name: "check-confirmation",
+        trace: jevSpanTrace(parentSpan, "check-confirmation"),
       }).catch(() => null)
     : Promise.resolve(null);
 
@@ -216,76 +207,6 @@ export function jevState(prevAssistant: string | null, userMessage: string): str
     `Previous assistant message: ${prevAssistant ?? "(none — start of conversation)"}`,
     `User message: ${userMessage}`,
   ].join("\n");
-}
-
-/**
- * Where a Jev call shows up in Langfuse: a generation under `parentSpan`. Model-call spans are
- * named `chat <model>` on export, so `name` (e.g. `classify-turn`) goes in metadata as `jevCall`.
- */
-type JevTrace = { parentSpan?: AnySpan; name: string };
-
-/** One Jev evaluation. Throws on missing key, HTTP error, timeout, or a malformed answer. */
-export async function askJev<Q extends QuestionSet>(
-  state: string,
-  questions: Q,
-  trace?: JevTrace,
-): Promise<JevAnswers<Q>> {
-  const span = trace?.parentSpan?.createChildSpan({
-    // MODEL_INFERENCE, not MODEL_GENERATION: only the per-call type is exported as a Langfuse
-    // generation (model + token usage); MODEL_GENERATION becomes a plain span.
-    type: SpanType.MODEL_INFERENCE,
-    name: trace.name,
-    input: { state, questions },
-    metadata: { jevCall: trace.name },
-    attributes: { model: JEV_MODEL, provider: "typesafe" },
-  });
-
-  try {
-    const { answers, model, usage } = await callJev(state, questions);
-    span?.end({
-      output: answers,
-      attributes: {
-        model,
-        usage: usage && { inputTokens: usage.input_tokens, outputTokens: usage.output_tokens },
-      },
-    });
-    return answers;
-  } catch (error) {
-    failSpan(span, error);
-    throw error;
-  }
-}
-
-async function callJev<Q extends QuestionSet>(state: string, questions: Q) {
-  const key = process.env.TYPESAFE_API_KEY?.trim();
-  if (!key) throw new Error("TYPESAFE_API_KEY not set");
-
-  const res = await fetch(JEV_URL, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: JEV_MODEL, state, questions }),
-    signal: AbortSignal.timeout(JEV_TIMEOUT_MS),
-  });
-  if (!res.ok) throw new Error(`jev HTTP ${res.status}`);
-
-  const body = (await res.json()) as {
-    answers?: Record<string, { noul?: unknown; choice?: unknown }>;
-    model?: string;
-    usage?: { input_tokens?: number; output_tokens?: number };
-  };
-  const answers: Record<string, number | string> = {};
-  for (const [name, question] of Object.entries(questions)) {
-    const answer = body.answers?.[name];
-    const value = question.type === "noul" ? answer?.noul : answer?.choice;
-    const valid = question.type === "noul" ? typeof value === "number" : typeof value === "string";
-    if (!valid) throw new Error(`jev answer missing: ${name}`);
-    answers[name] = value as number | string;
-  }
-  return {
-    answers: answers as JevAnswers<Q>,
-    model: body.model ?? JEV_MODEL,
-    usage: body.usage,
-  };
 }
 
 /** One-sentence lesson text when the user's own words don't stand alone. */
@@ -336,8 +257,7 @@ async function pickLessonText(opts: {
     const settled = await Promise.allSettled(
       sentences.map(async (sentence) => {
         const answers = await askJev(jevState(opts.prevAssistant, sentence), SENTENCE_QUESTIONS, {
-          parentSpan: opts.parentSpan,
-          name: "score-sentence",
+          trace: jevSpanTrace(opts.parentSpan, "score-sentence"),
         });
         return { sentence, reveals: answers.reveals, selfContained: answers.self_contained };
       }),
