@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Syraa M9 harness — chat orchestration, LLM config, memory wiring",
+  "description": "Syraa M9 harness \u2014 chat orchestration, LLM config, memory wiring",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -22,7 +22,8 @@
     "auth:migrate": "tsx src/auth/migrate.ts",
     "auth:migrate:dist": "node dist/auth/migrate.js",
     "titles:backfill": "tsx src/backfill-titles.ts",
-    "titles:backfill:dist": "node dist/backfill-titles.js"
+    "titles:backfill:dist": "node dist/backfill-titles.js",
+    "eval:guardrail": "tsx evals/guardrail/run.ts"
   },
   "dependencies": {
     "@mastra/ai-sdk": "^1.10.0",
@@ -33,6 +34,7 @@
     "@mastra/pg": "^1.22.2",
     "@syraa/context": "*",
     "@syraa/history": "*",
+    "@syraa/guardrails": "*",
     "@syraa/ingest": "*",
     "@syraa/memory": "*",
     "ai": "^7.0.87",

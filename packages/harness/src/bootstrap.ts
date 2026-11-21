@@ -1,3 +1,4 @@
+import { migrateGuardrailsSchema } from "@syraa/guardrails";
 import { migrateMemorySchema, resolveDatabaseUrl } from "@syraa/memory";
 import { ensureContextReady } from "./context.js";
 import { ensureHistoryReady } from "./history-state.js";
@@ -10,6 +11,7 @@ export async function ensureHarnessReady(connectionString?: string): Promise<voi
   try {
     await migrateMemorySchema(databaseUrl);
     await ensureContextReady(databaseUrl);
+    await migrateGuardrailsSchema(databaseUrl);
     await ensureMastraStorageReady(databaseUrl);
     await ensureSettingsReady(databaseUrl);
     await ensureHistoryReady(databaseUrl);

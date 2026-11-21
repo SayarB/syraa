@@ -20,6 +20,9 @@ node packages/memory/dist/migrate.js
 echo "Running context schema migrations..."
 node packages/context/dist/migrate.js
 
+echo "Running guardrails schema migrations..."
+node packages/guardrails/dist/migrate.js
+
 if [ -n "${BETTER_AUTH_SECRET:-}" ]; then
   echo "Running Better Auth schema migrations..."
   node packages/harness/dist/auth/migrate.js

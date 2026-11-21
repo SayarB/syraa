@@ -28,7 +28,12 @@ export async function createSyraaUIMessageStream(opts: {
   onSettled?: () => Promise<void>;
 }) {
   return runWithChatContext(
-    { userId: opts.userId, threadId: opts.threadId, currentUserMessage: opts.userMessage },
+    {
+      userId: opts.userId,
+      threadId: opts.threadId,
+      currentUserMessage: opts.userMessage,
+      turnSpan: opts.turnSpan,
+    },
     async () => {
       const agent = getSyraaAgent();
       const userMessage: UIMessage = {
