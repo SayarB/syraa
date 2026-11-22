@@ -1,0 +1,51 @@
+{
+  "name": "@syraa/guardrails",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Syraa guardrails \u2014 Jev client, guards, verdict store, Mastra processor adapter",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./mastra": {
+      "types": "./dist/mastra.d.ts",
+      "import": "./dist/mastra.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "flags": "tsx src/cli.ts",
+    "db:migrate": "tsx src/migrate.ts",
+    "db:migrate:dist": "node dist/migrate.js",
+    "db:generate": "drizzle-kit generate"
+  },
+  "dependencies": {
+    "drizzle-orm": "^1.0.0-rc.4",
+    "pg": "^8.23.0"
+  },
+  "peerDependencies": {
+    "@mastra/core": "^1.63.2"
+  },
+  "devDependencies": {
+    "@mastra/core": "^1.63.2",
+    "@mastra/memory": "^1.28.1",
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.23.1",
+    "ai": "^7.0.87",
+    "dotenv": "^17.4.2",
+    "drizzle-kit": "^1.0.0-rc.4",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

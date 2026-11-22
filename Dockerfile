@@ -10,6 +10,7 @@ COPY packages/memory/package.json packages/memory/
 COPY packages/context/package.json packages/context/
 COPY packages/ingest/package.json packages/ingest/
 COPY packages/history/package.json packages/history/
+COPY packages/guardrails/package.json packages/guardrails/
 COPY packages/harness/package.json packages/harness/
 COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
@@ -19,6 +20,7 @@ COPY packages/memory packages/memory
 COPY packages/context packages/context
 COPY packages/ingest packages/ingest
 COPY packages/history packages/history
+COPY packages/guardrails packages/guardrails
 COPY packages/harness packages/harness
 COPY apps/api apps/api
 COPY apps/web apps/web
@@ -31,6 +33,7 @@ RUN npm run build -w @syraa/memory \
   && npm run build -w @syraa/context \
   && npm run build -w @syraa/ingest \
   && npm run build -w @syraa/history \
+  && npm run build -w @syraa/guardrails \
   && npm run build -w @syraa/harness \
   && npm run build -w @syraa/api \
   && npm run build -w @syraa/web

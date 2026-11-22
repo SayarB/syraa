@@ -13,6 +13,7 @@ import {
 import { handleChat, pipeChatStream } from "./chat.js";
 import { getContextStore } from "./context.js";
 import { formatHarnessError } from "./errors.js";
+import { startVerdictRetention } from "./guardrails.js";
 import { getChatConfig } from "./llm.js";
 import { getMemory, listMemoryForUser } from "./memory.js";
 import {
@@ -380,6 +381,7 @@ async function handleApi(
 export function createHarnessServer(options: HarnessServerOptions = {}) {
   const staticDir = options.staticDir;
   const authHandler = isBetterAuthConfigured() ? toNodeHandler(getAuth()) : null;
+  startVerdictRetention();
 
   return createServer(async (req, res) => {
     try {

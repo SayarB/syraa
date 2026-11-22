@@ -1,4 +1,5 @@
 import { AsyncLocalStorage } from "node:async_hooks";
+import type { AnySpan } from "@mastra/core/observability";
 
 export type ChatRunContext = {
   userId: string;
@@ -17,6 +18,8 @@ export type ChatRunContext = {
   threadHistoryCount?: number;
   /** The user's message for this turn, so thread_history can leave the question being answered out of its results. */
   currentUserMessage?: string;
+  /** Langfuse `chat-turn` span, so work started during the turn can nest under it. */
+  turnSpan?: AnySpan;
 };
 
 const storage = new AsyncLocalStorage<ChatRunContext>();
@@ -39,4 +42,9 @@ export function getChatRunContext(): ChatRunContext {
     throw new Error("Chat tools require an active chat run context");
   }
   return ctx;
+}
+
+/** The active run context, or undefined outside a chat run (tests, evals). */
+export function tryChatRunContext(): ChatRunContext | undefined {
+  return storage.getStore();
 }
